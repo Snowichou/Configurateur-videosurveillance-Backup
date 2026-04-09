@@ -1315,7 +1315,6 @@ const KPI = (() => {
   function compactCameras() {
     // attend tes structures existantes : MODEL.cameraLines + getCameraById()
     const lines = Array.isArray(MODEL?.cameraLines) ? MODEL.cameraLines : [];
-    const blocks = Array.isArray(MODEL?.cameraBlocks) ? MODEL.cameraBlocks : [];
     const cams = [];
 
     for (const l of lines) {
@@ -1323,15 +1322,10 @@ const KPI = (() => {
       if (!camId) continue;
       const cam = (typeof getCameraById === "function") ? getCameraById(camId) : null;
       if (!cam) continue;
-      // Retrouver l'objectif DORI depuis le bloc source
-      const block = blocks.find(b => b.id === l.fromBlockId);
-      const objective = block?.answers?.objective || block?.objective || null;
       cams.push({
         id: cam.id,
         name: cam.name || "",
         qty: Number(l.qty || 0) || 0,
-        brand_range: cam.brand_range || "",   // ex: "NEXT", "ADVANCE", "EASY"
-        objective: objective,                  // ex: "detection", "observation", "identification"
       });
     }
     return cams.filter(c => c.qty > 0);
@@ -6218,9 +6212,9 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
           ⚠️ ${T("nvr_storage_capped").replace("{0}", proj.disks ? proj.disks.maxTotalTB : "—").replace("{1}", nvr.hdd_bays)}
         </div>` : ""}
         <div class="techValidation" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
-          ${proj.totalCameras <= nvr.channels ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_channels")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_channels")}</span>`}
-          ${proj.totalInMbps <= (nvr.max_in_mbps || 256) ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_bitrate")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_bitrate")}</span>`}
-          ${!proj.storageCapped ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_storage")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_storage")}</span>`}
+          ${proj.totalCameras <= nvr.channels ? '<span class="techBadge techBadgeOk">${"✅ " + T("nvr_badge_channels")}</span>' : '<span class="techBadge techBadgeWarn">${"⚠️ " + T("nvr_badge_channels")}</span>'}
+          ${proj.totalInMbps <= (nvr.max_in_mbps || 256) ? '<span class="techBadge techBadgeOk">${"✅ " + T("nvr_badge_bitrate")}</span>' : '<span class="techBadge techBadgeWarn">${"⚠️ " + T("nvr_badge_bitrate")}</span>'}
+          ${!proj.storageCapped ? '<span class="techBadge techBadgeOk">${"✅ " + T("nvr_badge_storage")}</span>' : '<span class="techBadge techBadgeWarn">${"⚠️ " + T("nvr_badge_storage")}</span>'}
         </div>
         ${nvr.image_url ? `<div style="text-align:center;margin:10px 0"><img style="max-height:100px;border-radius:8px" src="${nvr.image_url}" alt="" loading="lazy"></div>` : ""}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
@@ -6531,12 +6525,10 @@ function renderStepSummary() {
           <span class="exportBtnIcon">📨</span>
           <span class="exportBtnLabel">${T("sum_request_quote")}</span>
         </button>
-        <!-- DÉSACTIVÉ – lancement interne (réactiver pour déploiement distributeurs)
         <button class="exportBtn exportBtnSecondary" id="btnSendToDistributor">
           <span class="exportBtnIcon">🏢</span>
           <span class="exportBtnLabel">${T("sum_send_distributor")}</span>
         </button>
-        -->
       </div>
       <div class="summaryActionsRow summaryActionsUtils">
         <button class="exportBtn exportBtnSecondary" id="btnSaveConfig">
