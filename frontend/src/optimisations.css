@@ -17,84 +17,170 @@
 
 
 /* ============================================================
-   B. COMPARE PANEL — Responsive
+   B. COMPARE PANEL — Redesign Mobile-First
    ============================================================ */
 
-.cmpPanel {
+/* Card wrapper */
+.cmpCard {
   background: #fff;
-  border-radius: 14px;
   border: 1px solid var(--line, #E5E7EB);
-  box-shadow: 0 4px 12px rgba(0,0,0,.06);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.07);
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.cmpHead {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px;
-  background: var(--panel3, #FAFAFB);
+/* En-tête */
+.cmpCardHead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #1C1F2B 0%, #2d3348 100%);
+}
+.cmpCardTitle {
+  font-size: 14px; font-weight: 900; color: #fff; letter-spacing: .2px;
+}
+.cmpCardClose {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+  color: #fff; cursor: pointer; transition: all .15s;
+}
+.cmpCardClose:hover { background: rgba(220,38,38,.4); border-color: rgba(220,38,38,.6); }
+
+/* Colonnes header */
+.cmpCols {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr;
+  border-bottom: 2px solid var(--line, #E5E7EB);
+}
+.cmpColSpacer { background: #FAFAFB; border-right: 1px solid var(--line); }
+.cmpColHeader {
+  padding: 12px 10px; text-align: center;
+  background: #FAFAFB;
+}
+.cmpColHeader + .cmpColHeader { border-left: 1px solid var(--line); }
+.cmpColImg {
+  width: 56px; height: 56px; object-fit: contain;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: #fff; display: block; margin: 0 auto 8px;
+}
+.cmpColImgPh {
+  width: 56px; height: 56px; border-radius: 10px;
+  border: 1px solid var(--line); background: #f0f0f2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin: 0 auto 8px;
+}
+.cmpColId {
+  font-size: 11px; font-weight: 900; color: var(--cosmos, #1C1F2B);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cmpColName {
+  font-size: 10px; color: var(--muted, rgba(15,23,42,.6)); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cmpColRange {
+  display: inline-block; margin-top: 5px;
+  padding: 2px 7px; border-radius: 999px; font-size: 9px; font-weight: 900;
+  background: rgba(0,188,112,.1); color: #065f46;
+  border: 1px solid rgba(0,188,112,.25);
+}
+
+/* Table rows */
+.cmpTable { display: flex; flex-direction: column; }
+
+.cmpSectionHead {
+  display: flex; align-items: center;
+  padding: 6px 10px;
+  background: #F6F7F9;
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
-.cmpHeadTitle { font-size: 14px; font-weight: 800; }
-.cmpHeadClose {
-  background: none; border: 1px solid var(--line); border-radius: 8px;
-  padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
-  color: var(--muted); transition: all 0.15s;
+.cmpSectionHead span {
+  font-size: 10px; font-weight: 900; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted, rgba(15,23,42,.6));
 }
-.cmpHeadClose:hover { border-color: #DC2626; color: #DC2626; }
 
-/* Grille 3 colonnes */
-.cmpTable {
+.cmpRow {
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
-  font-size: 13px;
+  grid-template-columns: 90px 1fr 1fr;
+  border-bottom: 1px solid rgba(28,31,42,.06);
+  min-height: 36px;
+}
+.cmpRow:last-child { border-bottom: none; }
+
+.cmpRowLabel {
+  display: flex; align-items: center;
+  padding: 8px 10px;
+  font-size: 11px; font-weight: 700; color: var(--muted, rgba(15,23,42,.6));
+  background: #FAFAFB;
+  border-right: 1px solid var(--line);
+  white-space: nowrap;
 }
 
-.cmpCell { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,.04); }
-
-.cmpCorner { background: var(--panel3); border-right: 1px solid var(--line); border-bottom: 2px solid var(--line); }
-
-.cmpColHead {
-  padding: 10px 8px;
-  text-align: center;
-  background: var(--panel3);
-  border-bottom: 2px solid var(--line);
+.cmpRowVal {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 6px;
+  font-size: 12px; font-weight: 700; color: var(--cosmos, #1C1F2B);
+  text-align: center; transition: background .15s;
 }
-.cmpColHead + .cmpColHead { border-left: 1px solid var(--line); }
+.cmpRowVal + .cmpRowVal { border-left: 1px solid rgba(28,31,42,.06); }
 
-.cmpImg {
-  width: 48px; height: 48px; object-fit: contain;
-  border-radius: 8px; margin: 0 auto 6px;
-  display: block; background: #fff; border: 1px solid var(--line);
+/* Highlight win/lose */
+.cmpWin {
+  background: rgba(0,188,112,.08) !important;
+  color: #065f46 !important;
+  font-weight: 900 !important;
 }
-.cmpId { font-size: 12px; font-weight: 900; color: var(--cosmos); }
-.cmpName { font-size: 10px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; margin-inline: auto; }
-
-.cmpLabel {
-  font-weight: 600; color: var(--muted); font-size: 12px;
-  border-right: 1px solid var(--line); white-space: nowrap;
+.cmpWin::after { content: " ✓"; font-size: 10px; opacity: .7; }
+.cmpLose {
+  background: rgba(220,38,38,.04) !important;
+  color: rgba(15,23,42,.4) !important;
 }
 
-.cmpVal { text-align: center; font-weight: 600; color: var(--cosmos); }
-.cmpVal + .cmpVal { border-left: 1px solid var(--line); }
+/* Icônes booléennes */
+.cmpCheck { color: #00BC70; font-weight: 900; }
+.cmpCross  { color: #DC2626; font-weight: 900; }
 
-.cmpVal.cmpBetter { background: rgba(0,188,112,.07); color: #065f46; font-weight: 800; }
-.cmpVal.cmpWorse  { background: rgba(220,38,38,.03); color: rgba(15,23,42,.45); }
-
-/* Alternance */
-.cmpLabel:nth-child(6n+4),
-.cmpLabel:nth-child(6n+4) + .cmpVal,
-.cmpLabel:nth-child(6n+4) + .cmpVal + .cmpVal { background-color: rgba(0,0,0,.015); }
-
-.cmpFoot {
-  display: flex; justify-content: center; gap: 14px;
-  padding: 8px 12px; border-top: 1px solid var(--line);
-  background: var(--panel3); font-size: 11px; color: var(--muted);
+/* Légende */
+.cmpLegend {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 8px 12px;
+  background: #F6F7F9;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
 }
-.cmpLeg { display: flex; align-items: center; gap: 4px; font-weight: 600; }
-.cmpDot { width: 8px; height: 8px; border-radius: 2px; }
-.cmpDotG { background: rgba(0,188,112,.35); border: 1px solid rgba(0,188,112,.6); }
-.cmpDotR { background: rgba(220,38,38,.15); border: 1px solid rgba(220,38,38,.3); }
+.cmpLegItem { display: flex; align-items: center; gap: 5px; color: var(--muted); font-weight: 700; }
+.cmpLegDot { width: 10px; height: 10px; border-radius: 3px; }
+.cmpLegWin  { background: rgba(0,188,112,.3); border: 1px solid rgba(0,188,112,.5); }
+.cmpLegLose { background: rgba(220,38,38,.15); border: 1px solid rgba(220,38,38,.25); }
+
+/* État d'attente (1 seule cam sélectionnée) */
+.cmpCardWaiting {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px; margin-bottom: 14px;
+  background: #fff; border: 2px dashed var(--line);
+  border-radius: 14px; text-align: center;
+}
+.cmpWaitIcon { font-size: 28px; }
+.cmpWaitText { font-size: 13px; font-weight: 700; color: var(--muted); }
+.cmpCancelBtn {
+  margin-top: 4px; padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: #fff;
+  font-size: 12px; font-weight: 700; cursor: pointer; color: var(--muted);
+}
+.cmpCancelBtn:hover { border-color: #DC2626; color: #DC2626; }
+
+/* ── Responsive mobile ── */
+@media (max-width: 480px) {
+  .cmpCols,
+  .cmpRow { grid-template-columns: 72px 1fr 1fr; }
+  .cmpColSpacer,
+  .cmpRowLabel { font-size: 10px; padding: 6px 7px; }
+  .cmpColImg, .cmpColImgPh { width: 44px; height: 44px; }
+  .cmpColId { font-size: 10px; }
+  .cmpColName { font-size: 9px; }
+  .cmpRowVal { font-size: 11px; padding: 6px 4px; }
+  .cmpCard { border-radius: 12px; }
+}
 
 
 /* ============================================================
@@ -197,14 +283,7 @@
    R1. RESPONSIVE TABLETTE (≤900px)
    ============================================================ */
 
-@media (max-width: 900px) {
-  .cmpTable { font-size: 11px; }
-  .cmpCell { padding: 6px 8px; }
-  .cmpImg { width: 36px; height: 36px; }
-  .cmpId { font-size: 11px; }
-  .cmpName { font-size: 9px; max-width: 100px; }
-  .cmpLabel { font-size: 10px; }
-}
+/* (styles compare tablette déjà intégrés dans section B) */
 
 
 /* ============================================================
@@ -212,31 +291,12 @@
    ============================================================ */
 
 @media (max-width: 600px) {
-  .cmpPanel { border-radius: 10px; margin: 0 -2px 10px; }
-  .cmpHead { padding: 8px 10px; }
-  .cmpHeadTitle { font-size: 13px; }
-  .cmpTable { font-size: 10px; grid-template-columns: auto 1fr 1fr; }
-  .cmpCell { padding: 5px 6px; }
-  .cmpImg { width: 30px; height: 30px; margin-bottom: 4px; }
-  .cmpId { font-size: 10px; }
-  .cmpName { font-size: 8px; max-width: 70px; }
-  .cmpLabel { font-size: 9px; }
-  .cmpVal { font-size: 10px; }
-  .cmpFoot { padding: 6px 8px; font-size: 10px; gap: 10px; }
-
   #steps.stepSlideInNext, #steps.stepSlideInPrev { animation-duration: 0.2s; }
-
   .cfgModal { width: 100%; max-width: 100%; border-radius: 14px 14px 0 0; }
   .cfgModal__overlay { align-items: flex-end; }
 }
 
 @media (max-width: 400px) {
-  .cmpTable { grid-template-columns: auto 1fr 1fr; }
-  .cmpCell { padding: 4px 5px; }
-  .cmpLabel { font-size: 8px; }
-  .cmpVal { font-size: 9px; }
-  .cmpImg { width: 24px; height: 24px; }
-  .cmpName { max-width: 55px; }
   .cameraCards--swipeable > .cameraPickCard { flex: 0 0 92vw; max-width: 92vw; }
 }
 
@@ -250,7 +310,7 @@
 }
 
 @media print {
-  .cfgToast, .cfgModal__overlay, .scrollIndicator, .btnCompare, .cmpPanel { display: none !important; }
+  .cfgToast, .cfgModal__overlay, .scrollIndicator, .btnCompare, .cmpCard, .cmpCardWaiting { display: none !important; }
   .cameraCards--swipeable { display: flex !important; flex-wrap: wrap !important; overflow: visible !important; }
   .cameraCards--swipeable > .cameraPickCard { flex: 0 0 48% !important; max-width: 48% !important; }
 }

@@ -185,6 +185,58 @@ def login(data: LoginIn):
     return {"token": token, "expires_in": 86400}
 
 
+# --- Image Proxy (pour PDF export — CDN Comelit sans CORS) ---
+
+# Cache mémoire simple pour éviter de re-télécharger les mêmes images
+_IMG_PROXY_CACHE: dict[str, tuple[bytes, str]] = {}
+
+@app.get("/api/img-proxy")
+async def img_proxy(url: str):
+    """
+    Proxy d'images pour le rendu PDF.
+    Nécessaire car le CDN Comelit (staticpro.comelitgroup.com) ne supporte pas CORS,
+    ce qui empêche html2canvas de convertir les images en base64 côté client.
+    """
+    # Sécurité : domaines autorisés uniquement
+    ALLOWED_DOMAINS = [
+        "staticpro.comelitgroup.com",
+        "comelit.com",
+        "comelitgroup.com",
+    ]
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if not any(parsed.netloc.endswith(d) for d in ALLOWED_DOMAINS):
+        raise HTTPException(status_code=403, detail="Domain not allowed")
+
+    # Cache hit
+    if url in _IMG_PROXY_CACHE:
+        content, media_type = _IMG_PROXY_CACHE[url]
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=86400", "Access-Control-Allow-Origin": "*"}
+        )
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            content = resp.read()
+            media_type = resp.headers.get("Content-Type", "image/png").split(";")[0].strip()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Proxy fetch failed: {e}")
+
+    # Mettre en cache (max 200 entrées)
+    if len(_IMG_PROXY_CACHE) < 200:
+        _IMG_PROXY_CACHE[url] = (content, media_type)
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=86400", "Access-Control-Allow-Origin": "*"}
+    )
+
+
 # --- Catalog CRUD ---
 
 class CatalogOut(BaseModel):

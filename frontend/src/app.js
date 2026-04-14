@@ -3133,7 +3133,8 @@ function getSelectedOrRecommendedEnclosure(proj) {
   // Accessoires
   const accRows = (MODEL.accessoryLines || [])
     .map((a) => {
-      const imgUrl = pickImg("accessories", a.accessoryId, null);
+      // Passer l'objet entier pour que pickImg utilise image_url du CSV
+      const imgUrl = pickImg("accessories", a.accessoryId, a);
       return row({
         qty: a.qty || 0,
         ref: a.accessoryId,
@@ -3415,7 +3416,13 @@ function applyLocalMediaToCatalog() {
     for (const it of list) {
       const id = String(it?.id || "").trim();
       if (!id) continue;
-      it.image_url = getThumbSrc(fam, id);
+      // Préserver l'URL image du CSV (Comelit CDN) si elle existe déjà
+      if (!it.image_url || it.image_url === "false") {
+        // Préserver l'URL image du CSV (Comelit CDN) si elle existe déjà
+        if (!it.image_url || it.image_url === "false") {
+          it.image_url = getThumbSrc(fam, id);
+        }
+      }
       // Garder l'URL datasheet du CSV (Comelit multilingue) si elle existe
       if (!it.datasheet_url || it.datasheet_url === "false") {
         it.datasheet_url = getDatasheetSrc(fam, id);
@@ -3435,10 +3442,24 @@ function applyLocalMediaToCatalog() {
 
 
 function imgTag(family, ref) {
-  const src = getThumbSrc(family, ref);
+  // 1. Chercher l'image_url dans le catalogue (CDN Comelit)
+  let src = "";
+  try {
+    const catalogMap = {
+      cameras: CATALOG?.CAMERAS, nvrs: CATALOG?.NVRS,
+      hdds: CATALOG?.HDDS, switches: CATALOG?.SWITCHES,
+      accessories: CATALOG?.ACCESSORIES, screens: CATALOG?.SCREENS,
+      enclosures: CATALOG?.ENCLOSURES, signage: CATALOG?.SIGNAGE,
+    };
+    const list = catalogMap[String(family || "").toLowerCase()];
+    const obj = Array.isArray(list) ? list.find(x => x.id === ref) : null;
+    if (obj && obj.image_url && obj.image_url !== "false") src = obj.image_url;
+  } catch(e) {}
+  // 2. Fallback chemin local
+  if (!src) src = getThumbSrc(family, ref);
   if (!src) return "—";
   return `<img class="thumb" src="${src}" alt="${ref}"
-    onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<span class=muted>—</span>');" />`;
+    />`;
 }
 
   function buildPdfHtml(proj) {
@@ -3492,20 +3513,41 @@ function imgTag(family, ref) {
     return m ? String(m) : "—";
   };
 
-  const imgTag = (family, ref) => {
-    const src = getThumbSrc(family, ref);
+    const imgTag = (family, ref) => {
+    // 1. Chercher l'image_url dans le catalogue (CDN Comelit)
+    let src = "";
+    try {
+      const catalogMap = {
+        CAMERAS: CATALOG?.CAMERAS, cameras: CATALOG?.CAMERAS,
+        NVRS: CATALOG?.NVRS, nvrs: CATALOG?.NVRS,
+        HDDS: CATALOG?.HDDS, hdds: CATALOG?.HDDS,
+        SWITCHES: CATALOG?.SWITCHES, switches: CATALOG?.SWITCHES,
+        ACCESSORIES: CATALOG?.ACCESSORIES, accessories: CATALOG?.ACCESSORIES,
+        SCREENS: CATALOG?.SCREENS, screens: CATALOG?.SCREENS,
+        ENCLOSURES: CATALOG?.ENCLOSURES, enclosures: CATALOG?.ENCLOSURES,
+        SIGNAGE: CATALOG?.SIGNAGE, signage: CATALOG?.SIGNAGE,
+      };
+      const list = catalogMap[family] || catalogMap[String(family||"").toLowerCase()];
+      const obj = Array.isArray(list) ? list.find(x => x.id === ref) : null;
+      if (obj && obj.image_url && obj.image_url !== "false") src = obj.image_url;
+    } catch(e) {}
+    // 2. Fallback chemin local
+    if (!src) src = getThumbSrc(family, ref);
     if (!src) return "—";
     return `<img class="thumb" crossorigin="anonymous" src="${src}" alt="${safe(ref)}"
-      onerror="this.style.display='none'; this.insertAdjacentHTML('afterend','<span class=muted>—</span>');" />`;
+      />`;
   };
 
   // Tableau produits (Qté / Réf / Désignation / Image)
-  const row4 = (qty, ref, name, family) => `
+  // imgUrl optionnel : si fourni, utilisé directement (évite le lookup catalogue)
+  const row4 = (qty, ref, name, family, imgUrl) => `
     <tr>
       <td class="colQty">${safe(qty)}</td>
       <td class="colRef">${safe(ref || "—")}</td>
       <td class="colName">${safe(name || "")}</td>
-      <td class="colImg">${imgTag(family, ref)}</td>
+      <td class="colImg">${imgUrl && imgUrl !== "false"
+        ? `<img class="thumb" crossorigin="anonymous" src="${imgUrl}" />`
+        : imgTag(family, ref)}</td>
     </tr>
   `;
 
@@ -3594,7 +3636,7 @@ function imgTag(family, ref) {
     .filter(Boolean);
 
   const accRowsArray = (MODEL.accessoryLines || [])
-    .map((a) => row4(a.qty || 0, a.accessoryId || "—", a.name || a.accessoryId || "", "accessories"))
+    .map((a) => row4(a.qty || 0, a.accessoryId || "—", a.name || a.accessoryId || "", "accessories", a.image_url || false))
     .filter(Boolean);
 
   // 2) Autres produits
@@ -3699,7 +3741,7 @@ function imgTag(family, ref) {
         emplacement: String(ans.emplacement || "").toLowerCase(),
       },
       camera: cam ? { qty: camLine.qty || 0, id: cam.id, name: cam.name, scoreInfo } : null,
-      accessories: blockAccs.map((a) => ({ qty: a.qty || 0, id: a.accessoryId, name: a.name || a.accessoryId }))
+      accessories: blockAccs.map((a) => ({ qty: a.qty || 0, id: a.accessoryId, name: a.name || a.accessoryId, image_url: a.image_url || false }))
     });
   }
 
@@ -3806,7 +3848,7 @@ function imgTag(family, ref) {
       
       // Ajouter les accessoires du bloc
       for (const acc of group.accessories) {
-        addRow(row4(acc.qty, acc.id, acc.name, "accessories"));
+        addRow(row4(acc.qty, acc.id, acc.name, "accessories", acc.image_url || false));
       }
     }
 
@@ -5646,6 +5688,12 @@ function camPickCardHTML(blk, cam, label) {
                 ${T("btn_datasheet")}
               </a>
             ` : ""}
+            <button
+              class="btnCompare${(MODEL.ui.compare || []).includes(cam.id) ? " active" : ""}"
+              data-action="uiToggleCompare"
+              data-camid="${safeHtml(cam.id)}"
+              title="Comparer cette caméra"
+            >${(MODEL.ui.compare || []).includes(cam.id) ? "✓ Comparé" : "⇄ Comparer"}</button>
           </div>
 
           <!-- Détails (accordéon) -->
@@ -5892,43 +5940,130 @@ function camPickCardHTML(blk, cam, label) {
   const cmpA = cmp[0] ? getCameraById(cmp[0]) : null;
   const cmpB = cmp[1] ? getCameraById(cmp[1]) : null;
 
-  const compareHtml = (cmpA && cmpB) ? `
-    <div class="compareCard">
-      <div class="compareHead">
-        <div>
-          <div class="compareTitle">${T("cam_compare")}</div>
-          <div class="muted">${T("cam_compare")}</div>
-        </div>
-        <button class="btnGhost btnSmall" data-action="uiClearCompare" type="button">${T("btn_reset")}</button>
+  // ── Helpers comparaison ──
+  function cmpNum(a, b, higherIsBetter = true) {
+    if (a == null || b == null || a === b || a === 0 || b === 0) return ["", ""];
+    const better = higherIsBetter ? (a > b) : (a < b);
+    return better ? ["cmpWin", "cmpLose"] : ["cmpLose", "cmpWin"];
+  }
+  function cmpVal(v, unit = "") {
+    if (v == null || v === 0 || v === "") return "—";
+    return `${v}${unit}`;
+  }
+  function cmpBool(v) {
+    return v ? '<span class="cmpCheck">✓</span>' : '<span class="cmpCross">✗</span>';
+  }
+  function focalRange(cam) {
+    if (!cam.focal_min_mm) return "—";
+    return cam.focal_max_mm && cam.focal_max_mm !== cam.focal_min_mm
+      ? `${cam.focal_min_mm}–${cam.focal_max_mm} mm`
+      : `${cam.focal_min_mm} mm`;
+  }
+  function emplacement(cam) {
+    const arr = [];
+    if (cam.emplacement_interieur) arr.push("Int.");
+    if (cam.emplacement_exterieur) arr.push("Ext.");
+    return arr.join(" / ") || "—";
+  }
+  function analyticsLabel(v) {
+    const m = { "Intrusion humaine": "Intrusion", "Intrusion": "Intrusion",
+                "IA Avancée": "IA Avancée", "IA Avancee": "IA Avancée",
+                "IA Intrusion": "IA Intrusion" };
+    return m[v] || v || "—";
+  }
+
+  const compareHtml = (cmpA && cmpB) ? (() => {
+    const mpA = getMpFromCam(cmpA), mpB = getMpFromCam(cmpB);
+    const irA = getIrFromCam(cmpA), irB = getIrFromCam(cmpB);
+    const [mpCA, mpCB]     = cmpNum(mpA, mpB);
+    const [irCA, irCB]     = cmpNum(irA, irB);
+    const [dorDetCA, dorDetCB] = cmpNum(cmpA.dori_detection_m, cmpB.dori_detection_m);
+    const [dorObCA, dorObCB]   = cmpNum(cmpA.dori_observation_m, cmpB.dori_observation_m);
+    const [dorReCA, dorReCB]   = cmpNum(cmpA.dori_recognition_m, cmpB.dori_recognition_m);
+    const [dorIdCA, dorIdCB]   = cmpNum(cmpA.dori_identification_m, cmpB.dori_identification_m);
+    const [brCA, brCB]         = cmpNum(cmpA.bitrate_mbps_typical, cmpB.bitrate_mbps_typical, false);
+    const [poeCA, poeCB]       = cmpNum(cmpA.poe_w, cmpB.poe_w, false);
+    const [ipCA, ipCB]         = cmpNum(cmpA.ip, cmpB.ip);
+    const [ikCA, ikCB]         = cmpNum(cmpA.ik, cmpB.ik);
+    const [wledCA, wledCB]     = cmpNum(cmpA.white_led_range_m, cmpB.white_led_range_m);
+    const [strCA, strCB]       = cmpNum(cmpA.streams_max, cmpB.streams_max);
+
+    const row = (label, vA, vB, clA = "", clB = "") => `
+      <div class="cmpRow">
+        <div class="cmpRowLabel">${label}</div>
+        <div class="cmpRowVal ${clA}">${vA}</div>
+        <div class="cmpRowVal ${clB}">${vB}</div>
+      </div>`;
+
+    const sectionHead = (label) => `
+      <div class="cmpSectionHead"><span>${label}</span></div>`;
+
+    return `
+    <div class="cmpCard">
+      <div class="cmpCardHead">
+        <div class="cmpCardTitle">⇄ Comparaison</div>
+        <button class="cmpCardClose" data-action="uiClearCompare" type="button">✕ Effacer</button>
       </div>
-      <div class="compareGrid">
-        <div class="compareCol">
-          <div class="compareName">${safeHtml(cmpA.id)} — ${safeHtml(cmpA.name)}</div>
-          <div class="muted">${safeHtml(cmpA.brand_range || "")}</div>
+
+      <div class="cmpCols">
+        <div class="cmpColSpacer"></div>
+        <div class="cmpColHeader">
+          ${cmpA.image_url ? `<img class="cmpColImg" src="${cmpA.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">📷</div>`}
+          <div class="cmpColId">${safeHtml(cmpA.id)}</div>
+          <div class="cmpColName">${safeHtml(cmpA.name || "")}</div>
+          <span class="cmpColRange">${safeHtml(cmpA.brand_range || "")}</span>
         </div>
-        <div class="compareCol">
-          <div class="compareName">${safeHtml(cmpB.id)} — ${safeHtml(cmpB.name)}</div>
-          <div class="muted">${safeHtml(cmpB.brand_range || "")}</div>
+        <div class="cmpColHeader">
+          ${cmpB.image_url ? `<img class="cmpColImg" src="${cmpB.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">📷</div>`}
+          <div class="cmpColId">${safeHtml(cmpB.id)}</div>
+          <div class="cmpColName">${safeHtml(cmpB.name || "")}</div>
+          <span class="cmpColRange">${safeHtml(cmpB.brand_range || "")}</span>
         </div>
-
-        <div class="compareRowK">MP</div>
-        <div class="compareRowV">${safeHtml(String(getMpFromCam(cmpA) ?? "—"))}</div>
-        <div class="compareRowV">${safeHtml(String(getMpFromCam(cmpB) ?? "—"))}</div>
-
-        <div class="compareRowK">IR</div>
-        <div class="compareRowV">${safeHtml(String(getIrFromCam(cmpA) ?? "—"))} m</div>
-        <div class="compareRowV">${safeHtml(String(getIrFromCam(cmpB) ?? "—"))} m</div>
-
-        <div class="compareRowK">DORI (ID)</div>
-        <div class="compareRowV">${safeHtml(String(cmpA.dori_identification_m ?? "—"))} m</div>
-        <div class="compareRowV">${safeHtml(String(cmpB.dori_identification_m ?? "—"))} m</div>
-
-        <div class="compareRowK">Analytics</div>
-        <div class="compareRowV">${safeHtml(String(cmpA.analytics_level || "—"))}</div>
-        <div class="compareRowV">${safeHtml(String(cmpB.analytics_level || "—"))}</div>
       </div>
-    </div>
-  ` : "";
+
+      <div class="cmpTable">
+        ${sectionHead("🎥 Optique")}
+        ${row("Résolution", cmpVal(mpA, " MP"), cmpVal(mpB, " MP"), mpCA, mpCB)}
+        ${row("Focale", focalRange(cmpA), focalRange(cmpB))}
+        ${row("Type", safeHtml(cmpA.type || "—"), safeHtml(cmpB.type || "—"))}
+        ${row("Emplacement", emplacement(cmpA), emplacement(cmpB))}
+
+        ${sectionHead("🔦 Portée DORI")}
+        ${row("Détection", cmpVal(cmpA.dori_detection_m, " m"), cmpVal(cmpB.dori_detection_m, " m"), dorDetCA, dorDetCB)}
+        ${row("Observation", cmpVal(cmpA.dori_observation_m, " m"), cmpVal(cmpB.dori_observation_m, " m"), dorObCA, dorObCB)}
+        ${row("Reconnaissance", cmpVal(cmpA.dori_recognition_m, " m"), cmpVal(cmpB.dori_recognition_m, " m"), dorReCA, dorReCB)}
+        ${row("Identification", cmpVal(cmpA.dori_identification_m, " m"), cmpVal(cmpB.dori_identification_m, " m"), dorIdCA, dorIdCB)}
+
+        ${sectionHead("🌙 Vision nocturne")}
+        ${row("Portée IR", cmpVal(irA, " m"), cmpVal(irB, " m"), irCA, irCB)}
+        ${row("LED blanc", cmpVal(cmpA.white_led_range_m, " m"), cmpVal(cmpB.white_led_range_m, " m"), wledCA, wledCB)}
+        ${row("Basse lumière", cmpA.low_light_raw || "—", cmpB.low_light_raw || "—")}
+
+        ${sectionHead("🛡 Protection")}
+        ${row("Indice IP", cmpA.ip ? `IP${cmpA.ip}` : "—", cmpB.ip ? `IP${cmpB.ip}` : "—", ipCA, ipCB)}
+        ${row("Indice IK", cmpA.ik ? `IK${cmpA.ik}` : "—", cmpB.ik ? `IK${cmpB.ik}` : "—", ikCA, ikCB)}
+        ${row("Microphone", cmpBool(cmpA.microphone), cmpBool(cmpB.microphone))}
+
+        ${sectionHead("⚡ Réseau")}
+        ${row("Débit typique", cmpVal(cmpA.bitrate_mbps_typical, " Mbps"), cmpVal(cmpB.bitrate_mbps_typical, " Mbps"), brCA, brCB)}
+        ${row("Conso. PoE", cmpVal(cmpA.poe_w, " W"), cmpVal(cmpB.poe_w, " W"), poeCA, poeCB)}
+        ${row("Flux max", cmpVal(cmpA.streams_max, ""), cmpVal(cmpB.streams_max, ""), strCA, strCB)}
+
+        ${sectionHead("🤖 Intelligence")}
+        ${row("Analytics", analyticsLabel(cmpA.analytics_level), analyticsLabel(cmpB.analytics_level))}
+      </div>
+
+      <div class="cmpLegend">
+        <span class="cmpLegItem"><span class="cmpLegDot cmpLegWin"></span>Meilleur</span>
+        <span class="cmpLegItem"><span class="cmpLegDot cmpLegLose"></span>Inférieur</span>
+      </div>
+    </div>`;
+  })() : (cmpA || cmpB) ? `
+    <div class="cmpCardWaiting">
+      <div class="cmpWaitIcon">⇄</div>
+      <div class="cmpWaitText">Sélectionne une 2<sup>e</sup> caméra à comparer</div>
+      <button class="cmpCancelBtn" data-action="uiClearCompare" type="button">Annuler</button>
+    </div>` : "";
 
 // Toolbar 2.0 — Simple / Détails (Détails = mode "expert" interne)
 const toolbarHtml = "";
@@ -5998,14 +6133,14 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     const svD = savedCfg.savedAt ? new Date(savedCfg.savedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
     const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
     const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
-    saveCardHtml = '<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">'
-      + '<div class="recoName">💾 ${T("proj_save_available")}</div>'
-      + '<div class="muted" style="margin-top:4px"><strong>' + svN + '</strong><br>'
+    saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
+      + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
+      + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
       + (svD ? svD + '<br>' : '')
       + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
-      + '<div style="display:flex;gap:8px;margin-top:10px">'
-      + '<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📥 ${T("proj_save_load")}</button>'
-      + '<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>'
+      + `<div style="display:flex;gap:8px;margin-top:10px">`
+      + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📥 ${T("proj_save_load")}</button>`
+      + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
       + '</div></div>';
   }
 
@@ -7184,18 +7319,73 @@ async function buildPdfBlobProFromProject(proj) {
       r.readAsDataURL(blob);
     });
 
+  // Résout l'URL CDN depuis le catalogue (flat list ou ACCESSORIES_MAP)
+  const resolveCdnFromCatalog = (family, id) => {
+    try {
+      // Cas standard : liste plate (cameras, nvrs, hdds, switches, screens, enclosures, signage)
+      const flatMap = {
+        cameras: CATALOG?.CAMERAS, nvrs: CATALOG?.NVRS,
+        hdds: CATALOG?.HDDS, switches: CATALOG?.SWITCHES,
+        screens: CATALOG?.SCREENS, enclosures: CATALOG?.ENCLOSURES,
+        signage: CATALOG?.SIGNAGE,
+      };
+      const list = flatMap[family];
+      if (Array.isArray(list)) {
+        const obj = list.find(x => x.id === id);
+        if (obj?.image_url && obj.image_url !== "false") return obj.image_url;
+      }
+
+      // Cas accessoires : ACCESSORIES_MAP indexé par camera_id
+      // Structure : { cameraId, junction, wall, ceiling }  (pas un tableau)
+      if (family === "accessories" && CATALOG?.ACCESSORIES_MAP instanceof Map) {
+        for (const [, mapping] of CATALOG.ACCESSORIES_MAP) {
+          for (const slot of ["junction", "wall", "ceiling"]) {
+            const acc = mapping?.[slot];
+            if (acc?.accessoryId === id && acc?.image_url && acc.image_url !== "false") {
+              return acc.image_url;
+            }
+          }
+        }
+      }
+    } catch {}
+    return null;
+  };
+
   const inlineLocalImage = async (url) => {
     const u = String(url || "").trim();
     if (!u || /^data:/i.test(u)) return u;
-    if (/^https?:\/\//i.test(u) && !u.includes(window.location.host)) return null;
-    try {
-      const res = await fetch(u, { mode: "cors", cache: "force-cache" });
-      if (!res.ok) return null;
-      const blob = await res.blob();
-      return await blobToDataURL(blob);
-    } catch {
+
+    // ── Cas 1 : chemin local /data/Images/<family>/<ID>.png ──
+    // Plus de fichiers locaux → remonter au catalogue pour l'URL CDN
+    if (u.startsWith("/data/Images/")) {
+      const parts = u.split("/");
+      const family = (parts[3] || "").toLowerCase();
+      const id = (parts[4] || "").replace(/\.png$/i, "").replace(/%20/g, " ");
+      const cdnUrl = resolveCdnFromCatalog(family, id);
+      if (cdnUrl) {
+        try {
+          const res = await fetch(`/api/img-proxy?url=${encodeURIComponent(cdnUrl)}`, { cache: "force-cache" });
+          if (res.ok) { const blob = await res.blob(); if (blob.size > 0) return await blobToDataURL(blob); }
+        } catch {}
+      }
+      return null; // Pas de fallback local
+    }
+
+    // ── Cas 2 : URL externe CDN (https://staticpro...) → proxy backend ──
+    if (u.startsWith("http") && !u.includes(window.location.host)) {
+      try {
+        const res = await fetch(`/api/img-proxy?url=${encodeURIComponent(u)}`, { cache: "force-cache" });
+        if (res.ok) { const blob = await res.blob(); if (blob.size > 0) return await blobToDataURL(blob); }
+      } catch {}
       return null;
     }
+
+    // ── Cas 3 : URL locale même origine (/assets/logo.png) → fetch direct ──
+    try {
+      const res = await fetch(u, { cache: "force-cache" });
+      if (res.ok) { const blob = await res.blob(); if (blob.size > 0) return await blobToDataURL(blob); }
+    } catch {}
+    return null;
   };
 
   const inlineAllImages = async () => {
@@ -7205,7 +7395,15 @@ async function buildPdfBlobProFromProject(proj) {
         const src = img.getAttribute("src") || "";
         if (!src || /^data:/i.test(src)) return;
         const dataUrl = await inlineLocalImage(src);
-        if (dataUrl) img.setAttribute("src", dataUrl);
+        if (dataUrl) {
+          img.setAttribute("src", dataUrl);
+          img.removeAttribute("crossorigin");
+          img.style.display = "";
+        } else {
+          // Masquer proprement pour que html2canvas ne tente pas de charger l'URL
+          img.style.display = "none";
+          img.removeAttribute("src");
+        }
       })
     );
   };
@@ -7523,6 +7721,30 @@ function onStepsClick(e) {
       render();
       kpi("camera_block_unvalidate", { blockId: bid });
     }
+    return;
+  }
+
+  if (action === "uiToggleCompare") {
+    const camId = el.getAttribute("data-camid");
+    if (!camId) return;
+    if (!Array.isArray(MODEL.ui.compare)) MODEL.ui.compare = [];
+    const idx = MODEL.ui.compare.indexOf(camId);
+    if (idx >= 0) {
+      MODEL.ui.compare.splice(idx, 1);
+    } else if (MODEL.ui.compare.length < 2) {
+      MODEL.ui.compare.push(camId);
+    } else {
+      // Déjà 2 : remplace le plus ancien
+      MODEL.ui.compare[0] = MODEL.ui.compare[1];
+      MODEL.ui.compare[1] = camId;
+    }
+    render();
+    return;
+  }
+
+  if (action === "uiClearCompare") {
+    MODEL.ui.compare = [];
+    render();
     return;
   }
 
@@ -9121,6 +9343,8 @@ function setAdminMode(isAuthed){
   loginBox.classList.toggle("hidden", isAuthed);
   editorBox.classList.toggle("hidden", !isAuthed);
 }
+
+const ADMIN_PASSWORD = "Saddlebag0-Ripening5-Untapped0-Squeeze5-Caterer6";
 
 async function adminLogin(password){
   const msg = admin$("adminLoginMsg");
