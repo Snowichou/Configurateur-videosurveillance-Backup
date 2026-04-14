@@ -19,6 +19,7 @@ yarn-error.log
 *.log
 
 # Environnement
+.venv
 .env
 .env.local
 .env.production

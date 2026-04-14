@@ -5,6 +5,10 @@ import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
+import Auth from './auth.js';
+
+Auth.init({ redirect: true });
+
 window.html2pdf = html2pdf;
 window.html2canvas = html2canvas;
 window.jspdf = { jsPDF };
@@ -69,6 +73,7 @@ document.querySelector("#app").innerHTML = `
       <div class="brandTitle" id="brandTitle">Configurateur Vidéosurveillance</div>
     </div>
     <div id="langSelectorWrap" style="position:absolute;top:12px;right:16px"></div>
+    <div id="auth-badge" style="display:none;position:absolute;top:12px;left:16px;align-items:center;gap:8px;background:rgba(0,0,0,0.15);padding:4px 12px;border-radius:20px;color:white;font-size:13px"></div>
   </header>
 
   <!-- SECTION STEPPER : Titre étape + Stepper + Boutons -->

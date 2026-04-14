@@ -5,6 +5,8 @@ Version optimisée : Gzip, Cache, Portable
 ============================================================
 """
 
+from importlib.resources import path
+
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +15,18 @@ from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, Field
 import os, secrets, time, json, csv, io, sqlite3, base64, zipfile
 from datetime import datetime, timezone
+
+# ── Imports Azure AD ──────────────────────────────────────────
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import RedirectResponse
+from backend.auth import (
+    SSO_ENABLED, build_auth_url, exchange_code,
+    extract_user, require_sso, AUTHORITY
+)
+from dotenv import load_dotenv
+import secrets as _secrets
+
+load_dotenv()
 
 # ============================================================
 # CONFIGURATION PORTABLE
@@ -170,6 +184,81 @@ def health():
     """Health check pour les load balancers."""
     return {"ok": True, "ts": datetime.now(timezone.utc).isoformat()}
 
+
+
+# ============================================================
+# AZURE AD SSO
+# ============================================================
+
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import RedirectResponse
+from backend.auth import (
+    SSO_ENABLED, build_auth_url, exchange_code,
+    extract_user, require_sso, AUTHORITY
+)
+import secrets as _secrets
+
+# ─── Session middleware (required for SSO) ────────────────
+import secrets as _secrets
+from starlette.middleware.sessions import SessionMiddleware
+
+_SESSION_KEY = os.getenv("APP_SECRET_KEY", _secrets.token_hex(32))
+_APP_BASE_URL = os.getenv("APP_BASE_URL")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_SESSION_KEY,
+    session_cookie="configvs_session",
+    https_only=_APP_BASE_URL.startswith("https"),
+    same_site="lax",
+    max_age=86400,
+)
+
+@app.get("/auth/login")
+def sso_login(request: Request):
+    if not SSO_ENABLED:
+        raise HTTPException(503, "SSO not configured")
+    state = _secrets.token_urlsafe(16)
+    request.session["oauth_state"] = state
+    return RedirectResponse(build_auth_url(state))
+
+@app.get("/auth/callback")
+def sso_callback(
+    request: Request,
+    code: str = None,
+    state: str = None,
+    error: str = None,
+    error_description: str = None,
+):
+    if error:
+        raise HTTPException(400, f"Azure AD error : {error_description or error}")
+    if not code:
+        raise HTTPException(400, "Missing OAuth2 code")
+    expected = request.session.pop("oauth_state", None)
+    if state and expected and state != expected:
+        raise HTTPException(400, "Invalid CSRF state")
+    token_result = exchange_code(code)
+    user = extract_user(token_result)
+    request.session["azure_user"] = user
+    next_url = request.session.pop("next_url", "/")
+    return RedirectResponse(next_url)
+
+@app.get("/auth/me")
+def sso_me(request: Request):
+    user = require_sso(request)
+    return {"name": user["name"], "email": user["email"], "sso": SSO_ENABLED}
+
+@app.get("/auth/logout")
+def sso_logout(request: Request):
+    try:
+        request.session.clear()
+    except Exception:
+        pass
+    if SSO_ENABLED:
+        post_logout = "https://comelitservices.fr/configvs"
+        return RedirectResponse(
+            f"{AUTHORITY}/oauth2/v2.0/logout?post_logout_redirect_uri={post_logout}"
+        )
+    return RedirectResponse("/")
 
 # --- Auth ---
 
@@ -420,7 +509,7 @@ if os.path.isdir(FRONTEND_DIST):
 
     @app.get("/{path:path}")
     async def spa(path: str):
-        if path.startswith(("api/", "data/", "export/", "health", "assets/")):
+        if path.startswith(("api/", "data/", "export/", "health", "assets/", "auth/")):
             raise HTTPException(404)
         file = os.path.join(FRONTEND_DIST, path)
         if os.path.isfile(file):
@@ -440,7 +529,7 @@ else:
 
 print(f"""
 ╔══════════════════════════════════════════════════════════╗
-║  🚀 Configurateur Comelit - Ready                        ║
+║  �� Configurateur Comelit - Ready                        ║
 ╠══════════════════════════════════════════════════════════╣
 ║  Frontend: {str(os.path.isdir(FRONTEND_DIST)):5} | Data: {str(os.path.isdir(DATA_DIR)):5}              ║
 ║  Gzip: ON | Cache: ON                                    ║

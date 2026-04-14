@@ -615,11 +615,11 @@ function computeProjectScoreWeighted(){
 function levelFromScore(score){
   const s = Number(score);
   if (!Number.isFinite(s)) {
-    return { level: "LIM", dot: "🟠", label: "LIM" };
+    return { level: "LIM", dot: "��", label: "LIM" };
   }
-  if (s >= 78) return { level: "OK",  dot: "🟢", label: "OK"  };
-  if (s >= 60) return { level: "LIM", dot: "🟠", label: "LIM" };
-  return          { level: "BAD", dot: "🔴", label: "BAD" };
+  if (s >= 78) return { level: "OK",  dot: "��", label: "OK"  };
+  if (s >= 60) return { level: "LIM", dot: "��", label: "LIM" };
+  return          { level: "BAD", dot: "��", label: "BAD" };
 }
 
 // ==========================================================
@@ -1370,7 +1370,7 @@ const KPI = (() => {
       config_type,
       cam_total_qty,
       unique_cam_models: cams.length,
-      cameras: cams, // 👈 KPI le plus utile
+      cameras: cams, // �� KPI le plus utile
       nvr_id,
       retention_days: retention_days_ok,
       complements: {
@@ -3375,7 +3375,7 @@ function getThumbSrc(family, id) {
     const key = `${fam}::${ref}`;
     if (__thumbCache.has(key)) return __thumbCache.get(key);
 
-    // 👉 Convention projet : 1 image = <ID>.png dans /data/Images/<family>/
+    // �� Convention projet : 1 image = <ID>.png dans /data/Images/<family>/
     const url = `${LOCAL_IMG_ROOT}/${fam}/${encodeURIComponent(ref)}.png`;
 
     __thumbCache.set(key, url);
@@ -3420,7 +3420,7 @@ function applyLocalMediaToCatalog() {
       if (!it.image_url || it.image_url === "false") {
         // Préserver l'URL image du CSV (Comelit CDN) si elle existe déjà
         if (!it.image_url || it.image_url === "false") {
-          it.image_url = getThumbSrc(fam, id);
+      it.image_url = getThumbSrc(fam, id);
         }
       }
       // Garder l'URL datasheet du CSV (Comelit multilingue) si elle existe
@@ -3513,7 +3513,7 @@ function imgTag(family, ref) {
     return m ? String(m) : "—";
   };
 
-    const imgTag = (family, ref) => {
+  const imgTag = (family, ref) => {
     // 1. Chercher l'image_url dans le catalogue (CDN Comelit)
     let src = "";
     try {
@@ -3828,7 +3828,7 @@ function imgTag(family, ref) {
       <tr class="blockSeparator">
         <td colspan="4">
           <div class="blockSepInner">
-            <span class="blockSepLabel">📍 ${safe(label)}</span>
+            <span class="blockSepLabel">�� ${safe(label)}</span>
             ${meta ? `<span class="blockSepMeta">${safe(meta)}</span>` : ""}
           </div>
         </td>
@@ -5238,35 +5238,35 @@ const buildSynopticHtml = (proj) => {
 
     <div class="dashGrid">
       <div class="dashCard">
-        <div class="dashIcon">📹</div>
+        <div class="dashIcon">��</div>
         <div class="dashData">
           <div class="dashValue">${safe((MODEL.cameraLines || []).reduce((s,l) => s + (l.qty || 0), 0))}</div>
           <div class="dashLabel">${T("pdf_cameras")}</div>
         </div>
       </div>
       <div class="dashCard">
-        <div class="dashIcon">📍</div>
+        <div class="dashIcon">��</div>
         <div class="dashData">
           <div class="dashValue">${safe(blockGroups.length)}</div>
           <div class="dashLabel">${T("pdf_zones")}</div>
         </div>
       </div>
       <div class="dashCard">
-        <div class="dashIcon">💾</div>
+        <div class="dashIcon">��</div>
         <div class="dashData">
           <div class="dashValue">${safe(requiredTB.toFixed(1))} To</div>
           <div class="dashLabel">${T("pdf_required_storage")}</div>
         </div>
       </div>
       <div class="dashCard">
-        <div class="dashIcon">📡</div>
+        <div class="dashIcon">��</div>
         <div class="dashData">
           <div class="dashValue">${safe(totalMbps.toFixed(1))} Mbps</div>
           <div class="dashLabel">${T("pdf_total_bitrate")}</div>
         </div>
       </div>
       <div class="dashCard">
-        <div class="dashIcon">🎥</div>
+        <div class="dashIcon">��</div>
         <div class="dashData">
           <div class="dashValue">${safe(nvr?.id || "—")}</div>
           <div class="dashLabel">${T("pdf_nvr")}</div>
@@ -5632,7 +5632,7 @@ function camPickCardHTML(blk, cam, label) {
       <div class="cameraPickTop">
         ${cam.image_url 
           ? `<img class="cameraPickImg" src="${cam.image_url}" alt="${safeHtml(cam.name)}" loading="lazy">`
-          : `<div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--muted);font-size:24px">📷</div>`
+          : `<div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--muted);font-size:24px">��</div>`
         }
       
         <div class="cameraPickMeta">
@@ -5664,7 +5664,7 @@ function camPickCardHTML(blk, cam, label) {
             <span class="badgePill">IR ${ir}m</span>
             ${ip ? `<span class="badgePill">${ip}</span>` : ""}
             ${ik ? `<span class="badgePill">${ik}</span>` : ""}
-            ${aiLabel ? `<span class="badgePill" style="background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:#4338ca">🤖 ${aiLabel}</span>` : ""}            ${isValidated ? `<span class="badgePill" style="background:rgba(0,188,112,.15);border-color:rgba(0,188,112,.4);color:#065f46">${T("cam_selected")}</span>` : ""}
+            ${aiLabel ? `<span class="badgePill" style="background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:#4338ca">�� ${aiLabel}</span>` : ""}            ${isValidated ? `<span class="badgePill" style="background:rgba(0,188,112,.15);border-color:rgba(0,188,112,.4);color:#065f46">${T("cam_selected")}</span>` : ""}
           </div>
 
           <!-- Actions -->
@@ -5770,35 +5770,35 @@ function camPickCardHTML(blk, cam, label) {
           <div class="kv" style="margin-top:12px">
             <div>
               <strong>
-                📍 ${T("cam_placement")} <span class="fieldRequired">*</span>
+                �� ${T("cam_placement")} <span class="fieldRequired">*</span>
                 <span class="infoTip" data-tip="Intérieur ou extérieur ? Cela détermine la protection IP nécessaire et les caméras compatibles.">i</span>
               </strong>
               <select data-action="changeBlockField" data-bid="${safeHtml(blk.id)}" data-field="emplacement"
                 style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid ${ans.emplacement ? 'var(--line)' : 'rgba(220,38,38,.4)'};background:var(--panel2);color:var(--text)">
                 <option value="">— Choisir l'emplacement —</option>
-                <option value="interieur" ${normalizeEmplacement(ans.emplacement) === "interieur" ? "selected" : ""}>${"🏠 " + T("cam_interior")}</option>
-                <option value="exterieur" ${normalizeEmplacement(ans.emplacement) === "exterieur" ? "selected" : ""}>${"🌳 " + T("cam_exterior")}</option>
+                <option value="interieur" ${normalizeEmplacement(ans.emplacement) === "interieur" ? "selected" : ""}>${"�� " + T("cam_interior")}</option>
+                <option value="exterieur" ${normalizeEmplacement(ans.emplacement) === "exterieur" ? "selected" : ""}>${"�� " + T("cam_exterior")}</option>
               </select>
             </div>
 
             <div>
               <strong>
-                🎯 ${T("cam_objective")} <span class="fieldRequired">*</span>
+                �� ${T("cam_objective")} <span class="fieldRequired">*</span>
                 <span class="infoTip" data-tip="Norme EN 62676-4 : Détection = présence humaine | Observation = détails d'une scène | Reconnaissance = distinguer une personne | Identification = reconnaître un visage.">i</span>
               </strong>
               <select data-action="changeBlockField" data-bid="${safeHtml(blk.id)}" data-field="objective"
                 style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid ${ans.objective ? 'var(--line)' : 'rgba(220,38,38,.4)'};background:var(--panel2);color:var(--text)">
                 <option value="">${T("cam_choose_objective")}</option>
-                <option value="detection" ${ans.objective === "detection" ? "selected" : ""}>${"📡 " + T("cam_detection_long")}</option>
-                <option value="observation" ${ans.objective === "observation" || ans.objective === "dissuasion" ? "selected" : ""}>${"👁️ " + T("cam_observation_long")}</option>
-                <option value="reconnaissance" ${ans.objective === "reconnaissance" ? "selected" : ""}>${"🚶 " + T("cam_recognition_long")}</option>
-                <option value="identification" ${ans.objective === "identification" ? "selected" : ""}>${"🔍 " + T("cam_identification_long")}</option>
+                <option value="detection" ${ans.objective === "detection" ? "selected" : ""}>${"�� " + T("cam_detection_long")}</option>
+                <option value="observation" ${ans.objective === "observation" || ans.objective === "dissuasion" ? "selected" : ""}>${"��️ " + T("cam_observation_long")}</option>
+                <option value="reconnaissance" ${ans.objective === "reconnaissance" ? "selected" : ""}>${"�� " + T("cam_recognition_long")}</option>
+                <option value="identification" ${ans.objective === "identification" ? "selected" : ""}>${"�� " + T("cam_identification_long")}</option>
               </select>
             </div>
 
             <div>
               <strong>
-                📏 ${T("cam_distance")} <span class="fieldRequired">*</span>
+                �� ${T("cam_distance")} <span class="fieldRequired">*</span>
                 <span class="infoTip" data-tip="${T("cam_tip_distance")}">i</span>
               </strong>
               <input data-action="inputBlockField" data-bid="${safeHtml(blk.id)}" data-field="distance_m" type="number" min="1" max="999"
@@ -5811,19 +5811,19 @@ function camPickCardHTML(blk, cam, label) {
 
             <div>
               <strong>
-                🔧 ${T("cam_mount_type")}
+                �� ${T("cam_mount_type")}
                 <span class="infoTip" data-tip="${T("cam_tip_mounting")}">i</span>
               </strong>
               <select data-action="changeBlockField" data-bid="${safeHtml(blk.id)}" data-field="mounting"
                 style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
-                <option value="wall" ${ans.mounting === "wall" ? "selected" : ""}>${"🧱 " + T("cam_wall_option")}</option>
+                <option value="wall" ${ans.mounting === "wall" ? "selected" : ""}>${"�� " + T("cam_wall_option")}</option>
                 <option value="ceiling" ${ans.mounting === "ceiling" ? "selected" : ""}>${"⬆️ " + T("cam_ceiling_option")}</option>
               </select>
             </div>
 
             <div>
               <strong>
-                🔢 ${T("cam_quantity")}
+                �� ${T("cam_quantity")}
                 <span class="infoTip" data-tip="${T("cam_tip_quantity")}">i</span>
               </strong>
               <input data-action="inputBlockQty" data-bid="${safeHtml(blk.id)}" type="number" min="1" max="999"
@@ -5839,9 +5839,9 @@ function camPickCardHTML(blk, cam, label) {
               <select data-action="changeBlockQuality" data-bid="${safeHtml(blk.id)}"
                 title="${T("cam_quality_title")}"
                 style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
-                <option value="low" ${blk.quality === "low" ? "selected" : ""}>${"💚 " + T("cam_quality_economic")}</option>
-                <option value="standard" ${(!blk.quality || blk.quality === "standard") ? "selected" : ""}>${"💛 " + T("cam_quality_standard")}</option>
-                <option value="high" ${blk.quality === "high" ? "selected" : ""}>🔴 ${T("cam_hd")}</option>
+                <option value="low" ${blk.quality === "low" ? "selected" : ""}>${"�� " + T("cam_quality_economic")}</option>
+                <option value="standard" ${(!blk.quality || blk.quality === "standard") ? "selected" : ""}>${"�� " + T("cam_quality_standard")}</option>
+                <option value="high" ${blk.quality === "high" ? "selected" : ""}>�� ${T("cam_hd")}</option>
               </select>
             </div>
           </div>
@@ -5878,7 +5878,7 @@ function camPickCardHTML(blk, cam, label) {
               ${safeHtml(ansA.distance_m || "—")}m
             </div>
           </div>
-          <div class="score">🎯</div>
+          <div class="score">��</div>
         </div>
       </div>
     `;
@@ -6003,43 +6003,43 @@ function camPickCardHTML(blk, cam, label) {
       <div class="cmpCardHead">
         <div class="cmpCardTitle">⇄ Comparaison</div>
         <button class="cmpCardClose" data-action="uiClearCompare" type="button">✕ Effacer</button>
-      </div>
+        </div>
 
       <div class="cmpCols">
         <div class="cmpColSpacer"></div>
         <div class="cmpColHeader">
-          ${cmpA.image_url ? `<img class="cmpColImg" src="${cmpA.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">📷</div>`}
+          ${cmpA.image_url ? `<img class="cmpColImg" src="${cmpA.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">��</div>`}
           <div class="cmpColId">${safeHtml(cmpA.id)}</div>
           <div class="cmpColName">${safeHtml(cmpA.name || "")}</div>
           <span class="cmpColRange">${safeHtml(cmpA.brand_range || "")}</span>
-        </div>
+      </div>
         <div class="cmpColHeader">
-          ${cmpB.image_url ? `<img class="cmpColImg" src="${cmpB.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">📷</div>`}
+          ${cmpB.image_url ? `<img class="cmpColImg" src="${cmpB.image_url}" alt="" loading="lazy">` : `<div class="cmpColImgPh">��</div>`}
           <div class="cmpColId">${safeHtml(cmpB.id)}</div>
           <div class="cmpColName">${safeHtml(cmpB.name || "")}</div>
           <span class="cmpColRange">${safeHtml(cmpB.brand_range || "")}</span>
         </div>
-      </div>
+        </div>
 
       <div class="cmpTable">
-        ${sectionHead("🎥 Optique")}
+        ${sectionHead("�� Optique")}
         ${row("Résolution", cmpVal(mpA, " MP"), cmpVal(mpB, " MP"), mpCA, mpCB)}
         ${row("Focale", focalRange(cmpA), focalRange(cmpB))}
         ${row("Type", safeHtml(cmpA.type || "—"), safeHtml(cmpB.type || "—"))}
         ${row("Emplacement", emplacement(cmpA), emplacement(cmpB))}
 
-        ${sectionHead("🔦 Portée DORI")}
+        ${sectionHead("�� Portée DORI")}
         ${row("Détection", cmpVal(cmpA.dori_detection_m, " m"), cmpVal(cmpB.dori_detection_m, " m"), dorDetCA, dorDetCB)}
         ${row("Observation", cmpVal(cmpA.dori_observation_m, " m"), cmpVal(cmpB.dori_observation_m, " m"), dorObCA, dorObCB)}
         ${row("Reconnaissance", cmpVal(cmpA.dori_recognition_m, " m"), cmpVal(cmpB.dori_recognition_m, " m"), dorReCA, dorReCB)}
         ${row("Identification", cmpVal(cmpA.dori_identification_m, " m"), cmpVal(cmpB.dori_identification_m, " m"), dorIdCA, dorIdCB)}
 
-        ${sectionHead("🌙 Vision nocturne")}
+        ${sectionHead("�� Vision nocturne")}
         ${row("Portée IR", cmpVal(irA, " m"), cmpVal(irB, " m"), irCA, irCB)}
         ${row("LED blanc", cmpVal(cmpA.white_led_range_m, " m"), cmpVal(cmpB.white_led_range_m, " m"), wledCA, wledCB)}
         ${row("Basse lumière", cmpA.low_light_raw || "—", cmpB.low_light_raw || "—")}
 
-        ${sectionHead("🛡 Protection")}
+        ${sectionHead("�� Protection")}
         ${row("Indice IP", cmpA.ip ? `IP${cmpA.ip}` : "—", cmpB.ip ? `IP${cmpB.ip}` : "—", ipCA, ipCB)}
         ${row("Indice IK", cmpA.ik ? `IK${cmpA.ik}` : "—", cmpB.ik ? `IK${cmpB.ik}` : "—", ikCA, ikCB)}
         ${row("Microphone", cmpBool(cmpA.microphone), cmpBool(cmpB.microphone))}
@@ -6049,14 +6049,14 @@ function camPickCardHTML(blk, cam, label) {
         ${row("Conso. PoE", cmpVal(cmpA.poe_w, " W"), cmpVal(cmpB.poe_w, " W"), poeCA, poeCB)}
         ${row("Flux max", cmpVal(cmpA.streams_max, ""), cmpVal(cmpB.streams_max, ""), strCA, strCB)}
 
-        ${sectionHead("🤖 Intelligence")}
+        ${sectionHead("�� Intelligence")}
         ${row("Analytics", analyticsLabel(cmpA.analytics_level), analyticsLabel(cmpB.analytics_level))}
       </div>
 
       <div class="cmpLegend">
         <span class="cmpLegItem"><span class="cmpLegDot cmpLegWin"></span>Meilleur</span>
         <span class="cmpLegItem"><span class="cmpLegDot cmpLegLose"></span>Inférieur</span>
-      </div>
+    </div>
     </div>`;
   })() : (cmpA || cmpB) ? `
     <div class="cmpCardWaiting">
@@ -6134,13 +6134,13 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
     const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
     saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
-      + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
+      + `<div class="recoName">�� ${T("proj_save_available")}</div>`
       + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
       + (svD ? svD + '<br>' : '')
       + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
       + `<div style="display:flex;gap:8px;margin-top:10px">`
-      + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📥 ${T("proj_save_load")}</button>`
-      + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
+      + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">�� ${T("proj_save_load")}</button>`
+      + `<button class="btnGhost" data-action="deleteSave" type="button">��️</button>`
       + '</div></div>';
   }
 
@@ -6153,7 +6153,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
               <div class="recoName">${T("proj_title")}</div>
               <div class="muted">${T("proj_desc_old")}</div>
             </div>
-            <div class="score">📝</div>
+            <div class="score">��</div>
           </div>
 
           <!-- Nom du projet -->
@@ -6232,7 +6232,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     if (!validatedBlocks.length) {
       return `
         <div class="uiEmptyState">
-          <div class="uiEmptyIcon">🔩</div>
+          <div class="uiEmptyIcon">��</div>
           <div class="uiEmptyTitle">${T("err_no_block")}</div>
           <div class="uiEmptyMsg">${T("err_no_block")}</div>
         </div>
@@ -6257,7 +6257,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
                   <div class="uiProductMeta">${safeHtml(accessoryTypeLabel(acc.type))}${acc.accessoryId ? ` • <strong>${safeHtml(acc.accessoryId)}</strong>` : ""}</div>
                   ${acc.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(acc.datasheet_url)}" target="_blank" rel="noreferrer">${T("btn_datasheet")}</a>` : ""}
                 </div>
-                ${acc.image_url ? `<img class="uiProductImg" src="${acc.image_url}" alt="" loading="lazy">` : `<div class="uiProductImgPh">🔩</div>`}
+                ${acc.image_url ? `<img class="uiProductImg" src="${acc.image_url}" alt="" loading="lazy">` : `<div class="uiProductImgPh">��</div>`}
               </div>
               <div class="uiProductActions">
                 <div class="uiInputGroup">
@@ -6277,7 +6277,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
         return `
         <div class="uiSection">
           <div class="uiSectionHeader">
-            <div class="uiSectionIcon">📹</div>
+            <div class="uiSectionIcon">��</div>
             <div>
               <div class="uiSectionTitle">${safeHtml(blk.label || cam?.name || "Bloc caméra")}</div>
               <div class="uiSectionMeta">${blk.qty || 1}× • ${safeHtml(emplLabel)} • ${safeHtml(blk.answers.use_case || "—")}</div>
@@ -6294,7 +6294,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
 
     return `
       <div class="uiStepIntro">
-        <div class="uiStepIntroIcon">🔩</div>
+        <div class="uiStepIntroIcon">��</div>
         <div>
           <div class="uiStepIntroTitle">${T("mount_title")}</div>
           <div class="uiStepIntroMsg">${T("mount_desc")}</div>
@@ -6319,13 +6319,13 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
       ? `
     <div class="uiSection">
       <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🎥</div>
+        <div class="uiSectionIcon">��</div>
         <div>
           <div class="uiSectionTitle">${safeHtml(nvr.id)}</div>
           <div class="uiSectionMeta">${safeHtml(nvr.name)}${isManual ? ' <em style="color:#3B82F6">(manuel)</em>' : ''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          ${isAdvance ? '<span class="techBadge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca;font-weight:900">🤖 IA</span>' : ''}
+          ${isAdvance ? '<span class="techBadge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca;font-weight:900">�� IA</span>' : ''}
           <div class="uiBadge uiBadgeGreen">NVR</div>
         </div>
       </div>
@@ -6360,7 +6360,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
         ${nvr.image_url ? `<div style="text-align:center;margin:10px 0"><img style="max-height:100px;border-radius:8px" src="${nvr.image_url}" alt="" loading="lazy"></div>` : ""}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
           ${nvr.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(nvr.datasheet_url)}" target="_blank" rel="noreferrer">${T("nvr_datasheet_label")}</a>` : ""}
-          ${proj.disks?.hddRef?.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(proj.disks.hddRef.datasheet_url)}" target="_blank" rel="noreferrer">💾 HDD ${safeHtml(proj.disks.hddRef.id || "")}</a>` : ""}
+          ${proj.disks?.hddRef?.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(proj.disks.hddRef.datasheet_url)}" target="_blank" rel="noreferrer">�� HDD ${safeHtml(proj.disks.hddRef.id || "")}</a>` : ""}
           ${isManual ? '<button data-action="resetNvr" class="uiLink" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px;font-weight:700">✕ Auto</button>' : ""}
         </div>
       </div>
@@ -6369,7 +6369,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     ${(proj.nvrPick.alternatives || []).length ? `
     <div class="uiSection" style="margin-top:8px">
       <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🔄</div>
+        <div class="uiSectionIcon">��</div>
         <div>
           <div class="uiSectionTitle">${T("nvr_alternatives")}</div>
         </div>
@@ -6379,7 +6379,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
           const altIsAdvance = (alt.brand_range || "").toUpperCase() === "ADVANCE";
           const hasMoreCh = alt.channels > nvr.channels;
           const hasMoreBays = alt.hdd_bays > nvr.hdd_bays;
-          const why = altIsAdvance && !isAdvance ? "🤖 Gamme ADVANCE — analytics IA embarquée"
+          const why = altIsAdvance && !isAdvance ? "�� Gamme ADVANCE — analytics IA embarquée"
             : hasMoreCh ? T("nvr_capacity_higher").replace("{0}", alt.channels)
             : hasMoreBays ? T("nvr_more_storage").replace("{0}", alt.hdd_bays)
             : T("nvr_alt_compatible");
@@ -6387,7 +6387,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
             + '<div style="flex:1">'
             + '<div style="display:flex;align-items:center;gap:8px">'
             + '<strong style="font-size:14px">' + safeHtml(alt.id) + '</strong>'
-            + (altIsAdvance ? '<span class="techBadge" style="padding:2px 6px;font-size:10px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca">🤖 IA</span>' : '')
+            + (altIsAdvance ? '<span class="techBadge" style="padding:2px 6px;font-size:10px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca">�� IA</span>' : '')
             + '</div>'
             + '<div class="uiMuted" style="font-size:12px;margin-top:2px">' + alt.channels + ' ' + T("nvr_channels_label") + ' • ' + alt.max_in_mbps + ' Mbps • ' + alt.hdd_bays + ' ' + T("nvr_bays") + '</div>'
             + '<div style="font-size:11px;color:#3B82F6;margin-top:4px">' + why + '</div>'
@@ -6402,7 +6402,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
       : `
     <div class="uiSection uiSectionWarn">
       <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🎥</div>
+        <div class="uiSectionIcon">��</div>
         <div>
           <div class="uiSectionTitle">${T("nvr_title")}</div>
           <div class="uiSectionMeta">${T("nvr_none")}</div>
@@ -6421,11 +6421,11 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     const swHtml = (() => {
       if (!sw || !sw.required) {
         const nvrPoe = sw?.nvrPoePorts || 0;
-        return nvrPoe > 0 ? '<div class="uiSection" style="margin-top:12px"><div class="uiSectionHeader"><div class="uiSectionIcon">🔌</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div><div class="uiSectionMeta">Caméras sur les ' + nvrPoe + ' ports PoE du NVR</div></div></div></div>' : '';
+        return nvrPoe > 0 ? '<div class="uiSection" style="margin-top:12px"><div class="uiSectionHeader"><div class="uiSectionIcon">��</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div><div class="uiSectionMeta">Caméras sur les ' + nvrPoe + ' ports PoE du NVR</div></div></div></div>' : '';
       }
       const dist = sw.cameraDistribution || [];
       return '<div class="uiSection" style="margin-top:12px">'
-        + '<div class="uiSectionHeader"><div class="uiSectionIcon">🔌</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div>'
+        + '<div class="uiSectionHeader"><div class="uiSectionIcon">��</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div>'
         + '<div class="uiSectionMeta">' + (sw.camerasOnSwitches || proj.totalCameras) + ' ' + T('nvr_poe_cameras') + ' • ' + sw.totalPorts + ' ' + T('nvr_poe_ports') + '</div></div></div>'
         + '<div class="uiSectionBody">'
         + dist.map((d, i) => {
@@ -6435,7 +6435,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
               + '<div class="uiProductMeta">' + d.camerasConnected + ' cam / ' + d.totalPorts + ' ports PoE'
               + (item.poe_budget_w ? ' • ' + item.poe_budget_w + 'W' : '') + '</div>'
               + '</div>'
-              + (item.image_url ? '<img class="uiProductImg" src="' + item.image_url + '" alt="" loading="lazy">' : '<div class="uiProductImgPh">🔌</div>')
+              + (item.image_url ? '<img class="uiProductImg" src="' + item.image_url + '" alt="" loading="lazy">' : '<div class="uiProductImgPh">��</div>')
               + '</div></div>';
           }).join('')
         + '</div></div>';
@@ -6451,7 +6451,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
     
     return `
     <div class="uiStepIntro">
-      <div class="uiStepIntroIcon">💾</div>
+      <div class="uiStepIntroIcon">��</div>
       <div>
         <div class="uiStepIntroTitle">${T("stor_title")}</div>
         <div class="uiStepIntroMsg">${T("stor_desc")}</div>
@@ -6469,7 +6469,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
       <div class="uiSectionBody">
         <div class="uiFormGrid">
           <div class="uiFormField">
-            <label class="uiInputLabel">📅 ${T("stor_days")} <span class="infoTip" data-tip="${T("stor_days_tip")}">i</span></label>
+            <label class="uiInputLabel">�� ${T("stor_days")} <span class="infoTip" data-tip="${T("stor_days_tip")}">i</span></label>
             <input data-action="recDays" type="number" min="1" max="30" value="${rec.daysRetention}" class="uiInput" />
             <div class="uiHint">⚖️ ${T("stor_hint_max_legal")}</div>
           </div>
@@ -6479,14 +6479,14 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
             <div class="uiHint">${T("stor_hint_24h")}</div>
           </div>
           <div class="uiFormField">
-            <label class="uiInputLabel">🎬 ${T("stor_fps")} <span class="infoTip" data-tip="${T("stor_fps_tip")}">i</span></label>
+            <label class="uiInputLabel">�� ${T("stor_fps")} <span class="infoTip" data-tip="${T("stor_fps_tip")}">i</span></label>
             <select data-action="recFps" class="uiInput">
               ${CONFIG.fpsOptions.map((v) => `<option value="${v}" ${rec.fps === v ? "selected" : ""}>${v} FPS${v === 15 ? " ★" : ""}</option>`).join("")}
             </select>
             <div class="uiHint">${T("stor_hint_fps")}</div>
           </div>
           <div class="uiFormField">
-            <label class="uiInputLabel">🗜️ ${T("stor_codec")} <span class="infoTip" data-tip="${T("stor_codec_tip")}">i</span></label>
+            <label class="uiInputLabel">��️ ${T("stor_codec")} <span class="infoTip" data-tip="${T("stor_codec_tip")}">i</span></label>
             <select data-action="recCodec" class="uiInput">
               <option value="h265" ${rec.codec === "h265" ? "selected" : ""}>${T("stor_codec_h265")}</option>
               <option value="h264" ${rec.codec === "h264" ? "selected" : ""}>H.264</option>
@@ -6500,7 +6500,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
             </select>
           </div>
           <div class="uiFormField">
-            <label class="uiInputLabel">📊 ${T("nvr_margin_label")} <span class="infoTip" data-tip="Marge de sécurité sur le calcul de stockage. Compense les pics de débit et l'overhead filesystem. 20% est la valeur standard.">i</span></label>
+            <label class="uiInputLabel">�� ${T("nvr_margin_label")} <span class="infoTip" data-tip="Marge de sécurité sur le calcul de stockage. Compense les pics de débit et l'overhead filesystem. 20% est la valeur standard.">i</span></label>
             <input data-action="recOver" type="number" min="0" max="50" value="${rec.overheadPct}" class="uiInput" />
             <div class="uiHint">${T("stor_hint_margin")}</div>
           </div>
@@ -6510,7 +6510,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
 
     <div class="uiSection" style="margin-top:12px">
       <div class="uiSectionHeader">
-        <div class="uiSectionIcon">📊</div>
+        <div class="uiSectionIcon">��</div>
         <div>
           <div class="uiSectionTitle">${T("stor_result")}</div>
           <div class="uiSectionMeta">${T("stor_result_desc")} — l'enregistreur sera dimensionné à l'étape suivante</div>
@@ -6532,7 +6532,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
           </div>
         </div>
         <div class="uiMuted" style="margin-top:8px">
-          💡 ${T("stor_next_step")}
+          �� ${T("stor_next_step")}
         </div>
       </div>
     </div>
@@ -6598,7 +6598,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
       + '</select></div>'
       + '<div class="optFormField"><label class="optLabel">' + T('opt_qty') + '</label><input data-action="screenQty" type="number" min="1" max="10" value="' + (MODEL.complements.screen.qty || 1) + '" class="optInput optInputNarrow" /></div>'
       + '</div></div>'
-      + (scrSel ? productRow(scrSel.id, scrSel.name || '', scrSel.image_url, '🖥', []) : '');
+      + (scrSel ? productRow(scrSel.id, scrSel.name || '', scrSel.image_url, '��', []) : '');
 
     // Boîtier body — avec compatibilité écran
     const encBadges = [];
@@ -6612,7 +6612,7 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
       + '<div class="optFormRow">'
       + '<div class="optFormField"><label class="optLabel">' + T('opt_qty') + '</label><input data-action="enclosureQty" type="number" min="1" max="10" value="' + (MODEL.complements.enclosure.qty || 1) + '" class="optInput optInputNarrow" /></div>'
       + '</div></div>'
-      + (encSel ? productRow(encSel.id, encSel.name || '', encSel.image_url, '🔒', encBadges) : (!encEnabled ? '' : '<div class="optNoProduct">' + T('opt_enclosure_none') + '</div>'));
+      + (encSel ? productRow(encSel.id, encSel.name || '', encSel.image_url, '��', encBadges) : (!encEnabled ? '' : '<div class="optNoProduct">' + T('opt_enclosure_none') + '</div>'));
 
     // Signalisation body
     const signBody = '<div class="optForm">'
@@ -6627,15 +6627,15 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
 
     return `
     <div class="uiStepIntro">
-      <div class="uiStepIntroIcon">🛒</div>
+      <div class="uiStepIntroIcon">��</div>
       <div>
         <div class="uiStepIntroTitle">${T("opt_title")}</div>
         <div class="uiStepIntroMsg">${T("opt_desc")}</div>
       </div>
     </div>
     <div class="optGrid">
-      ${optionCard('🖥', T('opt_screen'), T('opt_screen_desc'), scrEnabled, 'screenToggle', scrEnabled ? '0' : '1', screenBody)}
-      ${optionCard('🔒', T('opt_enclosure'), T('opt_enclosure_desc_full') + (scrEnabled ? ' et de l\'écran' : ''), encEnabled, 'enclosureToggle', encEnabled ? '0' : '1', encBody)}
+      ${optionCard('��', T('opt_screen'), T('opt_screen_desc'), scrEnabled, 'screenToggle', scrEnabled ? '0' : '1', screenBody)}
+      ${optionCard('��', T('opt_enclosure'), T('opt_enclosure_desc_full') + (scrEnabled ? ' et de l\'écran' : ''), encEnabled, 'enclosureToggle', encEnabled ? '0' : '1', encBody)}
       ${optionCard('⚠️', T('opt_sign'), T('opt_sign_desc'), signEnabled, 'signageToggle', signEnabled ? '0' : '1', signBody)}
     </div>
     `;
@@ -6649,37 +6649,37 @@ function renderStepSummary() {
     <div class="summaryActions">
       <div class="summaryActionsRow">
         <button class="exportBtn exportBtnMain" id="btnExportPdf">
-          <span class="exportBtnIcon">📄</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_export_pdf")}</span>
         </button>
         <button class="exportBtn exportBtnSecondary" id="btnExportPdfPack">
-          <span class="exportBtnIcon">📦</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_export_pack")}</span>
         </button>
         <button class="exportBtn exportBtnSecondary" id="btnPreviewPdf">
-          <span class="exportBtnIcon">👁</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("proj_preview")}</span>
         </button>
       </div>
       <div class="summaryActionsRow">
         <button class="exportBtn exportBtnCommercial" id="btnRequestQuote">
-          <span class="exportBtnIcon">📨</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_request_quote")}</span>
         </button>
         <!-- DÉSACTIVÉ – lancement interne (réactiver pour déploiement distributeurs)
         <button class="exportBtn exportBtnSecondary" id="btnSendToDistributor">
-          <span class="exportBtnIcon">🏢</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_send_distributor")}</span>
         </button>
         -->
       </div>
       <div class="summaryActionsRow summaryActionsUtils">
         <button class="exportBtn exportBtnSecondary" id="btnSaveConfig">
-          <span class="exportBtnIcon">💾</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_save")}</span>
         </button>
         <button class="exportBtn exportBtnSecondary" id="btnShareConfig">
-          <span class="exportBtnIcon">🔗</span>
+          <span class="exportBtnIcon">��</span>
           <span class="exportBtnLabel">${T("sum_share")}</span>
         </button>
         <button class="exportBtn exportBtnGhost" id="btnBackToEdit">
@@ -6840,7 +6840,7 @@ function saveConfigToLocalStorage() {
   if (!snap) { showToast("❌ " + T("err_save_fail"), "danger"); return; }
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
-    showToast("💾 " + T("msg_saved"), "ok");
+    showToast("�� " + T("msg_saved"), "ok");
   } catch (e) { showToast("❌ Erreur : " + e.message, "danger"); }
 }
 
@@ -6854,12 +6854,12 @@ function shareConfigUrl() {
   if (!url) {
     const snap = snapshotForSave();
     if (snap) navigator.clipboard.writeText(JSON.stringify(snap))
-      .then(() => showToast("📋 Config trop longue pour un lien. JSON copié.", "warn"))
+      .then(() => showToast("�� Config trop longue pour un lien. JSON copié.", "warn"))
       .catch(() => showToast("⚠️ Config trop volumineuse pour un lien.", "warn"));
     return;
   }
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => showToast("🔗 Lien copié !", "ok"))
+    navigator.clipboard.writeText(url).then(() => showToast("�� Lien copié !", "ok"))
       .catch(() => prompt("Copie ce lien :", url));
   } else prompt("Copie ce lien :", url);
 }
@@ -6894,7 +6894,7 @@ function requestQuote() {
     "Cordialement"
   );
   window.open("mailto:devis@comelit.fr?subject=" + subject + "&body=" + body, "_blank");
-  showToast("📨 Email pré-rempli ouvert vers devis@comelit.fr", "ok");
+  showToast("�� Email pré-rempli ouvert vers devis@comelit.fr", "ok");
 }
 
 function sendToDistributor() {
@@ -6903,7 +6903,7 @@ function sendToDistributor() {
     navigator.share({ title: "Configuration Comelit — " + (MODEL.projectName || ""), url: url || window.location.href })
       .then(() => showToast("✅ Partagé !", "ok")).catch(() => {});
   } else if (url) {
-    navigator.clipboard.writeText(url).then(() => showToast("🔗 Lien copié — transmets-le à ton distributeur.", "ok"))
+    navigator.clipboard.writeText(url).then(() => showToast("�� Lien copié — transmets-le à ton distributeur.", "ok"))
       .catch(() => prompt("Copie ce lien :", url));
   } else showToast("⚠️ Génère le PDF et envoie-le par email.", "warn");
 }
@@ -6945,7 +6945,7 @@ function showToast(message, type) {
       const waitAndRestore = () => {
         if (typeof MODEL !== "undefined" && typeof render === "function") {
           restoreFromSnapshot(snap); render();
-          showToast("📥 Configuration restaurée depuis le lien !", "ok");
+          showToast("�� Configuration restaurée depuis le lien !", "ok");
           const clean = new URL(window.location.href); clean.searchParams.delete("cfg");
           window.history.replaceState({}, "", clean.toString());
         } else setTimeout(waitAndRestore, 200);
@@ -7178,8 +7178,8 @@ function showPdfPreview() {
     </style>
 
     <div class="prevToolbar">
-      <span class="prevTitle">${"👁 " + T("sum_preview") + " PDF"}</span>
-      <button class="prevBtnExport" id="previewExportBtn">📄 Exporter PDF</button>
+      <span class="prevTitle">${"�� " + T("sum_preview") + " PDF"}</span>
+      <button class="prevBtnExport" id="previewExportBtn">�� Exporter PDF</button>
       <button class="prevBtnClose" id="previewCloseBtn">✕ Fermer</button>
     </div>
     <div class="prevContainer" id="prevContainer"></div>
@@ -7363,7 +7363,7 @@ async function buildPdfBlobProFromProject(proj) {
       const id = (parts[4] || "").replace(/\.png$/i, "").replace(/%20/g, " ");
       const cdnUrl = resolveCdnFromCatalog(family, id);
       if (cdnUrl) {
-        try {
+    try {
           const res = await fetch(`/api/img-proxy?url=${encodeURIComponent(cdnUrl)}`, { cache: "force-cache" });
           if (res.ok) { const blob = await res.blob(); if (blob.size > 0) return await blobToDataURL(blob); }
         } catch {}
@@ -7582,7 +7582,7 @@ function renderCameraPickCard(cam, blk, sc, mainReason) {
       <div class="cameraPickTop">
         ${cam.image_url 
           ? `<img class="cameraPickImg" src="${cam.image_url}" alt="${safeHtml(cam.name)}" loading="lazy">`
-          : `<div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">📷</div>`
+          : `<div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">��</div>`
         }
 
         <div class="cameraPickMeta">
@@ -7658,7 +7658,7 @@ function onStepsClick(e) {
     delete MODEL.overrideNvrId;
     invalidateProjectCache();
     render();
-    if (typeof showToast === "function") showToast("🔄 Sélection NVR automatique restaurée.", "ok");
+    if (typeof showToast === "function") showToast("�� Sélection NVR automatique restaurée.", "ok");
     return;
   }
 
@@ -7669,7 +7669,7 @@ function onStepsClick(e) {
     MODEL.overrideNvrId = nvrId;
     invalidateProjectCache();
     render();
-    if (typeof showToast === "function") showToast("🎥 NVR changé : " + nvrId, "ok");
+    if (typeof showToast === "function") showToast("�� NVR changé : " + nvrId, "ok");
     return;
   }
 
@@ -7677,7 +7677,7 @@ function onStepsClick(e) {
     const snap = loadConfigFromLocalStorage();
     if (snap && restoreFromSnapshot(snap)) {
       MODEL.stepIndex = 0; render();
-      showToast("📥 Configuration restaurée !", "ok");
+      showToast("�� Configuration restaurée !", "ok");
     } else showToast("❌ Impossible de restaurer.", "danger");
     return;
   }
@@ -7685,7 +7685,7 @@ function onStepsClick(e) {
   if (action === "deleteSave") {
     if (confirm(T("err_save_fail"))) {
       localStorage.removeItem(SAVE_KEY); render();
-      showToast("🗑️ " + T("msg_loaded"), "ok");
+      showToast("��️ " + T("msg_loaded"), "ok");
     }
     return;
   }
@@ -8573,7 +8573,7 @@ async function exportProjectPdfWithLocalDatasheetsZip() {
     progressOverlay.innerHTML = `
       <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999">
         <div style="background:#fff;border-radius:16px;padding:28px 32px;min-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center">
-          <div style="font-size:24px;margin-bottom:8px">📦</div>
+          <div style="font-size:24px;margin-bottom:8px">��</div>
           <div id="zipProgressTitle" style="font-weight:800;font-size:15px;color:#1C1F2A;margin-bottom:4px">${T("sum_export_pack")}</div>
           <div id="zipProgressStatus" style="font-size:12px;color:#64748b;margin-bottom:14px">...</div>
           <div style="width:100%;height:8px;border-radius:4px;background:#e5e7eb;overflow:hidden">
