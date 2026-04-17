@@ -41,8 +41,8 @@ FRONTEND_CANDIDATES = [
     os.path.join(BASE_DIR, "dist"),
     os.path.join(APP_ROOT, "dist"),
 ]
-FRONTEND_DIST = next((p for p in FRONTEND_CANDIDATES if os.path.isdir(p)), FRONTEND_CANDIDATES[0])
 
+FRONTEND_DIST = next((p for p in FRONTEND_CANDIDATES if os.path.isdir(p)), FRONTEND_CANDIDATES[0])
 # Data : idem
 DATA_CANDIDATES = [
     os.path.join(BASE_DIR, "data"),
@@ -239,7 +239,26 @@ def sso_callback(
     token_result = exchange_code(code)
     user = extract_user(token_result)
     request.session["azure_user"] = user
-    next_url = request.session.pop("next_url", "/")
+
+    # ── Log connexion Azure SSO dans la base KPI ──────────────────
+    try:
+        ts = datetime.now(timezone.utc).isoformat()
+        con = _db()
+        con.execute(
+            "INSERT INTO kpi_events(ts_utc, session_id, event, payload_json, path, ua, ip) VALUES(?,?,?,?,?,?,?)",
+            (ts, None, "azure_login",
+             json.dumps({"name": user.get("name", ""), "email": user.get("email", "")}, ensure_ascii=False),
+             request.headers.get("referer", ""),
+             request.headers.get("user-agent", ""),
+             request.client.host if request.client else "")
+        )
+        con.commit()
+        con.close()
+    except Exception:
+        pass  # Ne jamais bloquer le login à cause du KPI
+    # ──────────────────────────────────────────────────────────────
+
+    next_url = request.session.pop("next_url", "/configvs/")
     return RedirectResponse(next_url)
 
 @app.get("/auth/me")
@@ -426,6 +445,55 @@ def kpi_export(authorization: str | None = Header(default=None)):
         headers={"Content-Disposition": 'attachment; filename="kpi_export.csv"'}
     )
 
+@app.get("/api/kpi/user-logins")
+def kpi_user_logins(authorization: str | None = Header(default=None)):
+    """Statistiques de connexion Azure SSO par mois et par utilisateur."""
+    require_auth(authorization)
+    con = _db()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT substr(ts_utc,1,7) m, COUNT(*) c
+        FROM kpi_events WHERE event = 'azure_login'
+        GROUP BY m ORDER BY m DESC LIMIT 12
+    """)
+    by_month = [{"month": m, "count": c} for m, c in cur.fetchall()][::-1]
+
+    cur.execute("""
+        SELECT json_extract(payload_json,'$.email') email,
+               json_extract(payload_json,'$.name')  name,
+               COUNT(*) c
+        FROM kpi_events WHERE event = 'azure_login'
+        GROUP BY email ORDER BY c DESC LIMIT 20
+    """)
+    top_users = [{"email": e or "?", "name": n or "?", "count": c} for e, n, c in cur.fetchall()]
+
+    cur.execute("""
+        SELECT substr(ts_utc,1,10) d, COUNT(*) c
+        FROM kpi_events WHERE event = 'azure_login'
+        GROUP BY d ORDER BY d DESC LIMIT 30
+    """)
+    by_day = [{"date": d, "count": c} for d, c in cur.fetchall()][::-1]
+
+    cur.execute("SELECT COUNT(*) FROM kpi_events WHERE event = 'azure_login'")
+    total = cur.fetchone()[0]
+
+    cur.execute("""
+        SELECT COUNT(DISTINCT json_extract(payload_json,'$.email'))
+        FROM kpi_events WHERE event = 'azure_login'
+    """)
+    unique_users = cur.fetchone()[0]
+
+    con.close()
+    return {
+        "total": total,
+        "unique_users": unique_users,
+        "by_month": by_month,
+        "by_day": by_day,
+        "top_users": top_users,
+    }
+
+
 class ResetMonthIn(BaseModel):
     month: str = Field(..., min_length=7, max_length=7)
 
@@ -477,6 +545,32 @@ def export_test():
     return {"ok": True, "frontend": FRONTEND_DIST, "data": DATA_DIR}
 
 
+@app.get("/proxy-pdf")
+async def proxy_pdf(url: str):
+    """Proxy PDF pour les fiches techniques Comelit (CORS non supporté par le CDN)."""
+    ALLOWED_DOMAINS = ["staticpro.comelitgroup.com", "comelit.com", "comelitgroup.com"]
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if not any(parsed.netloc.endswith(d) for d in ALLOWED_DOMAINS):
+        raise HTTPException(status_code=403, detail="Domain not allowed")
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/pdf,*/*"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read()
+        if not content.startswith(b"%PDF-"):
+            raise HTTPException(status_code=502, detail="Not a PDF")
+        return Response(
+            content=content,
+            media_type="application/pdf",
+            headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Proxy fetch failed: {e}")
+
+
 # ============================================================
 # STATIC FILES
 # ============================================================
@@ -509,11 +603,14 @@ if os.path.isdir(FRONTEND_DIST):
 
     @app.get("/{path:path}")
     async def spa(path: str):
-        if path.startswith(("api/", "data/", "export/", "health", "assets/", "auth/")):
+        if path.startswith(("api/", "data/", "export/", "health", "auth/")):
             raise HTTPException(404)
         file = os.path.join(FRONTEND_DIST, path)
         if os.path.isfile(file):
-            return FileResponse(file)
+            # Assets Vite hashés → cache long ; autres fichiers → pas de cache
+            if path.startswith("assets/"):
+                return FileResponse(file, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+            return FileResponse(file, headers={"Cache-Control": "no-store"})
         index = os.path.join(FRONTEND_DIST, "index.html")
         return FileResponse(index) if os.path.isfile(index) else HTTPException(404)
 

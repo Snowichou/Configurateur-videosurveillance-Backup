@@ -394,6 +394,7 @@
       <div class="tabs">
         <button class="tabBtn on" data-tab="catalog">Catalogues</button>
         <button class="tabBtn" data-tab="kpi">KPI Metier</button>
+        <button class="tabBtn" data-tab="users">Utilisateurs SSO</button>
         <button class="tabBtn" data-tab="events">Evenements bruts</button>
       </div>
     </div>
@@ -573,6 +574,39 @@
         </div>
       </div>
 
+      <!-- Emplacement + Distance + HDD -->
+      <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Emplacement</div>
+              <div class="h2">Interieur vs Exterieur (nb cameras)</div>
+            </div>
+          </div>
+          <ul id="topEmplacement" class="list"></ul>
+        </div>
+
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Distance configuree</div>
+              <div class="h2">Repartition par tranche (nb cameras)</div>
+            </div>
+          </div>
+          <ul id="topDistances" class="list"></ul>
+        </div>
+
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Top HDD</div>
+              <div class="h2">Disques durs recommandes</div>
+            </div>
+          </div>
+          <ul id="topHdd" class="list"></ul>
+        </div>
+      </div>
+
       <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
         <!-- Configs par jour de semaine -->
         <div class="card">
@@ -591,6 +625,75 @@
             </div>
           </div>
           <ul id="topObjectives" class="list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- UTILISATEURS SSO -->
+    <section id="tab_users" class="hidden">
+      <div class="row" style="margin-bottom:14px;justify-content:space-between">
+        <div style="font-weight:950;font-size:18px">Connexions Azure SSO</div>
+        <button id="btnRefreshUsers" class="btn">Rafraichir</button>
+      </div>
+
+      <!-- KPI tiles utilisateurs -->
+      <div class="kpiGrid" style="margin-bottom:14px">
+        <div class="kpiTile">
+          <div class="kpiLabel">Total connexions</div>
+          <div id="kpiLoginTotal" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Utilisateurs uniques</div>
+          <div id="kpiLoginUnique" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Connexions ce mois</div>
+          <div id="kpiLoginMonth" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Mois le plus actif</div>
+          <div id="kpiLoginBestMonth" class="kpiVal" style="font-size:18px">--</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+        <!-- Graphique connexions par mois -->
+        <div class="card">
+          <div class="chartTitle">Connexions par mois (12 derniers mois)</div>
+          <div style="height:250px">
+            <canvas id="chartUserLogins"></canvas>
+          </div>
+        </div>
+
+        <!-- Graphique connexions par jour (30j) -->
+        <div class="card">
+          <div class="chartTitle">Connexions par jour (30 derniers jours)</div>
+          <div style="height:250px">
+            <canvas id="chartUserLoginsDay"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top utilisateurs -->
+      <div class="card">
+        <div class="h">
+          <div>
+            <div class="h1">Top utilisateurs</div>
+            <div class="h2">Classement par nombre de connexions</div>
+          </div>
+        </div>
+        <div class="tableWrap" style="max-height:400px">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th style="width:100px;text-align:right">Connexions</th>
+              </tr>
+            </thead>
+            <tbody id="topUsersTable"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -616,6 +719,7 @@
               <option value="validate_camera">validate_camera</option>
               <option value="nav_next">nav_next</option>
               <option value="export_pdf">export_pdf</option>
+              <option value="azure_login">azure_login</option>
             </select>
             <button id="btnLoadEvents" class="btn">Charger</button>
           </div>
@@ -755,9 +859,11 @@
     const tab = b.dataset.tab;
     $("#tab_catalog").classList.toggle("hidden", tab !== "catalog");
     $("#tab_kpi").classList.toggle("hidden", tab !== "kpi");
+    $("#tab_users").classList.toggle("hidden", tab !== "users");
     $("#tab_events").classList.toggle("hidden", tab !== "events");
     
     if(tab === "kpi") refreshKpiMetier();
+    if(tab === "users") refreshUserLogins();
   }));
 
   // ==================== CATALOG ====================
@@ -1035,26 +1141,41 @@
 
       let totalCameras = 0;
       let prevTotalCameras = 0;
-      const cameraCount = {};
-      const nvrCount = {};
-      const rangeCount = {};
-      const siteTypeCount = {};
-      const objectiveCount = {};
-      const sessions = new Set();
+      const cameraCount     = {};
+      const nvrCount        = {};
+      const rangeCount      = {};
+      const siteTypeCount   = {};
+      const objectiveCount  = {};
+      const emplacementCount= {};
+      const distanceBuckets = {};
+      const hddCount        = {};
+      const sessions        = new Set();
 
       computeEvents.forEach(e => {
         const p = e.payload || {};
         sessions.add(p.sid || e.session_id);
         totalCameras += Number(p.cam_total_qty) || 0;
+
+        // Type de site
         const siteType = p.config_type || "Autre";
         siteTypeCount[siteType] = (siteTypeCount[siteType] || 0) + 1;
+
+        // NVR
         if (p.nvr_id) nvrCount[p.nvr_id] = (nvrCount[p.nvr_id] || 0) + 1;
+
+        // HDD
+        if (p.hdd_id) {
+          const hddLabel = p.hdd_name ? `${p.hdd_id} — ${p.hdd_name}` : p.hdd_id;
+          hddCount[hddLabel] = (hddCount[hddLabel] || 0) + 1;
+        }
+
+        // Caméras
         (p.cameras || []).forEach(cam => {
-          const id = cam.id || "?";
+          const id  = cam.id || "?";
           const qty = Number(cam.qty) || 1;
           cameraCount[id] = (cameraCount[id] || 0) + qty;
-          // brand_range est envoyé depuis app.js compactCameras()
-          // Fallback : tentative de détection depuis le nom si champ absent (anciens events)
+
+          // Gamme produit
           const br = (cam.brand_range || "").toUpperCase();
           const nm = (cam.name || cam.id || "").toUpperCase();
           const range = br.includes("NEXT")    || nm.includes("NEXT")    ? "NEXT"
@@ -1062,6 +1183,38 @@
                       : br.includes("EASY")    || nm.includes("EASY")    ? "EASY"
                       : "Autre";
           rangeCount[range] = (rangeCount[range] || 0) + qty;
+
+          // Emplacement (nouvelle donnée)
+          if (cam.emplacement) {
+            const empl = cam.emplacement === "interieur" ? "Intérieur"
+                       : cam.emplacement === "exterieur" ? "Extérieur"
+                       : cam.emplacement;
+            emplacementCount[empl] = (emplacementCount[empl] || 0) + qty;
+          }
+
+          // Distance (nouvelle donnée)
+          const dist = Number(cam.distance_m);
+          if (dist > 0) {
+            const bucket = dist <= 5  ? "≤5m"
+                         : dist <= 10 ? "6-10m"
+                         : dist <= 20 ? "11-20m"
+                         : dist <= 30 ? "21-30m"
+                         : dist <= 50 ? "31-50m"
+                         : ">50m";
+            distanceBuckets[bucket] = (distanceBuckets[bucket] || 0) + qty;
+          }
+
+          // Objectif DORI
+          const obj = cam.objective;
+          if (obj) {
+            const label = obj === "detection"      ? "Détection"
+                        : obj === "observation"    ? "Observation"
+                        : obj === "reconnaissance" ? "Reconnaissance"
+                        : obj === "identification" ? "Identification"
+                        : obj === "dissuasion"     ? "Dissuasion"
+                        : obj;
+            objectiveCount[label] = (objectiveCount[label] || 0) + qty;
+          }
         });
       });
 
@@ -1077,30 +1230,7 @@
         el.textContent = (delta >= 0 ? "↑ +" : "↓ ") + delta + "% vs mois précédent";
       }
 
-      $("#kpiAvgCam").innerHTML = nbConfigs > 0
-        ? (totalCameras / nbConfigs).toFixed(1) + "<small> cam/config</small>"
-        : "--";
-      $("#kpiSessions").textContent = sessions.size;
-
-      // ── Objectifs DORI — depuis le champ objective dans cameras (compute_project) ──
-      // Le champ objective est inclus dans compactCameras() depuis app.js
-      computeEvents.forEach(e => {
-        (e.payload?.cameras || []).forEach(cam => {
-          const qty = Number(cam.qty) || 1;
-          const obj = cam.objective;
-          if (obj) {
-            // Normaliser les labels
-            const label = obj === "detection"       ? "Détection"
-                        : obj === "observation"     ? "Observation"
-                        : obj === "reconnaissance"  ? "Reconnaissance"
-                        : obj === "identification"  ? "Identification"
-                        : obj === "dissuasion"      ? "Dissuasion"
-                        : obj;
-            objectiveCount[label] = (objectiveCount[label] || 0) + qty;
-          }
-        });
-      });
-      // Fallback sur validate_camera si compute_project ne contient pas objective
+      // Fallback objectifs depuis validate_camera si compute ne contient pas d'objectif
       if (Object.keys(objectiveCount).length === 0) {
         validateEvents.forEach(e => {
           (e.payload?.cameras || []).forEach(cam => {
@@ -1110,10 +1240,18 @@
         });
       }
 
-      renderTopList("#topCameras", cameraCount, 10);
-      renderTopList("#topNvrs", nvrCount, 5);
-      renderTopList("#topRanges", rangeCount, 5);
-      renderTopList("#topObjectives", objectiveCount, 5);
+      $("#kpiAvgCam").innerHTML = nbConfigs > 0
+        ? (totalCameras / nbConfigs).toFixed(1) + "<small> cam/config</small>"
+        : "--";
+      $("#kpiSessions").textContent = sessions.size;
+
+      renderTopList("#topCameras",     cameraCount,      10);
+      renderTopList("#topNvrs",        nvrCount,          5);
+      renderTopList("#topRanges",      rangeCount,        5);
+      renderTopList("#topObjectives",  objectiveCount,    5);
+      renderTopList("#topEmplacement", emplacementCount,  5);
+      renderTopList("#topDistances",   distanceBuckets,   6);
+      renderTopList("#topHdd",         hddCount,          5);
 
       renderCharts(summary, siteTypeCount, monthEvents);
 
@@ -1195,7 +1333,16 @@
     
     if(chartSiteTypes) chartSiteTypes.destroy();
     if(siteLabels.length > 0){
-      chartSiteTypes = new Chart($("#chartSiteTypes"), {
+      // S'assurer qu'on a un canvas (pas un <p> de remplacement précédent)
+      let siteCanvas = document.getElementById("chartSiteTypes");
+      if (!siteCanvas || siteCanvas.tagName !== "CANVAS") {
+        siteCanvas = document.createElement("canvas");
+        siteCanvas.id = "chartSiteTypes";
+        siteCanvas.style.cssText = "width:100%;height:100%";
+        if (siteCanvas.parentElement) siteCanvas.parentElement.appendChild(siteCanvas);
+        else document.querySelector("[id='chartSiteTypes']")?.replaceWith(siteCanvas);
+      }
+      chartSiteTypes = new Chart(siteCanvas, {
         type: 'doughnut',
         data: {
           labels: siteLabels,
@@ -1210,6 +1357,19 @@
           plugins: { legend: { position: 'right' } }
         }
       });
+    } else {
+      // Pas de données ce mois : message à la place du canvas
+      const existing = document.getElementById("chartSiteTypes");
+      if (existing && existing.tagName === "CANVAS") {
+        const msg = document.createElement("p");
+        msg.id = "chartSiteTypes";
+        msg.className = "muted";
+        msg.style.cssText = "text-align:center;padding-top:70px;font-size:13px;margin:0";
+        msg.textContent = "Aucune configuration enregistrée ce mois";
+        existing.replaceWith(msg);
+      } else if (existing) {
+        existing.textContent = "Aucune configuration enregistrée ce mois";
+      }
     }
     
     const weekdayCount = [0,0,0,0,0,0,0];
@@ -1332,6 +1492,117 @@
       </div>`;
     }).join("") || "<div class='muted'>Aucun event.</div>";
   });
+
+  // ==================== UTILISATEURS SSO ====================
+  let chartUserLogins = null;
+  let chartUserLoginsDay = null;
+
+  async function refreshUserLogins() {
+    try {
+      const data = await api("/api/kpi/user-logins");
+
+      $("#kpiLoginTotal").textContent  = data.total  || 0;
+      $("#kpiLoginUnique").textContent = data.unique_users || 0;
+
+      // Connexions ce mois courant
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisMonthEntry = (data.by_month || []).find(m => m.month === thisMonth);
+      $("#kpiLoginMonth").textContent = thisMonthEntry ? thisMonthEntry.count : 0;
+
+      // Mois le plus actif
+      const best = (data.by_month || []).reduce((a, b) => b.count > (a?.count||0) ? b : a, null);
+      if (best) {
+        const [y, m] = best.month.split("-");
+        const mLabel = ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(m)-1];
+        $("#kpiLoginBestMonth").textContent = mLabel + " " + y + " (" + best.count + ")";
+      } else {
+        $("#kpiLoginBestMonth").textContent = "--";
+      }
+
+      // Graphique par mois
+      const monthLabels = (data.by_month || []).map(m => {
+        const [y, mo] = m.month.split("-");
+        return ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(mo)-1] + " " + y.slice(2);
+      });
+      const monthCounts = (data.by_month || []).map(m => m.count);
+
+      if (chartUserLogins) chartUserLogins.destroy();
+      const canvasMonth = document.getElementById("chartUserLogins");
+      if (canvasMonth) {
+        chartUserLogins = new Chart(canvasMonth, {
+          type: "bar",
+          data: {
+            labels: monthLabels,
+            datasets: [{
+              label: "Connexions",
+              data: monthCounts,
+              backgroundColor: "rgba(0,188,112,0.6)",
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+
+      // Graphique par jour (30j)
+      const dayLabels  = (data.by_day || []).map(d => d.date.slice(5)); // MM-DD
+      const dayCounts  = (data.by_day || []).map(d => d.count);
+
+      if (chartUserLoginsDay) chartUserLoginsDay.destroy();
+      const canvasDay = document.getElementById("chartUserLoginsDay");
+      if (canvasDay) {
+        chartUserLoginsDay = new Chart(canvasDay, {
+          type: "line",
+          data: {
+            labels: dayLabels,
+            datasets: [{
+              label: "Connexions",
+              data: dayCounts,
+              borderColor: "#3B82F6",
+              backgroundColor: "rgba(59,130,246,0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
+
+      // Tableau top utilisateurs
+      const tbody = document.getElementById("topUsersTable");
+      if (tbody) {
+        const users = data.top_users || [];
+        if (users.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:20px">Aucune connexion enregistrée</td></tr>`;
+        } else {
+          tbody.innerHTML = users.map((u, i) => `
+            <tr>
+              <td><span class="rank ${i < 3 ? 'top3' : ''}">${i+1}</span></td>
+              <td style="font-weight:800">${u.name || "—"}</td>
+              <td class="muted mono" style="font-size:12px">${u.email || "—"}</td>
+              <td style="text-align:right;font-weight:900">${u.count}</td>
+            </tr>`).join("");
+        }
+      }
+
+    } catch(e) {
+      console.error("User logins error:", e);
+    }
+  }
+
+  $("#btnRefreshUsers")?.addEventListener("click", () => refreshUserLogins());
 
   // ==================== INIT ====================
   checkAuth();
