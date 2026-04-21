@@ -280,6 +280,8 @@
     .kpiGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
     @media(max-width:900px){ .kpiGrid{grid-template-columns:repeat(2,1fr)} }
     @media(max-width:500px){ .kpiGrid{grid-template-columns:1fr} }
+    .grid{display:grid;gap:10px}
+    @media(max-width:900px){ .grid{grid-template-columns:1fr !important} }
     .kpiTile{
       border:1px solid var(--line);border-radius:14px;background:#fff;padding:14px;
       transition:all .15s ease;
@@ -330,6 +332,35 @@
     }
     .monthSelector button:hover{background:rgba(0,188,112,.08)}
     .monthSelector span{font-weight:900;min-width:140px;text-align:center}
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media(max-width:768px){
+      .topBar{flex-direction:column;gap:10px;padding:12px}
+      .topBar .row{flex-wrap:wrap;gap:6px}
+      .tabs{flex-wrap:wrap}
+      main{padding:10px}
+      .card{padding:12px}
+      .row{flex-wrap:wrap;gap:6px}
+      .monthSelector{width:100%;justify-content:center}
+      .monthSelector span{min-width:100px;font-size:13px}
+      .kpiVal{font-size:22px}
+      .tableWrap{max-height:60vh}
+      .tableWrap td input{width:100px;padding:6px 8px;font-size:12px}
+      .list .name{font-size:12px}
+      .list .val{font-size:12px}
+      .h1{font-size:14px}
+      .h2{font-size:11px}
+    }
+    @media(max-width:500px){
+      .topBar{padding:10px}
+      main{padding:6px}
+      .card{padding:10px;border-radius:12px}
+      .btn,.tabBtn{padding:8px 12px;font-size:11px}
+      .kpiVal{font-size:18px}
+      .loginBox{padding:24px 20px;margin:10px}
+    }
   </style>
   <!-- Chart.js pour les graphiques -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -394,7 +425,7 @@
       <div class="tabs">
         <button class="tabBtn on" data-tab="catalog">Catalogues</button>
         <button class="tabBtn" data-tab="kpi">KPI Metier</button>
-        <button class="tabBtn" data-tab="users">Utilisateurs SSO</button>
+        <button class="tabBtn" data-tab="health">Sante BDD</button>
         <button class="tabBtn" data-tab="events">Evenements bruts</button>
       </div>
     </div>
@@ -408,9 +439,9 @@
           <div class="h">
             <div>
               <div class="h1">Editeur de catalogues</div>
-              <div class="h2">Modification des données produits</div>
+              <div class="h2">Modification des donnees produits</div>
             </div>
-            <div class="row" style="flex-wrap:wrap;gap:8px">
+            <div class="row">
               <select id="catalogKind" class="in">
                 <option value="cameras">cameras</option>
                 <option value="nvrs">nvrs</option>
@@ -421,28 +452,14 @@
                 <option value="enclosures">enclosures</option>
                 <option value="signage">signage</option>
               </select>
-              <button id="btnLoad" class="btn">⟳ Charger</button>
+              <button id="btnLoad" class="btn">Charger</button>
               <button id="btnAddRow" class="btn">+ Ligne</button>
-              <label class="btn" title="Importer un fichier CSV" style="cursor:pointer">
-                📂 Importer CSV
-                <input type="file" id="csvFileInput" accept=".csv" style="display:none">
-              </label>
-              <button id="btnDownloadCsv" class="btn">⬇ Exporter CSV</button>
-              <button id="btnSave" class="btn primary">💾 Enregistrer</button>
+              <button id="btnSave" class="btn primary">Enregistrer</button>
             </div>
           </div>
 
-          <!-- Barre de recherche + status -->
-          <div class="row" style="margin-bottom:8px;gap:8px">
-            <input id="catSearch" class="in" placeholder="🔍 Filtrer les lignes..." style="flex:1;min-width:160px">
-            <div id="catMeta" class="muted" style="white-space:nowrap;align-self:center"></div>
-            <div id="catSaveStatus" style="font-size:13px;font-weight:700;color:#00BC70;display:none">✅ Enregistré</div>
-          </div>
-
-          <!-- Zone de drop CSV -->
-          <div id="csvDropZone" style="display:none;border:2px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px;transition:all .2s;cursor:pointer">
-            📂 Glisser-déposer un fichier CSV ici
-          </div>
+          <div id="catMeta" class="muted"></div>
+          <div class="sep"></div>
 
           <div class="tableWrap">
             <table id="catTable">
@@ -452,32 +469,23 @@
           </div>
         </div>
 
-        <div class="card" style="min-width:0">
+        <div class="card">
           <div class="h">
             <div>
               <div class="h1">Guide</div>
-              <div class="h2">Gestion des catalogues</div>
+              <div class="h2">Conseils d'utilisation</div>
             </div>
           </div>
-          <ul class="list" style="font-size:13px">
-            <li><span>cameras</span><span class="pill">Caméras IP</span></li>
-            <li><span>nvrs</span><span class="pill">Enregistreurs</span></li>
-            <li><span>hdds</span><span class="pill">Disques durs</span></li>
-            <li><span>switches</span><span class="pill">Switches PoE</span></li>
-            <li><span>accessories</span><span class="pill">Fixations</span></li>
-            <li><span>screens</span><span class="pill">Écrans</span></li>
-            <li><span>enclosures</span><span class="pill">Coffrets</span></li>
-            <li><span>signage</span><span class="pill">Signalétique</span></li>
+          <ul class="list">
+            <li><span>Cameras</span><span class="pill">Principal</span></li>
+            <li><span>NVRs</span><span class="pill">Enregistreurs</span></li>
+            <li><span>HDDs</span><span class="pill">Stockage</span></li>
+            <li><span>Switches</span><span class="pill">Reseau</span></li>
+            <li><span>Accessories</span><span class="pill">Supports</span></li>
           </ul>
           <div class="sep"></div>
-          <div class="muted" style="font-size:12.5px;line-height:1.6">
-            <b>Workflow CSV :</b><br>
-            1. Sélectionner le catalogue<br>
-            2. Charger ou importer un CSV<br>
-            3. Modifier les données<br>
-            4. Enregistrer (envoi au serveur)<br><br>
-            <b>Import CSV :</b> le fichier doit avoir les mêmes colonnes que le catalogue en cours.<br><br>
-            <b>Export CSV :</b> télécharge l'état actuel de l'éditeur (avant ou après save).
+          <div class="muted">
+            Modifiez les donnees puis cliquez sur "Enregistrer". Les modifications sont immediates.
           </div>
         </div>
       </div>
@@ -499,7 +507,7 @@
         </div>
       </div>
 
-      <!-- KPIs principaux -->
+      <!-- KPIs principaux — ligne 1 -->
       <div class="kpiGrid" style="margin-bottom:14px">
         <div class="kpiTile">
           <div class="kpiLabel">Configurations generees</div>
@@ -509,7 +517,6 @@
         <div class="kpiTile">
           <div class="kpiLabel">Cameras configurees</div>
           <div id="kpiCameras" class="kpiVal">--</div>
-          <div id="kpiCamerasTrend" class="kpiTrend"></div>
         </div>
         <div class="kpiTile">
           <div class="kpiLabel">Camera moyenne/config</div>
@@ -521,16 +528,34 @@
         </div>
       </div>
 
+      <!-- KPIs secondaires — ligne 2 -->
+      <div class="kpiGrid" style="margin-bottom:14px">
+        <div class="kpiTile">
+          <div class="kpiLabel">Stockage moyen</div>
+          <div id="kpiAvgStorage" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Debit moyen</div>
+          <div id="kpiAvgMbps" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Retention moyenne</div>
+          <div id="kpiAvgRetention" class="kpiVal">--</div>
+        </div>
+        <div class="kpiTile">
+          <div class="kpiLabel">Taux complements</div>
+          <div id="kpiComplementRate" class="kpiVal">--</div>
+        </div>
+      </div>
+
+      <!-- Graphiques ligne 1 -->
       <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
-        <!-- Graphique evolution mensuelle -->
         <div class="card">
           <div class="chartTitle">Evolution des configurations (12 derniers mois)</div>
           <div style="height:250px">
             <canvas id="chartConfigs"></canvas>
           </div>
         </div>
-
-        <!-- Graphique cameras par type -->
         <div class="card">
           <div class="chartTitle">Repartition par type de site</div>
           <div style="height:250px">
@@ -539,8 +564,8 @@
         </div>
       </div>
 
+      <!-- Top cameras / NVR / Gammes -->
       <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
-        <!-- Top cameras -->
         <div class="card">
           <div class="h">
             <div>
@@ -550,8 +575,6 @@
           </div>
           <ul id="topCameras" class="list"></ul>
         </div>
-
-        <!-- Top NVR -->
         <div class="card">
           <div class="h">
             <div>
@@ -561,8 +584,6 @@
           </div>
           <ul id="topNvrs" class="list"></ul>
         </div>
-
-        <!-- Repartition gammes -->
         <div class="card">
           <div class="h">
             <div>
@@ -574,126 +595,131 @@
         </div>
       </div>
 
-      <!-- Emplacement + Distance + HDD -->
+      <!-- Graphiques ligne 2 : Activité + DORI + Emplacements -->
       <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
-        <div class="card">
-          <div class="h">
-            <div>
-              <div class="h1">Emplacement</div>
-              <div class="h2">Interieur vs Exterieur (nb cameras)</div>
-            </div>
-          </div>
-          <ul id="topEmplacement" class="list"></ul>
-        </div>
-
-        <div class="card">
-          <div class="h">
-            <div>
-              <div class="h1">Distance configuree</div>
-              <div class="h2">Repartition par tranche (nb cameras)</div>
-            </div>
-          </div>
-          <ul id="topDistances" class="list"></ul>
-        </div>
-
-        <div class="card">
-          <div class="h">
-            <div>
-              <div class="h1">Top HDD</div>
-              <div class="h2">Disques durs recommandes</div>
-            </div>
-          </div>
-          <ul id="topHdd" class="list"></ul>
-        </div>
-      </div>
-
-      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
-        <!-- Configs par jour de semaine -->
         <div class="card">
           <div class="chartTitle">Activite par jour de la semaine</div>
           <div style="height:200px">
             <canvas id="chartWeekday"></canvas>
           </div>
         </div>
+        <div class="card">
+          <div class="chartTitle">Objectifs DORI</div>
+          <div style="height:200px">
+            <canvas id="chartDori"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chartTitle">Emplacements</div>
+          <div style="height:200px">
+            <canvas id="chartEmplacement"></canvas>
+          </div>
+        </div>
+      </div>
 
-        <!-- Objectifs DORI -->
+      <!-- Ligne 3 : Distances + Codecs + Compléments -->
+      <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        <div class="card">
+          <div class="chartTitle">Distances configurees</div>
+          <div style="height:200px">
+            <canvas id="chartDistances"></canvas>
+          </div>
+        </div>
         <div class="card">
           <div class="h">
             <div>
-              <div class="h1">Objectifs DORI</div>
-              <div class="h2">Repartition des besoins</div>
+              <div class="h1">Parametres enregistrement</div>
+              <div class="h2">Codecs et FPS les plus utilises</div>
             </div>
           </div>
-          <ul id="topObjectives" class="list"></ul>
+          <ul id="topRecording" class="list"></ul>
+        </div>
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Complements</div>
+              <div class="h2">Taux d'activation par type</div>
+            </div>
+          </div>
+          <div id="complementStats" class="muted">--</div>
+        </div>
+      </div>
+
+      <!-- Ligne 4 : Top HDD + Switches + Écrans -->
+      <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:14px">
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Top HDD</div>
+              <div class="h2">Disques les plus recommandes</div>
+            </div>
+          </div>
+          <ul id="topHdds" class="list"></ul>
+        </div>
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Top distances</div>
+              <div class="h2">Distances cibles les plus demandees</div>
+            </div>
+          </div>
+          <ul id="topDistances" class="list"></ul>
+        </div>
+        <div class="card">
+          <div class="h">
+            <div>
+              <div class="h1">Tailles ecrans</div>
+              <div class="h2">Preferences utilisateurs</div>
+            </div>
+          </div>
+          <ul id="topScreenSizes" class="list"></ul>
         </div>
       </div>
     </section>
 
-    <!-- UTILISATEURS SSO -->
-    <section id="tab_users" class="hidden">
-      <div class="row" style="margin-bottom:14px;justify-content:space-between">
-        <div style="font-weight:950;font-size:18px">Connexions Azure SSO</div>
-        <button id="btnRefreshUsers" class="btn">Rafraichir</button>
-      </div>
-
-      <!-- KPI tiles utilisateurs -->
+    <!-- SANTE BDD -->
+    <section id="tab_health" class="hidden">
       <div class="kpiGrid" style="margin-bottom:14px">
         <div class="kpiTile">
-          <div class="kpiLabel">Total connexions</div>
-          <div id="kpiLoginTotal" class="kpiVal">--</div>
+          <div class="kpiLabel">Total produits</div>
+          <div id="healthTotal" class="kpiVal">--</div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Utilisateurs uniques</div>
-          <div id="kpiLoginUnique" class="kpiVal">--</div>
+          <div class="kpiLabel">Sans image</div>
+          <div id="healthNoImg" class="kpiVal" style="color:#DC2626">--</div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Connexions ce mois</div>
-          <div id="kpiLoginMonth" class="kpiVal">--</div>
+          <div class="kpiLabel">Sans fiche technique</div>
+          <div id="healthNoDs" class="kpiVal" style="color:#F59E0B">--</div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Mois le plus actif</div>
-          <div id="kpiLoginBestMonth" class="kpiVal" style="font-size:18px">--</div>
+          <div class="kpiLabel">Completude</div>
+          <div id="healthScore" class="kpiVal">--</div>
         </div>
       </div>
 
-      <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
-        <!-- Graphique connexions par mois -->
+      <div class="grid" style="grid-template-columns:1fr">
         <div class="card">
-          <div class="chartTitle">Connexions par mois (12 derniers mois)</div>
-          <div style="height:250px">
-            <canvas id="chartUserLogins"></canvas>
+          <div class="h" style="margin-bottom:12px">
+            <div>
+              <div class="h1">Etat des catalogues</div>
+              <div class="h2">Couverture images et fiches techniques par famille</div>
+            </div>
+            <button id="btnRefreshHealth" class="btn">Analyser</button>
           </div>
-        </div>
-
-        <!-- Graphique connexions par jour (30j) -->
-        <div class="card">
-          <div class="chartTitle">Connexions par jour (30 derniers jours)</div>
-          <div style="height:250px">
-            <canvas id="chartUserLoginsDay"></canvas>
-          </div>
+          <div id="healthDetails" class="muted">Cliquez sur Analyser pour scanner les catalogues.</div>
         </div>
       </div>
 
-      <!-- Top utilisateurs -->
-      <div class="card">
-        <div class="h">
-          <div>
-            <div class="h1">Top utilisateurs</div>
-            <div class="h2">Classement par nombre de connexions</div>
+      <div class="grid" style="grid-template-columns:1fr;margin-top:14px">
+        <div class="card">
+          <div class="h" style="margin-bottom:12px">
+            <div>
+              <div class="h1">Produits incomplets</div>
+              <div class="h2">References avec donnees manquantes</div>
+            </div>
           </div>
-        </div>
-        <div class="tableWrap" style="max-height:400px">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px">#</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th style="width:100px;text-align:right">Connexions</th>
-              </tr>
-            </thead>
-            <tbody id="topUsersTable"></tbody>
-          </table>
+          <div id="healthMissing" class="muted">--</div>
         </div>
       </div>
     </section>
@@ -719,7 +745,6 @@
               <option value="validate_camera">validate_camera</option>
               <option value="nav_next">nav_next</option>
               <option value="export_pdf">export_pdf</option>
-              <option value="azure_login">azure_login</option>
             </select>
             <button id="btnLoadEvents" class="btn">Charger</button>
           </div>
@@ -747,6 +772,9 @@
   let chartConfigs = null;
   let chartSiteTypes = null;
   let chartWeekday = null;
+  let chartDori = null;
+  let chartEmplacement = null;
+  let chartDistances = null;
 
   // ==================== AUTH ====================
   function showAdmin() {
@@ -792,43 +820,34 @@
   }
 
   // ==================== LOGIN FORM ====================
-  // Mot de passe visible par l'utilisateur (vérification locale)
-  const ADMIN_PASSWORD = "Saddlebag0-Ripening5-Untapped0-Squeeze5-Caterer6";
-  // Mot de passe réel du backend (transparent pour l'utilisateur)
-  const BACKEND_PASSWORD = "admin";
-
   $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    
     const btn = $("#loginBtn");
     const errorDiv = $("#loginError");
     const pwd = $("#loginPassword").value;
+    
     errorDiv.textContent = "";
     btn.disabled = true;
     btn.textContent = "Connexion...";
-
-    // 1. Vérification locale du mot de passe utilisateur
-    if (pwd !== ADMIN_PASSWORD) {
-      errorDiv.textContent = "❌ Mot de passe incorrect";
-      $("#loginPassword").value = "";
-      $("#loginPassword").focus();
-      btn.disabled = false;
-      btn.textContent = "Se connecter";
-      return;
-    }
-
+    
     try {
-      // 2. Appel API avec le vrai mot de passe backend
       const out = await api("/api/login", {
-        method: "POST",
-        body: JSON.stringify({ password: BACKEND_PASSWORD }),
+        method: "POST", 
+        body: JSON.stringify({password: pwd}),
         headers: {}
       });
+      
       token = out.token;
       localStorage.setItem(LS_TOKEN, token);
+      
       showAdmin();
       initAdminContent();
+      
     } catch(e) {
-      errorDiv.textContent = "❌ Erreur serveur : " + (e?.message || e);
+      errorDiv.textContent = "Mot de passe incorrect";
+      $("#loginPassword").value = "";
+      $("#loginPassword").focus();
     } finally {
       btn.disabled = false;
       btn.textContent = "Se connecter";
@@ -857,18 +876,15 @@
     $$(".tabBtn").forEach(x => x.classList.remove("on"));
     b.classList.add("on");
     const tab = b.dataset.tab;
-    $("#tab_catalog").classList.toggle("hidden", tab !== "catalog");
-    $("#tab_kpi").classList.toggle("hidden", tab !== "kpi");
-    $("#tab_users").classList.toggle("hidden", tab !== "users");
-    $("#tab_events").classList.toggle("hidden", tab !== "events");
-    
+    ["catalog","kpi","health","events"].forEach(t => {
+      const el = $(`#tab_${t}`);
+      if(el) el.classList.toggle("hidden", tab !== t);
+    });
     if(tab === "kpi") refreshKpiMetier();
-    if(tab === "users") refreshUserLogins();
+    if(tab === "health") refreshHealth();
   }));
 
   // ==================== CATALOG ====================
-  let searchFilter = "";
-
   function renderTable(){
     const head = $("#catHead");
     const body = $("#catBody");
@@ -889,21 +905,13 @@
     thA.textContent = "Actions";
     head.appendChild(thA);
 
-    // Filtrage par recherche
-    const filter = searchFilter.toLowerCase();
-    const visibleRows = (catalog.rows || []).map((row, realIdx) => ({ row, realIdx }))
-      .filter(({ row }) => {
-        if (!filter) return true;
-        return Object.values(row).some(v => String(v).toLowerCase().includes(filter));
-      });
-
-    visibleRows.forEach(({ row, realIdx }) => {
+    (catalog.rows||[]).forEach((row, idx) => {
       const tr = document.createElement("tr");
       cols.forEach(c => {
         const td = document.createElement("td");
         const inp = document.createElement("input");
         inp.value = row?.[c] ?? "";
-        inp.addEventListener("input", () => { catalog.rows[realIdx][c] = inp.value; });
+        inp.addEventListener("input", () => { catalog.rows[idx][c] = inp.value; });
         td.appendChild(inp);
         tr.appendChild(td);
       });
@@ -913,7 +921,7 @@
       del.className = "miniBtn del";
       del.textContent = "Suppr.";
       del.addEventListener("click", () => {
-        catalog.rows.splice(realIdx, 1);
+        catalog.rows.splice(idx, 1);
         renderTable();
       });
       tdA.appendChild(del);
@@ -921,172 +929,42 @@
       body.appendChild(tr);
     });
 
-    const total = (catalog.rows || []).length;
-    const shown = visibleRows.length;
     $("#catMeta").textContent = catalog.kind
-      ? `${catalog.filename} · ${cols.length} colonnes · ${shown === total ? total : shown + "/" + total} lignes`
+      ? ("Fichier: " + catalog.filename + " | Colonnes: " + cols.length + " | Lignes: " + (catalog.rows||[]).length)
       : "";
   }
 
-  // Recherche
-  $("#catSearch").addEventListener("input", e => {
-    searchFilter = e.target.value;
-    renderTable();
-  });
-
-  // Charger depuis l'API
   $("#btnLoad").addEventListener("click", async () => {
-    try {
+    try{
       const kind = $("#catalogKind").value;
-      const btn = $("#btnLoad");
-      btn.textContent = "Chargement...";
-      btn.disabled = true;
       const out = await api("/api/admin/catalog/" + encodeURIComponent(kind));
       catalog = out;
-      searchFilter = "";
-      $("#catSearch").value = "";
       renderTable();
-    } catch(e) {
+    }catch(e){
       alert("Erreur chargement: " + (e?.message || e));
-    } finally {
-      const btn = $("#btnLoad");
-      btn.textContent = "⟳ Charger";
-      btn.disabled = false;
     }
   });
 
-  // Ajouter une ligne
   $("#btnAddRow").addEventListener("click", () => {
     const cols = catalog.columns || [];
     if(!cols.length){ alert("Charge un catalogue d'abord."); return; }
     const r = {};
     cols.forEach(c => r[c] = "");
     catalog.rows.push(r);
-    searchFilter = "";
-    $("#catSearch").value = "";
     renderTable();
-    // Scroll en bas
-    const tw = document.querySelector(".tableWrap");
-    if(tw) tw.scrollTop = tw.scrollHeight;
   });
 
-  // Enregistrer vers l'API
   $("#btnSave").addEventListener("click", async () => {
-    try {
+    try{
       if(!catalog.kind){ alert("Charge un catalogue d'abord."); return; }
-      const btn = $("#btnSave");
-      btn.textContent = "Enregistrement...";
-      btn.disabled = true;
       await api("/api/admin/catalog/" + encodeURIComponent(catalog.kind), {
         method:"PUT",
         body: JSON.stringify({columns: catalog.columns, rows: catalog.rows})
       });
-      const status = $("#catSaveStatus");
-      status.style.display = "block";
-      setTimeout(() => { status.style.display = "none"; }, 3000);
-    } catch(e) {
+      alert("Enregistre OK");
+    }catch(e){
       alert("Erreur save: " + (e?.message || e));
-    } finally {
-      const btn = $("#btnSave");
-      btn.textContent = "💾 Enregistrer";
-      btn.disabled = false;
     }
-  });
-
-  // ── Import CSV depuis fichier ──
-  function parseCsvText(text) {
-    const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 1) return null;
-    const parseRow = line => {
-      const cols = []; let cur = ""; let inQ = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') { inQ = !inQ; }
-        else if (ch === "," && !inQ) { cols.push(cur.trim()); cur = ""; }
-        else { cur += ch; }
-      }
-      cols.push(cur.trim());
-      return cols;
-    };
-    const headers = parseRow(lines[0]);
-    const rows = lines.slice(1).filter(l => l.trim()).map(line => {
-      const vals = parseRow(line);
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
-      return obj;
-    });
-    return { columns: headers, rows };
-  }
-
-  function loadCsvFile(file) {
-    if (!file || !file.name.endsWith(".csv")) {
-      alert("Veuillez sélectionner un fichier .csv");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = e => {
-      const parsed = parseCsvText(e.target.result);
-      if (!parsed) { alert("Fichier CSV invalide."); return; }
-      catalog.columns = parsed.columns;
-      catalog.rows = parsed.rows;
-      catalog.filename = file.name;
-      if (!catalog.kind) catalog.kind = $("#catalogKind").value;
-      searchFilter = "";
-      $("#catSearch").value = "";
-      renderTable();
-    };
-    reader.readAsText(file, "utf-8");
-  }
-
-  $("#csvFileInput").addEventListener("change", e => {
-    loadCsvFile(e.target.files[0]);
-    e.target.value = ""; // reset pour permettre re-import du même fichier
-  });
-
-  // Drag & drop sur la zone ou la table
-  const dropZone = $("#csvDropZone");
-  ["dragenter","dragover"].forEach(ev => {
-    document.querySelector(".tableWrap").addEventListener(ev, e => {
-      e.preventDefault();
-      dropZone.style.display = "block";
-      dropZone.style.borderColor = "var(--green)";
-      dropZone.style.background = "rgba(0,188,112,.04)";
-    });
-  });
-  ["dragleave","drop"].forEach(ev => {
-    document.querySelector(".tableWrap").addEventListener(ev, e => {
-      if (ev === "drop") {
-        e.preventDefault();
-        const file = e.dataTransfer?.files?.[0];
-        if (file) loadCsvFile(file);
-      }
-      dropZone.style.display = "none";
-      dropZone.style.borderColor = "";
-      dropZone.style.background = "";
-    });
-  });
-
-  // ── Export CSV ──
-  $("#btnDownloadCsv").addEventListener("click", () => {
-    const cols = catalog.columns || [];
-    if (!cols.length) { alert("Aucun catalogue chargé."); return; }
-    const escape = v => {
-      const s = String(v ?? "");
-      return s.includes(",") || s.includes('"') || s.includes("\n")
-        ? '"' + s.replace(/"/g, '""') + '"'
-        : s;
-    };
-    const lines = [
-      cols.map(escape).join(","),
-      ...(catalog.rows || []).map(row => cols.map(c => escape(row[c])).join(","))
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = (catalog.filename || (catalog.kind || "export") + ".csv");
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
   });
 
   // ==================== KPI METIER ====================
@@ -1111,150 +989,187 @@
     try {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-
+      
       const summary = await api("/api/kpi/summary");
       const events = await api(`/api/kpi/events?limit=5000`);
-
+      
       const monthStr = `${year}-${String(month).padStart(2,'0')}`;
-      const allRows = events.rows || [];
-      const monthEvents = allRows.filter(e => (e.ts_utc || "").startsWith(monthStr));
-
-      // Mois précédent pour les tendances
-      const prevDate = new Date(year, month - 2, 1);
-      const prevStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
-      const prevMonthEvents = allRows.filter(e => (e.ts_utc || "").startsWith(prevStr));
-
-      const computeEvents     = monthEvents.filter(e => e.event === "compute_project");
-      const validateEvents    = monthEvents.filter(e => e.event === "validate_camera");
-      const prevComputeEvents = prevMonthEvents.filter(e => e.event === "compute_project");
-
-      // ── KPI : configs générées ──
+      const monthEvents = (events.rows || []).filter(e => 
+        (e.ts_utc || "").startsWith(monthStr)
+      );
+      
+      const computeEvents = monthEvents.filter(e => e.event === "compute_project");
       const nbConfigs = computeEvents.length;
-      const nbConfigsPrev = prevComputeEvents.length;
       $("#kpiConfigs").textContent = nbConfigs;
-      if (nbConfigsPrev > 0) {
-        const delta = Math.round(((nbConfigs - nbConfigsPrev) / nbConfigsPrev) * 100);
-        const el = $("#kpiConfigsTrend");
-        el.className = "kpiTrend " + (delta >= 0 ? "up" : "down");
-        el.textContent = (delta >= 0 ? "↑ +" : "↓ ") + delta + "% vs mois précédent";
-      }
-
+      
       let totalCameras = 0;
-      let prevTotalCameras = 0;
-      const cameraCount     = {};
-      const nvrCount        = {};
-      const rangeCount      = {};
-      const siteTypeCount   = {};
-      const objectiveCount  = {};
-      const emplacementCount= {};
-      const distanceBuckets = {};
-      const hddCount        = {};
-      const sessions        = new Set();
-
+      const cameraCount = {};
+      const nvrCount = {};
+      const rangeCount = {};
+      const siteTypeCount = {};
+      const objectiveCount = {};
+      const emplacementCount = {};
+      const distanceList = [];
+      const distanceBuckets = { "0-10m": 0, "10-25m": 0, "25-50m": 0, "50-100m": 0, "100m+": 0 };
+      const codecCount = {};
+      const fpsCount = {};
+      const hddCount = {};
+      const screenSizeCount = {};
+      const sessions = new Set();
+      let totalTB = 0, totalMbps = 0, totalRetentionDays = 0;
+      let storageCount = 0, mbpsCount = 0, retentionCount = 0;
+      let complementScreen = 0, complementEnclosure = 0, complementSignage = 0;
+      
       computeEvents.forEach(e => {
         const p = e.payload || {};
         sessions.add(p.sid || e.session_id);
-        totalCameras += Number(p.cam_total_qty) || 0;
-
-        // Type de site
-        const siteType = p.config_type || "Autre";
+        
+        const camQty = Number(p.cam_total_qty) || 0;
+        totalCameras += camQty;
+        
+        const siteType = p.config_type || p.use_case || "Autre";
         siteTypeCount[siteType] = (siteTypeCount[siteType] || 0) + 1;
-
-        // NVR
-        if (p.nvr_id) nvrCount[p.nvr_id] = (nvrCount[p.nvr_id] || 0) + 1;
-
-        // HDD
-        if (p.hdd_id) {
-          const hddLabel = p.hdd_name ? `${p.hdd_id} — ${p.hdd_name}` : p.hdd_id;
-          hddCount[hddLabel] = (hddCount[hddLabel] || 0) + 1;
+        
+        if(p.nvr_id) nvrCount[p.nvr_id] = (nvrCount[p.nvr_id] || 0) + 1;
+        
+        // Stockage
+        const st = p.storage || {};
+        if(st.required_tb > 0) { totalTB += st.required_tb; storageCount++; }
+        if(st.total_mbps > 0) { totalMbps += st.total_mbps; mbpsCount++; }
+        if(st.hdd_id) hddCount[st.hdd_id + (st.hdd_count > 1 ? ` x${st.hdd_count}` : "")] = (hddCount[st.hdd_id] || 0) + 1;
+        
+        // Enregistrement
+        const rec = p.recording || {};
+        if(rec.days > 0) { totalRetentionDays += rec.days; retentionCount++; }
+        if(rec.codec) {
+          const c = String(rec.codec).toUpperCase();
+          codecCount[c] = (codecCount[c] || 0) + 1;
         }
-
-        // Caméras
+        if(rec.fps > 0) {
+          fpsCount[rec.fps + " IPS"] = (fpsCount[rec.fps + " IPS"] || 0) + 1;
+        }
+        
+        // Compléments
+        const comp = p.complements || {};
+        if(comp.screen_enabled) { 
+          complementScreen++;
+          if(comp.screen_size_inch) screenSizeCount[comp.screen_size_inch + '"'] = (screenSizeCount[comp.screen_size_inch + '"'] || 0) + 1;
+        }
+        if(comp.enclosure_enabled) complementEnclosure++;
+        if(comp.signage_enabled) complementSignage++;
+        
+        // Caméras avec objectifs et emplacements
         (p.cameras || []).forEach(cam => {
-          const id  = cam.id || "?";
+          const id = cam.id || "?";
           const qty = Number(cam.qty) || 1;
           cameraCount[id] = (cameraCount[id] || 0) + qty;
-
-          // Gamme produit
-          const br = (cam.brand_range || "").toUpperCase();
-          const nm = (cam.name || cam.id || "").toUpperCase();
-          const range = br.includes("NEXT")    || nm.includes("NEXT")    ? "NEXT"
-                      : br.includes("ADVANCE") || nm.includes("ADVANCE") ? "ADVANCE"
-                      : br.includes("EASY")    || nm.includes("EASY")    ? "EASY"
-                      : "Autre";
+          
+          // Gamme — utiliser brand_range si disponible, sinon fallback ID
+          const range = cam.range || (
+            id.includes("NEXT") ? "NEXT" : 
+            id.includes("ADVANCE") ? "ADVANCE" : 
+            id.includes("EASY") ? "EASY" : "Autre"
+          );
           rangeCount[range] = (rangeCount[range] || 0) + qty;
-
-          // Emplacement (nouvelle donnée)
-          if (cam.emplacement) {
-            const empl = cam.emplacement === "interieur" ? "Intérieur"
-                       : cam.emplacement === "exterieur" ? "Extérieur"
-                       : cam.emplacement;
-            emplacementCount[empl] = (emplacementCount[empl] || 0) + qty;
-          }
-
-          // Distance (nouvelle donnée)
-          const dist = Number(cam.distance_m);
-          if (dist > 0) {
-            const bucket = dist <= 5  ? "≤5m"
-                         : dist <= 10 ? "6-10m"
-                         : dist <= 20 ? "11-20m"
-                         : dist <= 30 ? "21-30m"
-                         : dist <= 50 ? "31-50m"
-                         : ">50m";
-            distanceBuckets[bucket] = (distanceBuckets[bucket] || 0) + qty;
-          }
-
-          // Objectif DORI
-          const obj = cam.objective;
-          if (obj) {
-            const label = obj === "detection"      ? "Détection"
-                        : obj === "observation"    ? "Observation"
-                        : obj === "reconnaissance" ? "Reconnaissance"
-                        : obj === "identification" ? "Identification"
-                        : obj === "dissuasion"     ? "Dissuasion"
-                        : obj;
+          
+          // DORI — extraire des caméras
+          if(cam.objective) {
+            const obj = String(cam.objective).toLowerCase();
+            const label = obj === "identification" ? "Identification" :
+                          obj === "detection" ? "Detection" :
+                          obj === "dissuasion" ? "Dissuasion" :
+                          obj === "observation" ? "Observation" : obj;
             objectiveCount[label] = (objectiveCount[label] || 0) + qty;
           }
+          
+          // Emplacements
+          if(cam.emplacement) {
+            const empl = String(cam.emplacement).toLowerCase();
+            const label = empl.includes("ext") ? "Exterieur" : empl.includes("int") ? "Interieur" : empl;
+            emplacementCount[label] = (emplacementCount[label] || 0) + qty;
+          }
+          
+          // Distances
+          if(cam.distance > 0) {
+            distanceList.push(cam.distance);
+            const d = cam.distance;
+            if(d <= 10) distanceBuckets["0-10m"] += qty;
+            else if(d <= 25) distanceBuckets["10-25m"] += qty;
+            else if(d <= 50) distanceBuckets["25-50m"] += qty;
+            else if(d <= 100) distanceBuckets["50-100m"] += qty;
+            else distanceBuckets["100m+"] += qty;
+          }
         });
       });
-
-      // ── KPI : caméras — avec tendance ──
-      prevComputeEvents.forEach(e => {
-        prevTotalCameras += Number((e.payload || {}).cam_total_qty) || 0;
-      });
+      
+      // KPIs principaux
       $("#kpiCameras").textContent = totalCameras;
-      if (prevTotalCameras > 0) {
-        const delta = Math.round(((totalCameras - prevTotalCameras) / prevTotalCameras) * 100);
-        const el = $("#kpiCamerasTrend");
-        el.className = "kpiTrend " + (delta >= 0 ? "up" : "down");
-        el.textContent = (delta >= 0 ? "↑ +" : "↓ ") + delta + "% vs mois précédent";
-      }
-
-      // Fallback objectifs depuis validate_camera si compute ne contient pas d'objectif
-      if (Object.keys(objectiveCount).length === 0) {
-        validateEvents.forEach(e => {
-          (e.payload?.cameras || []).forEach(cam => {
-            const obj = cam.objective;
-            if (obj) objectiveCount[obj] = (objectiveCount[obj] || 0) + 1;
-          });
-        });
-      }
-
-      $("#kpiAvgCam").innerHTML = nbConfigs > 0
-        ? (totalCameras / nbConfigs).toFixed(1) + "<small> cam/config</small>"
-        : "--";
+      $("#kpiAvgCam").innerHTML = nbConfigs > 0 ? (totalCameras / nbConfigs).toFixed(1) + "<small> cam/config</small>" : "--";
       $("#kpiSessions").textContent = sessions.size;
-
-      renderTopList("#topCameras",     cameraCount,      10);
-      renderTopList("#topNvrs",        nvrCount,          5);
-      renderTopList("#topRanges",      rangeCount,        5);
-      renderTopList("#topObjectives",  objectiveCount,    5);
-      renderTopList("#topEmplacement", emplacementCount,  5);
-      renderTopList("#topDistances",   distanceBuckets,   6);
-      renderTopList("#topHdd",         hddCount,          5);
-
-      renderCharts(summary, siteTypeCount, monthEvents);
-
+      
+      // KPIs secondaires
+      $("#kpiAvgStorage").innerHTML = storageCount > 0 ? (totalTB / storageCount).toFixed(1) + "<small> To</small>" : "--";
+      $("#kpiAvgMbps").innerHTML = mbpsCount > 0 ? (totalMbps / mbpsCount).toFixed(0) + "<small> Mbps</small>" : "--";
+      $("#kpiAvgRetention").innerHTML = retentionCount > 0 ? (totalRetentionDays / retentionCount).toFixed(0) + "<small> jours</small>" : "--";
+      
+      const compTotal = nbConfigs || 1;
+      const screenPct = Math.round(complementScreen / compTotal * 100);
+      const enclosurePct = Math.round(complementEnclosure / compTotal * 100);
+      const signagePct = Math.round(complementSignage / compTotal * 100);
+      $("#kpiComplementRate").innerHTML = nbConfigs > 0 ? screenPct + "<small>%</small>" : "--";
+      
+      // Compléments détaillés
+      const compDiv = $("#complementStats");
+      if(compDiv && nbConfigs > 0) {
+        compDiv.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:90px;font-size:12px;font-weight:800">Ecran</span>
+              <div style="flex:1;background:rgba(0,0,0,.06);border-radius:6px;height:22px;overflow:hidden">
+                <div style="width:${screenPct}%;height:100%;background:#00BC70;border-radius:6px;min-width:${screenPct > 0 ? '24px' : '0'}"></div>
+              </div>
+              <span style="font-size:13px;font-weight:900;width:40px;text-align:right">${screenPct}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:90px;font-size:12px;font-weight:800">Boitier</span>
+              <div style="flex:1;background:rgba(0,0,0,.06);border-radius:6px;height:22px;overflow:hidden">
+                <div style="width:${enclosurePct}%;height:100%;background:#3B82F6;border-radius:6px;min-width:${enclosurePct > 0 ? '24px' : '0'}"></div>
+              </div>
+              <span style="font-size:13px;font-weight:900;width:40px;text-align:right">${enclosurePct}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:90px;font-size:12px;font-weight:800">Signalisation</span>
+              <div style="flex:1;background:rgba(0,0,0,.06);border-radius:6px;height:22px;overflow:hidden">
+                <div style="width:${signagePct}%;height:100%;background:#F59E0B;border-radius:6px;min-width:${signagePct > 0 ? '24px' : '0'}"></div>
+              </div>
+              <span style="font-size:13px;font-weight:900;width:40px;text-align:right">${signagePct}%</span>
+            </div>
+          </div>`;
+      }
+      
+      // Listes
+      renderTopList("#topCameras", cameraCount, 10);
+      renderTopList("#topNvrs", nvrCount, 5);
+      renderTopList("#topRanges", rangeCount, 5);
+      renderTopList("#topHdds", hddCount, 5);
+      
+      // Enregistrement : fusionner codec + fps
+      const recData = {};
+      Object.entries(codecCount).forEach(([k, v]) => recData["Codec " + k] = v);
+      Object.entries(fpsCount).forEach(([k, v]) => recData[k] = v);
+      renderTopList("#topRecording", recData, 8);
+      
+      // Distances top
+      const distCount = {};
+      distanceList.forEach(d => { const k = d + "m"; distCount[k] = (distCount[k] || 0) + 1; });
+      renderTopList("#topDistances", distCount, 8);
+      
+      // Écrans
+      renderTopList("#topScreenSizes", screenSizeCount, 5);
+      
+      // Charts
+      renderCharts(summary, siteTypeCount, monthEvents, objectiveCount, emplacementCount, distanceBuckets);
+      
     } catch(e) {
       console.error("KPI error:", e);
     }
@@ -1284,7 +1199,8 @@
     }).join("");
   }
 
-  function renderCharts(summary, siteTypeCount, monthEvents){
+  function renderCharts(summary, siteTypeCount, monthEvents, objectiveCount, emplacementCount, distanceBuckets){
+    const chartColors = ['#00BC70', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
     const byDay = summary.by_day || [];
     const last12Months = {};
     const now = new Date();
@@ -1328,56 +1244,30 @@
       }
     });
     
+    // Site types doughnut
     const siteLabels = Object.keys(siteTypeCount);
     const siteData = Object.values(siteTypeCount);
-    
     if(chartSiteTypes) chartSiteTypes.destroy();
     if(siteLabels.length > 0){
-      // S'assurer qu'on a un canvas (pas un <p> de remplacement précédent)
-      let siteCanvas = document.getElementById("chartSiteTypes");
-      if (!siteCanvas || siteCanvas.tagName !== "CANVAS") {
-        siteCanvas = document.createElement("canvas");
-        siteCanvas.id = "chartSiteTypes";
-        siteCanvas.style.cssText = "width:100%;height:100%";
-        if (siteCanvas.parentElement) siteCanvas.parentElement.appendChild(siteCanvas);
-        else document.querySelector("[id='chartSiteTypes']")?.replaceWith(siteCanvas);
-      }
-      chartSiteTypes = new Chart(siteCanvas, {
+      chartSiteTypes = new Chart($("#chartSiteTypes"), {
         type: 'doughnut',
         data: {
           labels: siteLabels,
-          datasets: [{
-            data: siteData,
-            backgroundColor: ['#00BC70', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
-          }]
+          datasets: [{ data: siteData, backgroundColor: chartColors }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           plugins: { legend: { position: 'right' } }
         }
       });
-    } else {
-      // Pas de données ce mois : message à la place du canvas
-      const existing = document.getElementById("chartSiteTypes");
-      if (existing && existing.tagName === "CANVAS") {
-        const msg = document.createElement("p");
-        msg.id = "chartSiteTypes";
-        msg.className = "muted";
-        msg.style.cssText = "text-align:center;padding-top:70px;font-size:13px;margin:0";
-        msg.textContent = "Aucune configuration enregistrée ce mois";
-        existing.replaceWith(msg);
-      } else if (existing) {
-        existing.textContent = "Aucune configuration enregistrée ce mois";
-      }
     }
     
+    // Weekday bar
     const weekdayCount = [0,0,0,0,0,0,0];
     monthEvents.forEach(e => {
       const d = new Date(e.ts_utc);
       if(!isNaN(d)) weekdayCount[d.getDay()]++;
     });
-    
     if(chartWeekday) chartWeekday.destroy();
     chartWeekday = new Chart($("#chartWeekday"), {
       type: 'bar',
@@ -1391,12 +1281,84 @@
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: { y: { beginAtZero: true } }
       }
     });
+    
+    // DORI doughnut
+    const doriLabels = Object.keys(objectiveCount || {});
+    const doriData = Object.values(objectiveCount || {});
+    if(chartDori) chartDori.destroy();
+    if(doriLabels.length > 0){
+      chartDori = new Chart($("#chartDori"), {
+        type: 'doughnut',
+        data: {
+          labels: doriLabels,
+          datasets: [{ data: doriData, backgroundColor: ['#00BC70', '#3B82F6', '#F59E0B', '#EF4444'] }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right' } }
+        }
+      });
+    } else {
+      const ctx = $("#chartDori");
+      if(ctx) {
+        const parent = ctx.parentElement;
+        if(parent) parent.innerHTML = '<div class="muted" style="display:grid;place-items:center;height:100%">Aucune donnee DORI.<br><small>Les objectifs seront visibles apres la prochaine mise a jour des KPI.</small></div>';
+      }
+    }
+    
+    // Emplacements bar
+    const emplLabels = Object.keys(emplacementCount || {});
+    const emplData = Object.values(emplacementCount || {});
+    if(chartEmplacement) chartEmplacement.destroy();
+    if(emplLabels.length > 0){
+      chartEmplacement = new Chart($("#chartEmplacement"), {
+        type: 'bar',
+        data: {
+          labels: emplLabels,
+          datasets: [{
+            label: 'Cameras',
+            data: emplData,
+            backgroundColor: ['#3B82F6', '#F59E0B', '#8B5CF6'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true } }
+        }
+      });
+    }
+    
+    // Distances bar
+    const distLabels = Object.keys(distanceBuckets || {});
+    const distData = Object.values(distanceBuckets || {});
+    if(chartDistances) chartDistances.destroy();
+    if(distData.some(v => v > 0)){
+      chartDistances = new Chart($("#chartDistances"), {
+        type: 'bar',
+        data: {
+          labels: distLabels,
+          datasets: [{
+            label: 'Cameras',
+            data: distData,
+            backgroundColor: 'rgba(59,130,246,0.6)',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
   }
 
   $("#btnRefreshKpi").addEventListener("click", () => refreshKpiMetier());
@@ -1493,116 +1455,154 @@
     }).join("") || "<div class='muted'>Aucun event.</div>";
   });
 
-  // ==================== UTILISATEURS SSO ====================
-  let chartUserLogins = null;
-  let chartUserLoginsDay = null;
-
-  async function refreshUserLogins() {
+  // ==================== SANTE BDD ====================
+  async function refreshHealth(){
+    // Accessories a une structure différente (mapping camera→accessoires), pas de check image standard
+    const families = ["cameras","nvrs","hdds","switches","screens","enclosures","signage"];
+    
+    let totalProducts = 0;
+    let totalNoImg = 0;
+    let totalNoDs = 0;
+    const familyStats = [];
+    const missingProducts = [];
+    
+    for(const fam of families){
+      try {
+        const data = await api(`/api/admin/catalog/${fam}`);
+        const rows = data.rows || [];
+        const cols = data.columns || [];
+        const count = rows.length;
+        totalProducts += count;
+        
+        let noImg = 0, noName = 0, noId = 0;
+        
+        rows.forEach(r => {
+          const id = String(r.id || "").trim();
+          const name = String(r.name || "").trim();
+          const img = String(r.image_url || "").trim();
+          
+          if(!id) noId++;
+          if(!name) noName++;
+          if(!img || img === "false") noImg++;
+          
+          const issues = [];
+          if(!name) issues.push("nom manquant");
+          if(!img || img === "false") issues.push("image manquante");
+          if(issues.length > 0 && id) {
+            missingProducts.push({ family: fam, id, issues });
+          }
+        });
+        
+        totalNoImg += noImg;
+        
+        familyStats.push({
+          family: fam,
+          count,
+          cols: cols.length,
+          noImg,
+          noName,
+          noId,
+          imgPct: count > 0 ? Math.round((count - noImg) / count * 100) : 0,
+        });
+        
+      } catch(e) {
+        familyStats.push({ family: fam, count: 0, error: e.message });
+      }
+    }
+    
+    // Ajouter accessories en tant que ligne info (pas de check image)
     try {
-      const data = await api("/api/kpi/user-logins");
-
-      $("#kpiLoginTotal").textContent  = data.total  || 0;
-      $("#kpiLoginUnique").textContent = data.unique_users || 0;
-
-      // Connexions ce mois courant
-      const now = new Date();
-      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const thisMonthEntry = (data.by_month || []).find(m => m.month === thisMonth);
-      $("#kpiLoginMonth").textContent = thisMonthEntry ? thisMonthEntry.count : 0;
-
-      // Mois le plus actif
-      const best = (data.by_month || []).reduce((a, b) => b.count > (a?.count||0) ? b : a, null);
-      if (best) {
-        const [y, m] = best.month.split("-");
-        const mLabel = ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(m)-1];
-        $("#kpiLoginBestMonth").textContent = mLabel + " " + y + " (" + best.count + ")";
-      } else {
-        $("#kpiLoginBestMonth").textContent = "--";
-      }
-
-      // Graphique par mois
-      const monthLabels = (data.by_month || []).map(m => {
-        const [y, mo] = m.month.split("-");
-        return ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(mo)-1] + " " + y.slice(2);
+      const accData = await api("/api/admin/catalog/accessories");
+      const accRows = accData.rows || [];
+      familyStats.push({
+        family: "accessories",
+        count: accRows.length,
+        cols: (accData.columns || []).length,
+        noImg: 0, noName: 0, noId: 0,
+        imgPct: -1, // flag: pas de check
+        isMapping: true,
       });
-      const monthCounts = (data.by_month || []).map(m => m.count);
-
-      if (chartUserLogins) chartUserLogins.destroy();
-      const canvasMonth = document.getElementById("chartUserLogins");
-      if (canvasMonth) {
-        chartUserLogins = new Chart(canvasMonth, {
-          type: "bar",
-          data: {
-            labels: monthLabels,
-            datasets: [{
-              label: "Connexions",
-              data: monthCounts,
-              backgroundColor: "rgba(0,188,112,0.6)",
-              borderRadius: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-          }
-        });
-      }
-
-      // Graphique par jour (30j)
-      const dayLabels  = (data.by_day || []).map(d => d.date.slice(5)); // MM-DD
-      const dayCounts  = (data.by_day || []).map(d => d.count);
-
-      if (chartUserLoginsDay) chartUserLoginsDay.destroy();
-      const canvasDay = document.getElementById("chartUserLoginsDay");
-      if (canvasDay) {
-        chartUserLoginsDay = new Chart(canvasDay, {
-          type: "line",
-          data: {
-            labels: dayLabels,
-            datasets: [{
-              label: "Connexions",
-              data: dayCounts,
-              borderColor: "#3B82F6",
-              backgroundColor: "rgba(59,130,246,0.1)",
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-          }
-        });
-      }
-
-      // Tableau top utilisateurs
-      const tbody = document.getElementById("topUsersTable");
-      if (tbody) {
-        const users = data.top_users || [];
-        if (users.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:20px">Aucune connexion enregistrée</td></tr>`;
-        } else {
-          tbody.innerHTML = users.map((u, i) => `
-            <tr>
-              <td><span class="rank ${i < 3 ? 'top3' : ''}">${i+1}</span></td>
-              <td style="font-weight:800">${u.name || "—"}</td>
-              <td class="muted mono" style="font-size:12px">${u.email || "—"}</td>
-              <td style="text-align:right;font-weight:900">${u.count}</td>
-            </tr>`).join("");
-        }
-      }
-
+      totalProducts += accRows.length;
     } catch(e) {
-      console.error("User logins error:", e);
+      familyStats.push({ family: "accessories", count: 0, error: e.message });
+    }
+    
+    // KPIs
+    $("#healthTotal").textContent = totalProducts;
+    $("#healthNoImg").textContent = totalNoImg;
+    $("#healthNoDs").textContent = "--";
+    const completePct = totalProducts > 0 ? Math.round((totalProducts - totalNoImg) / totalProducts * 100) : 0;
+    $("#healthScore").innerHTML = completePct + "<small>%</small>";
+    
+    // Table des familles
+    const detailsDiv = $("#healthDetails");
+    detailsDiv.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--line)">
+            <th style="text-align:left;padding:8px;font-weight:900">Famille</th>
+            <th style="text-align:right;padding:8px">Produits</th>
+            <th style="text-align:right;padding:8px">Colonnes</th>
+            <th style="text-align:right;padding:8px">Sans image</th>
+            <th style="text-align:right;padding:8px">Sans nom</th>
+            <th style="text-align:left;padding:8px">Couverture image</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${familyStats.map(f => {
+            if(f.error) return `<tr><td style="padding:8px">${f.family}</td><td colspan="5" class="muted">${f.error}</td></tr>`;
+            if(f.isMapping) return `<tr style="border-bottom:1px solid var(--line)">
+              <td style="padding:8px;font-weight:800">${f.family} <span class="muted" style="font-size:10px">(mapping)</span></td>
+              <td style="padding:8px;text-align:right;font-weight:900">${f.count}</td>
+              <td style="padding:8px;text-align:right">${f.cols}</td>
+              <td colspan="3" style="padding:8px;color:var(--muted);font-size:12px">Structure mapping — pas de check image</td>
+            </tr>`;
+            const barColor = f.imgPct >= 90 ? '#00BC70' : f.imgPct >= 60 ? '#F59E0B' : '#DC2626';
+            return `<tr style="border-bottom:1px solid var(--line)">
+              <td style="padding:8px;font-weight:800">${f.family}</td>
+              <td style="padding:8px;text-align:right;font-weight:900">${f.count}</td>
+              <td style="padding:8px;text-align:right">${f.cols}</td>
+              <td style="padding:8px;text-align:right;color:${f.noImg > 0 ? '#DC2626' : 'inherit'};font-weight:${f.noImg > 0 ? '900' : 'normal'}">${f.noImg}</td>
+              <td style="padding:8px;text-align:right;color:${f.noName > 0 ? '#F59E0B' : 'inherit'}">${f.noName}</td>
+              <td style="padding:8px;width:180px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;background:rgba(0,0,0,.06);border-radius:4px;height:16px;overflow:hidden">
+                    <div style="width:${f.imgPct}%;height:100%;background:${barColor};border-radius:4px"></div>
+                  </div>
+                  <span style="font-weight:900;font-size:12px;width:32px;text-align:right">${f.imgPct}%</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+    
+    // Produits incomplets
+    const missingDiv = $("#healthMissing");
+    if(missingProducts.length === 0){
+      missingDiv.innerHTML = '<div style="color:#00BC70;font-weight:800">✅ Tous les produits sont complets !</div>';
+    } else {
+      const shown = missingProducts.slice(0, 50);
+      missingDiv.innerHTML = `
+        <div style="margin-bottom:8px;font-size:12px;color:var(--muted)">${missingProducts.length} produits avec donnees manquantes${missingProducts.length > 50 ? ` (50 premiers affiches)` : ''}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px">
+          ${shown.map(p => `
+            <div style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <span style="font-weight:900">${p.id}</span>
+                <span class="muted" style="margin-left:4px">${p.family}</span>
+              </div>
+              <div style="display:flex;gap:4px">
+                ${p.issues.map(i => `<span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;background:${i.includes('image') ? 'rgba(220,38,38,.1);color:#DC2626' : 'rgba(245,158,11,.1);color:#92400e'}">${i}</span>`).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>`;
     }
   }
-
-  $("#btnRefreshUsers")?.addEventListener("click", () => refreshUserLogins());
+  
+  const btnHealth = $("#btnRefreshHealth");
+  if(btnHealth) btnHealth.addEventListener("click", refreshHealth);
 
   // ==================== INIT ====================
   checkAuth();
