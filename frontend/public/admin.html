@@ -691,8 +691,12 @@
         <button id="btnRefreshUsers" class="btn">&#8635; Rafraichir</button>
       </div>
 
-      <!-- 4 KPI tiles -->
-      <div class="kpiGrid" style="margin-bottom:14px">
+      <!-- 5 KPI tiles -->
+      <div class="kpiGrid" style="margin-bottom:14px;grid-template-columns:repeat(5,minmax(0,1fr))">
+        <div class="kpiTile">
+          <div class="kpiLabel">Connexions SSO</div>
+          <div id="kpiLoginsMonth" class="kpiVal">--</div>
+        </div>
         <div class="kpiTile">
           <div class="kpiLabel">Visites de page</div>
           <div id="kpiVisitsMonth" class="kpiVal">--</div>
@@ -711,6 +715,29 @@
           <div class="kpiLabel">Exports PDF</div>
           <div id="kpiExportMonth" class="kpiVal">--</div>
           <div id="kpiExportTrend" class="kpiTrend"></div>
+        </div>
+      </div>
+
+      <!-- Top utilisateurs connectés ce mois -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="h" style="margin-bottom:10px">
+          <div>
+            <div class="h1">Utilisateurs connectes &mdash; <span id="usersTableMonthLabel"></span></div>
+            <div class="h2">Classement par nombre de connexions SSO Azure sur le mois</div>
+          </div>
+        </div>
+        <div class="tableWrap" style="max-height:280px">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th style="width:110px;text-align:right">Connexions</th>
+              </tr>
+            </thead>
+            <tbody id="topUsersTable"></tbody>
+          </table>
         </div>
       </div>
 
@@ -741,6 +768,7 @@
           </div>
           <select id="feedFilter" class="in" style="font-size:12px;padding:6px 10px;min-height:34px">
             <option value="">Tous</option>
+            <option value="azure_login">Connexions SSO</option>
             <option value="page_view">Visites</option>
             <option value="reach_summary">Recaps finalises</option>
             <option value="export_pdf_click">Exports PDF</option>
@@ -1783,9 +1811,12 @@
 
   function _updateMonthLabelU() {
     const el = document.getElementById("currentMonthU");
-    if(el) el.textContent = MONTHS_FR[currentMonthU.getMonth()] + " " + currentMonthU.getFullYear();
+    const lbl = MONTHS_FR[currentMonthU.getMonth()] + " " + currentMonthU.getFullYear();
+    if(el) el.textContent = lbl;
     const fl = document.getElementById("feedMonthLabel");
-    if(fl) fl.textContent = MONTHS_FR[currentMonthU.getMonth()] + " " + currentMonthU.getFullYear();
+    if(fl) fl.textContent = lbl;
+    const tl = document.getElementById("usersTableMonthLabel");
+    if(tl) tl.textContent = lbl;
   }
 
   function _monthStr(d) {
@@ -1819,6 +1850,7 @@
       return;
     }
     const icons = {
+      azure_login:      {ico:"🔑", label:"Connexion SSO",    color:"#7C3AED"},
       page_view:        {ico:"👁️", label:"Visite",           color:"#6B7280"},
       compute_project:  {ico:"⚙️",  label:"Config calculee",  color:"#3B82F6"},
       reach_summary:    {ico:"✅", label:"Projet finalise",   color:"#00BC70"},
@@ -1839,7 +1871,12 @@
         const time = (r.ts||"").slice(11,16);
         const p = r.payload || {};
         let detail = "";
-        if(r.event === "reach_summary" || r.event === "compute_project") {
+        if(r.event === "azure_login") {
+          const name  = p.name  || "";
+          const email = p.email || "";
+          if(name)  detail = "<strong>" + name + "</strong>";
+          if(email) detail += (detail ? " &nbsp;<span style=\"font-size:11px;color:var(--muted)\">" + email + "</span>" : email);
+        } else if(r.event === "reach_summary" || r.event === "compute_project") {
           const cams = p.cam_total_qty || p.totalCameras || "";
           const proj = p.config_type || p.projectName || "";
           if(cams) detail += cams + " cam" + (Number(cams)>1?"s":"");
@@ -1890,13 +1927,15 @@
       const sNow = mv(data.summary.by_month, mStr);  const sPrv = mv(data.summary.by_month, mPrev);
       const eNow = mv(data.exports.by_month, mStr);  const ePrv = mv(data.exports.by_month, mPrev);
 
-      const vEl = document.getElementById("kpiVisitsMonth");
-      const sEl = document.getElementById("kpiSummaryMonth");
-      const eEl = document.getElementById("kpiExportMonth");
-      const uEl = document.getElementById("kpiVisitsUniq");
+      const vEl  = document.getElementById("kpiVisitsMonth");
+      const sEl  = document.getElementById("kpiSummaryMonth");
+      const eEl  = document.getElementById("kpiExportMonth");
+      const uEl  = document.getElementById("kpiVisitsUniq");
+      const lEl  = document.getElementById("kpiLoginsMonth");
       if(vEl) vEl.textContent = vNow;
       if(sEl) sEl.textContent = sNow;
       if(eEl) eEl.textContent = eNow;
+      if(lEl) lEl.textContent = data.logins_month || 0;
       _setTrend("kpiVisitsTrend",  vNow, vPrv);
       _setTrend("kpiSummaryTrend", sNow, sPrv);
       _setTrend("kpiExportTrend",  eNow, ePrv);
@@ -1904,6 +1943,26 @@
       // Sessions uniques ce mois : distinct session_id dans le feed
       const sesSet = new Set((data.feed||[]).filter(r=>r.event==="page_view").map(r=>r.session_id).filter(Boolean));
       if(uEl) uEl.textContent = sesSet.size || (vNow > 0 ? "~"+vNow : "--");
+
+      // ── Top utilisateurs connectés (azure_login) ──
+      const tbody = document.getElementById("topUsersTable");
+      if(tbody) {
+        const users = data.top_users || [];
+        if(users.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:16px">
+            Aucune connexion SSO enregistree ce mois
+            <br><small style="font-size:11px">Les connexions apparaissent apres la premiere authentification Azure</small>
+          </td></tr>`;
+        } else {
+          tbody.innerHTML = users.map((u, i) => `
+            <tr>
+              <td><span class="rank ${i<3?"top3":""}">${i+1}</span></td>
+              <td style="font-weight:800">${u.name||"—"}</td>
+              <td class="muted mono" style="font-size:12px">${u.email||"—"}</td>
+              <td style="text-align:right;font-weight:900">${u.count}x</td>
+            </tr>`).join("");
+        }
+      }
 
       // ── Graphique visites par mois ──
       const vLabels = (data.visits.by_month||[]).map(m=>_monthLabel(m.month));

@@ -497,11 +497,12 @@ def kpi_user_stats(
     else:
         month_end = f"{y+1}-01-01"
 
+    # Feed : inclure azure_login pour avoir les noms/prénoms
     cur.execute("""
         SELECT ts_utc, event, payload_json, session_id
         FROM kpi_events
         WHERE ts_utc >= ? AND ts_utc < ?
-          AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera')
+          AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera','azure_login')
         ORDER BY ts_utc DESC LIMIT 500
     """, (month_start, month_end))
 
@@ -518,9 +519,36 @@ def kpi_user_stats(
             "payload": payload
         })
 
+    # Top utilisateurs connectés ce mois (depuis azure_login)
+    cur.execute("""
+        SELECT
+            json_extract(payload_json,'$.name')  as name,
+            json_extract(payload_json,'$.email') as email,
+            COUNT(*) as cnt
+        FROM kpi_events
+        WHERE event = 'azure_login'
+          AND ts_utc >= ? AND ts_utc < ?
+        GROUP BY email
+        ORDER BY cnt DESC
+        LIMIT 20
+    """, (month_start, month_end))
+    top_users = [
+        {"name": n or "?", "email": e or "?", "count": c}
+        for n, e, c in cur.fetchall()
+    ]
+
+    # Nombre de connexions SSO ce mois
+    cur.execute(
+        "SELECT COUNT(*) FROM kpi_events WHERE event='azure_login' AND ts_utc>=? AND ts_utc<?",
+        (month_start, month_end)
+    )
+    logins_month = cur.fetchone()[0]
+
     # ⚠️ Construire le résultat AVANT con.close() — les fonctions monthly/daily/total_ev utilisent cur
     result = {
         "month": f"{y}-{m:02d}",
+        "logins_month": logins_month,
+        "top_users": top_users,
         "visits":  {"total": total_ev("page_view"),        "by_month": monthly("page_view"),        "by_day": daily("page_view")},
         "summary": {"total": total_ev("reach_summary"),    "by_month": monthly("reach_summary"),    "by_day": daily("reach_summary")},
         "exports": {"total": total_ev("export_pdf_click"), "by_month": monthly("export_pdf_click"), "by_day": daily("export_pdf_click")},
