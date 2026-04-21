@@ -425,7 +425,7 @@
       <div class="tabs">
         <button class="tabBtn on" data-tab="catalog">Catalogues</button>
         <button class="tabBtn" data-tab="kpi">KPI Metier</button>
-        <button class="tabBtn" data-tab="users">Utilisateurs SSO</button>
+        <button class="tabBtn" data-tab="users">Activite Utilisateurs</button>
         <button class="tabBtn" data-tab="health">Sante BDD</button>
         <button class="tabBtn" data-tab="events">Evenements bruts</button>
       </div>
@@ -678,63 +678,112 @@
       </div>
     </section>
 
-    <!-- UTILISATEURS SSO -->
+    <!-- ACTIVITE UTILISATEURS -->
     <section id="tab_users" class="hidden">
-      <div class="row" style="margin-bottom:14px;justify-content:space-between">
-        <div style="font-weight:950;font-size:18px">Connexions Azure SSO</div>
-        <button id="btnRefreshUsers" class="btn">⟳ Rafraichir</button>
+
+      <!-- Sélecteur de mois + bouton -->
+      <div class="row" style="margin-bottom:14px;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div class="monthSelector">
+          <button id="btnPrevMonthU">&larr;</button>
+          <span id="currentMonthU">Chargement...</span>
+          <button id="btnNextMonthU">&rarr;</button>
+        </div>
+        <button id="btnRefreshUsers" class="btn">&#8635; Rafraichir</button>
       </div>
 
+      <!-- 4 KPI tiles -->
       <div class="kpiGrid" style="margin-bottom:14px">
         <div class="kpiTile">
-          <div class="kpiLabel">Total connexions</div>
-          <div id="kpiLoginTotal" class="kpiVal">--</div>
+          <div class="kpiLabel">Visites de page</div>
+          <div id="kpiVisitsMonth" class="kpiVal">--</div>
+          <div id="kpiVisitsTrend" class="kpiTrend"></div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Utilisateurs uniques</div>
-          <div id="kpiLoginUnique" class="kpiVal">--</div>
+          <div class="kpiLabel">Sessions uniques</div>
+          <div id="kpiVisitsUniq" class="kpiVal">--</div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Connexions ce mois</div>
-          <div id="kpiLoginMonth" class="kpiVal">--</div>
+          <div class="kpiLabel">Projets finalises</div>
+          <div id="kpiSummaryMonth" class="kpiVal">--</div>
+          <div id="kpiSummaryTrend" class="kpiTrend"></div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Mois le plus actif</div>
-          <div id="kpiLoginBestMonth" class="kpiVal" style="font-size:18px">--</div>
+          <div class="kpiLabel">Exports PDF</div>
+          <div id="kpiExportMonth" class="kpiVal">--</div>
+          <div id="kpiExportTrend" class="kpiTrend"></div>
         </div>
       </div>
 
+      <!-- Graphiques par mois -->
       <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
         <div class="card">
-          <div class="chartTitle">Connexions par mois (12 derniers mois)</div>
-          <div style="height:250px"><canvas id="chartUserLogins"></canvas></div>
+          <div class="chartTitle">Visites par mois (12 mois)</div>
+          <div style="height:220px"><canvas id="chartVisitsMonth"></canvas></div>
         </div>
         <div class="card">
-          <div class="chartTitle">Connexions par jour (30 derniers jours)</div>
-          <div style="height:250px"><canvas id="chartUserLoginsDay"></canvas></div>
+          <div class="chartTitle">Projets finalises + Exports par mois</div>
+          <div style="height:220px"><canvas id="chartFunnelMonth"></canvas></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="h">
+      <!-- Graphique journalier 30j -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="chartTitle">Activite quotidienne &mdash; 30 derniers jours</div>
+        <div style="height:190px"><canvas id="chartActivityDay"></canvas></div>
+      </div>
+
+      <!-- Fil de l'eau du mois sélectionné -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="h" style="margin-bottom:10px">
           <div>
-            <div class="h1">Top utilisateurs</div>
-            <div class="h2">Classement par nombre de connexions</div>
+            <div class="h1">Fil de l&rsquo;eau &mdash; <span id="feedMonthLabel"></span></div>
+            <div class="h2">Historique des actions (500 derniers evenements du mois)</div>
+          </div>
+          <select id="feedFilter" class="in" style="font-size:12px;padding:6px 10px;min-height:34px">
+            <option value="">Tous</option>
+            <option value="page_view">Visites</option>
+            <option value="reach_summary">Recaps finalises</option>
+            <option value="export_pdf_click">Exports PDF</option>
+            <option value="compute_project">Configs calculees</option>
+          </select>
+        </div>
+        <div id="feedTimeline" style="max-height:480px;overflow:auto">
+          <div class="muted" style="padding:20px;text-align:center">Cliquez sur Rafraichir</div>
+        </div>
+      </div>
+
+      <!-- Export CSV par plage -->
+      <div class="card">
+        <div class="h" style="margin-bottom:12px">
+          <div>
+            <div class="h1">Export CSV par plage de dates</div>
+            <div class="h2">Extraction flexible selon periode et type d&rsquo;evenement</div>
           </div>
         </div>
-        <div class="tableWrap" style="max-height:400px">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px">#</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th style="width:110px;text-align:right">Connexions</th>
-              </tr>
-            </thead>
-            <tbody id="topUsersTable"></tbody>
-          </table>
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Du</label>
+            <input type="date" id="exportDateFrom" class="in" style="min-width:155px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Au</label>
+            <input type="date" id="exportDateTo" class="in" style="min-width:155px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Evenement</label>
+            <select id="exportEventType" class="in" style="min-width:190px">
+              <option value="">Tous les evenements</option>
+              <option value="page_view">page_view (visites)</option>
+              <option value="compute_project">compute_project</option>
+              <option value="reach_summary">reach_summary (recap)</option>
+              <option value="export_pdf_click">export_pdf_click</option>
+              <option value="validate_camera">validate_camera</option>
+              <option value="azure_login">azure_login</option>
+            </select>
+          </div>
+          <button id="btnExportRange" class="btn primary">&#11015; Telecharger CSV</button>
         </div>
+        <div id="exportRangeStatus" style="margin-top:8px;font-size:13px;font-weight:700;color:var(--green);display:none"></div>
       </div>
     </section>
 
@@ -946,7 +995,7 @@
     });
     if(tab === "kpi") refreshKpiMetier();
     if(tab === "health") refreshHealth();
-    if(tab === "users") refreshUserActivity();
+    if(tab === "users") { _updateMonthLabelU(); refreshUserActivity(); }
   }));
 
   // ==================== CATALOG ====================
@@ -1725,34 +1774,58 @@
   if(btnHealth) btnHealth.addEventListener("click", refreshHealth);
 
   // ==================== ACTIVITE UTILISATEURS ====================
-  let _chartVisitsMonth = null, _chartFunnelMonth = null, _chartActivityDay = null;
-  let _feedAllRows = [];
+  // Mois courant pour l'onglet users (indépendant du mois KPI Metier)
+  let currentMonthU = new Date();
+  let _chartVM = null, _chartFM = null, _chartAD = null;
+  let _feedAll = [];
 
-  function _monthLabel(m) {
-    const [y, mo] = m.split("-");
-    return ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(mo)-1] + " " + y.slice(2);
+  const MONTHS_FR = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"];
+
+  function _updateMonthLabelU() {
+    const el = document.getElementById("currentMonthU");
+    if(el) el.textContent = MONTHS_FR[currentMonthU.getMonth()] + " " + currentMonthU.getFullYear();
+    const fl = document.getElementById("feedMonthLabel");
+    if(fl) fl.textContent = MONTHS_FR[currentMonthU.getMonth()] + " " + currentMonthU.getFullYear();
   }
-  function _trend(curr, prev) {
+
+  function _monthStr(d) {
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+  }
+
+  function _monthLabel(s) {
+    const [y, m] = s.split("-");
+    return ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(m)-1] + " " + y.slice(2);
+  }
+
+  function _trendU(curr, prev) {
     if(!prev) return {txt:"", cls:""};
     const d = Math.round(((curr-prev)/prev)*100);
     return {txt:(d>=0?"↑ +":"↓ ")+d+"% vs mois préc.", cls:d>=0?"up":"down"};
+  }
+
+  function _setTrend(id, curr, prev) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const t = _trendU(curr, prev);
+    el.textContent = t.txt;
+    el.className   = "kpiTrend " + t.cls;
   }
 
   function _renderFeed(rows) {
     const div = document.getElementById("feedTimeline");
     if(!div) return;
     if(!rows || rows.length === 0) {
-      div.innerHTML = '<div class="muted" style="padding:20px;text-align:center">Aucun evenement ce mois</div>';
+      div.innerHTML = '<div class="muted" style="padding:24px;text-align:center">Aucun evenement ce mois pour ce filtre</div>';
       return;
     }
     const icons = {
-      page_view:        {ico:"👁️", label:"Visite",          color:"#6B7280"},
-      compute_project:  {ico:"⚙️", label:"Config calculee", color:"#3B82F6"},
-      reach_summary:    {ico:"✅", label:"Projet finalise", color:"#00BC70"},
-      export_pdf_click: {ico:"📄", label:"Export PDF",      color:"#F59E0B"},
-      validate_camera:  {ico:"📷", label:"Camera validee",  color:"#8B5CF6"},
+      page_view:        {ico:"👁️", label:"Visite",           color:"#6B7280"},
+      compute_project:  {ico:"⚙️",  label:"Config calculee",  color:"#3B82F6"},
+      reach_summary:    {ico:"✅", label:"Projet finalise",   color:"#00BC70"},
+      export_pdf_click: {ico:"📄", label:"Export PDF",        color:"#F59E0B"},
+      validate_camera:  {ico:"📷", label:"Camera validee",    color:"#8B5CF6"},
     };
-    // Grouper par date
+    // Grouper par date (jours décroissants, déjà triés par l'API)
     const byDate = {};
     rows.forEach(r => {
       const d = (r.ts||"").slice(0,10);
@@ -1760,112 +1833,98 @@
       byDate[d].push(r);
     });
     const html = Object.entries(byDate).map(([date, evts]) => {
+      const dayName = new Date(date+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
       const evtsHtml = evts.map(r => {
         const meta = icons[r.event] || {ico:"📌", label:r.event, color:"#9CA3AF"};
         const time = (r.ts||"").slice(11,16);
         const p = r.payload || {};
-        // Info contextuelle selon le type
         let detail = "";
         if(r.event === "reach_summary" || r.event === "compute_project") {
           const cams = p.cam_total_qty || p.totalCameras || "";
           const proj = p.config_type || p.projectName || "";
-          if(cams) detail = `${cams} cam${cams>1?"s":""}`;
-          if(proj) detail += (detail?" · ":"") + proj;
+          if(cams) detail += cams + " cam" + (Number(cams)>1?"s":"");
+          if(proj) detail += (detail?" · ":"")+proj;
         } else if(r.event === "export_pdf_click") {
           const proj = p.projectName || "";
           const cams = p.totalCameras || "";
           if(proj) detail = proj;
-          if(cams) detail += (detail?" · ":"") + cams + " cam" + (cams>1?"s":"");
+          if(cams) detail += (detail?" · ":"")+cams+" cam"+(Number(cams)>1?"s":"");
         }
         const sid = (r.session_id||"").slice(0,8);
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(28,31,42,.06)">
-          <span style="font-size:16px;width:24px;text-align:center">${meta.ico}</span>
-          <span style="font-size:11px;color:var(--muted);width:38px;flex-shrink:0">${time}</span>
-          <span style="font-size:12px;font-weight:900;color:${meta.color};width:140px;flex-shrink:0">${meta.label}</span>
-          <span style="font-size:12px;flex:1;color:var(--cosmos)">${detail}</span>
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(28,31,42,.05)">
+          <span style="font-size:15px;width:22px;text-align:center;flex-shrink:0">${meta.ico}</span>
+          <span style="font-size:11px;color:var(--muted);width:36px;flex-shrink:0">${time}</span>
+          <span style="font-size:12px;font-weight:900;color:${meta.color};width:130px;flex-shrink:0">${meta.label}</span>
+          <span style="font-size:12px;flex:1;color:var(--cosmos)">${detail||""}</span>
           <span class="mono muted" style="font-size:10px">${sid}</span>
         </div>`;
       }).join("");
-      const dayName = new Date(date+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"});
       return `<div>
-        <div style="padding:6px 12px;background:var(--bg);font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--line);position:sticky;top:0">${dayName} — ${evts.length} evenement${evts.length>1?"s":""}</div>
+        <div style="padding:6px 12px;background:var(--bg);font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--line);border-top:1px solid var(--line);position:sticky;top:0;z-index:1">
+          ${dayName} &nbsp;&mdash;&nbsp; ${evts.length} evenement${evts.length>1?"s":""}
+        </div>
         ${evtsHtml}
       </div>`;
     }).join("");
     div.innerHTML = html;
   }
 
-  // Filtre fil de l'eau
   document.getElementById("feedFilter")?.addEventListener("change", function() {
     const f = this.value;
-    const rows = f ? _feedAllRows.filter(r => r.event === f) : _feedAllRows;
+    const rows = f ? _feedAll.filter(r=>r.event===f) : _feedAll;
     _renderFeed(rows);
   });
 
   async function refreshUserActivity() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth()+1).padStart(2,"0");
-    const thisMonth = y + "-" + m;
-    const prevDate  = new Date(y, now.getMonth()-1, 1);
-    const prevMonth = prevDate.getFullYear() + "-" + String(prevDate.getMonth()+1).padStart(2,"0");
-
-    // Label mois
-    const ml = ["Janvier","Fevrier","Mars","Avril","Mai","Juin","Juillet","Aout","Septembre","Octobre","Novembre","Decembre"][now.getMonth()];
-    const lbl = document.getElementById("usersMonthLabel");
-    if(lbl) lbl.textContent = ml + " " + y;
+    const mStr  = _monthStr(currentMonthU);
+    const prev  = new Date(currentMonthU.getFullYear(), currentMonthU.getMonth()-1, 1);
+    const mPrev = _monthStr(prev);
 
     try {
-      const data = await api("/api/kpi/user-stats");
+      const data = await api("/api/kpi/user-stats?month=" + encodeURIComponent(mStr));
 
-      function mv(arr, month) { return (arr||[]).find(x=>x.month===month)?.count||0; }
+      function mv(arr, m) { return (arr||[]).find(x=>x.month===m)?.count||0; }
 
-      // ── Visites ──
-      const vNow = mv(data.visits.by_month, thisMonth);
-      const vPrv = mv(data.visits.by_month, prevMonth);
-      $("#kpiVisitsMonth").textContent = vNow;
-      const vTr = _trend(vNow, vPrv);
-      Object.assign($("#kpiVisitsTrend"), {textContent:vTr.txt, className:"kpiTrend "+vTr.cls});
+      // ── Tuiles ──
+      const vNow = mv(data.visits.by_month,  mStr);  const vPrv = mv(data.visits.by_month,  mPrev);
+      const sNow = mv(data.summary.by_month, mStr);  const sPrv = mv(data.summary.by_month, mPrev);
+      const eNow = mv(data.exports.by_month, mStr);  const ePrv = mv(data.exports.by_month, mPrev);
 
-      // Sessions uniques ce mois (approx : distinct session_id dans feed)
+      const vEl = document.getElementById("kpiVisitsMonth");
+      const sEl = document.getElementById("kpiSummaryMonth");
+      const eEl = document.getElementById("kpiExportMonth");
+      const uEl = document.getElementById("kpiVisitsUniq");
+      if(vEl) vEl.textContent = vNow;
+      if(sEl) sEl.textContent = sNow;
+      if(eEl) eEl.textContent = eNow;
+      _setTrend("kpiVisitsTrend",  vNow, vPrv);
+      _setTrend("kpiSummaryTrend", sNow, sPrv);
+      _setTrend("kpiExportTrend",  eNow, ePrv);
+
+      // Sessions uniques ce mois : distinct session_id dans le feed
       const sesSet = new Set((data.feed||[]).filter(r=>r.event==="page_view").map(r=>r.session_id).filter(Boolean));
-      $("#kpiVisitsUniq").textContent = sesSet.size || "--";
-
-      // ── Projets finalisés ──
-      const sNow = mv(data.summary.by_month, thisMonth);
-      const sPrv = mv(data.summary.by_month, prevMonth);
-      $("#kpiSummaryMonth").textContent = sNow;
-      const sTr = _trend(sNow, sPrv);
-      Object.assign($("#kpiSummaryTrend"), {textContent:sTr.txt, className:"kpiTrend "+sTr.cls});
-
-      // ── Exports ──
-      const eNow = mv(data.exports.by_month, thisMonth);
-      const ePrv = mv(data.exports.by_month, prevMonth);
-      $("#kpiExportMonth").textContent = eNow;
-      const eTr = _trend(eNow, ePrv);
-      Object.assign($("#kpiExportTrend"), {textContent:eTr.txt, className:"kpiTrend "+eTr.cls});
+      if(uEl) uEl.textContent = sesSet.size || (vNow > 0 ? "~"+vNow : "--");
 
       // ── Graphique visites par mois ──
       const vLabels = (data.visits.by_month||[]).map(m=>_monthLabel(m.month));
-      if(_chartVisitsMonth) _chartVisitsMonth.destroy();
+      if(_chartVM) _chartVM.destroy();
       const cV = document.getElementById("chartVisitsMonth");
-      if(cV) _chartVisitsMonth = new Chart(cV, {
+      if(cV) _chartVM = new Chart(cV, {
         type:"bar",
         data:{labels:vLabels, datasets:[{label:"Visites", data:(data.visits.by_month||[]).map(m=>m.count), backgroundColor:"rgba(0,188,112,0.6)", borderRadius:5}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
       });
 
-      // ── Graphique entonnoir (finalisés + exports) par mois ──
+      // ── Graphique entonnoir ──
       const fMonths = (data.visits.by_month||[]).map(m=>m.month);
-      const fLabels = fMonths.map(_monthLabel);
-      if(_chartFunnelMonth) _chartFunnelMonth.destroy();
+      if(_chartFM) _chartFM.destroy();
       const cF = document.getElementById("chartFunnelMonth");
-      if(cF) _chartFunnelMonth = new Chart(cF, {
+      if(cF) _chartFM = new Chart(cF, {
         type:"bar",
         data:{
-          labels:fLabels,
+          labels:fMonths.map(_monthLabel),
           datasets:[
-            {label:"Recaps finalises", data:fMonths.map(m=>mv(data.summary.by_month,m)), backgroundColor:"rgba(59,130,246,0.6)", borderRadius:5},
+            {label:"Recaps finalises", data:fMonths.map(m=>mv(data.summary.by_month,m)), backgroundColor:"rgba(59,130,246,0.6)",  borderRadius:5},
             {label:"Exports PDF",      data:fMonths.map(m=>mv(data.exports.by_month,m)), backgroundColor:"rgba(245,158,11,0.6)", borderRadius:5}
           ]
         },
@@ -1873,70 +1932,78 @@
       });
 
       // ── Graphique journalier 30j ──
-      const dDates = (data.visits.by_day||[]).map(d=>d.date);
+      const dDates  = (data.visits.by_day||[]).map(d=>d.date);
       const dLabels = dDates.map(d=>d.slice(5));
       function dv(arr,date){return (arr||[]).find(x=>x.date===date)?.count||0;}
-      if(_chartActivityDay) _chartActivityDay.destroy();
+      if(_chartAD) _chartAD.destroy();
       const cA = document.getElementById("chartActivityDay");
-      if(cA) _chartActivityDay = new Chart(cA, {
+      if(cA) _chartAD = new Chart(cA, {
         type:"line",
         data:{
           labels:dLabels,
           datasets:[
-            {label:"Visites",   data:(data.visits.by_day||[]).map(d=>d.count), borderColor:"#00BC70", backgroundColor:"rgba(0,188,112,0.08)", fill:true,  tension:0.3, pointRadius:2},
-            {label:"Recaps",    data:dDates.map(d=>dv(data.summary.by_day,d)),  borderColor:"#3B82F6", backgroundColor:"transparent",            fill:false, tension:0.3, pointRadius:3, borderWidth:2},
-            {label:"Exports",   data:dDates.map(d=>dv(data.exports.by_day,d)),  borderColor:"#F59E0B", backgroundColor:"transparent",            fill:false, tension:0.3, pointRadius:3, borderWidth:2}
+            {label:"Visites",  data:(data.visits.by_day||[]).map(d=>d.count), borderColor:"#00BC70", backgroundColor:"rgba(0,188,112,0.08)", fill:true,  tension:0.3, pointRadius:2},
+            {label:"Recaps",   data:dDates.map(d=>dv(data.summary.by_day,d)),  borderColor:"#3B82F6", backgroundColor:"transparent",            fill:false, tension:0.3, pointRadius:3, borderWidth:2},
+            {label:"Exports",  data:dDates.map(d=>dv(data.exports.by_day,d)),  borderColor:"#F59E0B", backgroundColor:"transparent",            fill:false, tension:0.3, pointRadius:3, borderWidth:2}
           ]
         },
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"top",labels:{font:{size:11,weight:"bold"}}}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
       });
 
       // ── Fil de l'eau ──
-      _feedAllRows = data.feed || [];
-      const filterVal = document.getElementById("feedFilter")?.value || "";
-      const filtered = filterVal ? _feedAllRows.filter(r=>r.event===filterVal) : _feedAllRows;
-      _renderFeed(filtered);
+      _feedAll = data.feed || [];
+      const fv = document.getElementById("feedFilter")?.value || "";
+      _renderFeed(fv ? _feedAll.filter(r=>r.event===fv) : _feedAll);
 
     } catch(e) {
       console.error("User activity error:", e);
       const div = document.getElementById("feedTimeline");
-      if(div) div.innerHTML = `<div class="muted" style="padding:16px">Erreur : ${e.message}</div>`;
+      if(div) div.innerHTML = `<div class="muted" style="padding:16px;color:#DC2626">Erreur API : ${e.message||e}</div>`;
     }
   }
 
-  $("#btnRefreshUsers")?.addEventListener("click", () => refreshUserActivity());
+  // Sélecteur de mois utilisateurs
+  document.getElementById("btnPrevMonthU")?.addEventListener("click", () => {
+    currentMonthU.setMonth(currentMonthU.getMonth()-1);
+    _updateMonthLabelU();
+    refreshUserActivity();
+  });
+  document.getElementById("btnNextMonthU")?.addEventListener("click", () => {
+    currentMonthU.setMonth(currentMonthU.getMonth()+1);
+    _updateMonthLabelU();
+    refreshUserActivity();
+  });
+  document.getElementById("btnRefreshUsers")?.addEventListener("click", () => refreshUserActivity());
 
-  // ── Initialisation export range : dates par défaut = mois en cours ──
-  (function() {
+  // ── Export CSV par plage ──
+  (function(){
     const n = new Date();
-    const y = n.getFullYear(), m = String(n.getMonth()+1).padStart(2,"0"), d = String(n.getDate()).padStart(2,"0");
-    const fromEl = document.getElementById("exportDateFrom");
-    const toEl   = document.getElementById("exportDateTo");
-    if(fromEl) fromEl.value = `${y}-${m}-01`;
-    if(toEl)   toEl.value   = `${y}-${m}-${d}`;
+    const y=n.getFullYear(), m=String(n.getMonth()+1).padStart(2,"0"), d=String(n.getDate()).padStart(2,"0");
+    const f=document.getElementById("exportDateFrom"), t=document.getElementById("exportDateTo");
+    if(f) f.value=`${y}-${m}-01`;
+    if(t) t.value=`${y}-${m}-${d}`;
   })();
 
   document.getElementById("btnExportRange")?.addEventListener("click", async () => {
     const from  = document.getElementById("exportDateFrom")?.value;
     const to    = document.getElementById("exportDateTo")?.value;
     const event = document.getElementById("exportEventType")?.value;
-    const status = document.getElementById("exportRangeStatus");
-    if(!from||!to) { alert("Veuillez renseigner les deux dates."); return; }
-    if(from>to)    { alert("La date de debut doit etre avant la date de fin."); return; }
+    const status= document.getElementById("exportRangeStatus");
+    if(!from||!to)  { alert("Veuillez renseigner les deux dates."); return; }
+    if(from>to)     { alert("La date de debut doit etre avant la date de fin."); return; }
     let url = `/api/kpi/export-range.csv?date_from=${from}&date_to=${to}`;
     if(event) url += `&event=${encodeURIComponent(event)}`;
     const btn = document.getElementById("btnExportRange");
     try {
-      btn.disabled = true; btn.textContent = "Export...";
+      btn.disabled=true; btn.textContent="Export...";
       const res = await fetch(url, {headers:{"Authorization":"Bearer "+token}});
       if(!res.ok) throw new Error("HTTP "+res.status);
       const blob = await res.blob();
       const fname = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "kpi_export.csv";
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = fname;
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(a.href),2500);
-      if(status){ status.textContent="✅ Fichier telecharge"; status.style.display="block"; setTimeout(()=>status.style.display="none",3000); }
+      if(status){status.textContent="✅ Fichier telecharge";status.style.display="block";setTimeout(()=>status.style.display="none",3500);}
     } catch(e) {
       alert("Erreur export : "+(e?.message||e));
     } finally {

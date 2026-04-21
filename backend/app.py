@@ -452,8 +452,11 @@ def kpi_user_logins(authorization: str | None = Header(default=None)):
 
 
 @app.get("/api/kpi/user-stats")
-def kpi_user_stats(authorization: str | None = Header(default=None)):
-    """Statistiques activité : visites de page, projets finalisés, exports PDF."""
+def kpi_user_stats(
+    month: str = None,
+    authorization: str | None = Header(default=None)
+):
+    """Statistiques activité : visites, projets finalisés, exports. month=YYYY-MM optionnel."""
     require_auth(authorization)
     con = _db()
     cur = con.cursor()
@@ -474,41 +477,25 @@ def kpi_user_stats(authorization: str | None = Header(default=None)):
         """, (event_name,))
         return [{"date": d, "count": c} for d, c in cur.fetchall()][::-1]
 
-    def total(event_name):
+    def total_ev(event_name):
         cur.execute("SELECT COUNT(*) FROM kpi_events WHERE event = ?", (event_name,))
         return cur.fetchone()[0]
 
-    def feed(month_str):
-        """Fil de l'eau du mois : tous les events utiles triés par date desc."""
-        cur.execute("""
-            SELECT ts_utc, event, payload_json, session_id
-            FROM kpi_events
-            WHERE ts_utc >= ? AND ts_utc < ?
-              AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera')
-            ORDER BY ts_utc DESC
-            LIMIT 500
-        """, (month_str + "-01", month_str[:4] + "-" + str(int(month_str[5:7]) % 12 + 1).zfill(2) + "-01"
-              if month_str[5:7] != "12"
-              else str(int(month_str[:4]) + 1) + "-01-01"))
-        rows = []
-        for ts, ev, pj, sid in cur.fetchall():
-            try:
-                payload = json.loads(pj) if pj else {}
-            except Exception:
-                payload = {}
-            rows.append({"ts": ts, "event": ev, "session_id": sid or "", "payload": payload})
-        return rows
-
-    # Mois en cours pour le fil de l'eau
+    # Mois cible pour le fil de l'eau
     now = datetime.now(timezone.utc)
-    current_month_str = now.strftime("%Y-%m")
-    # Gérer le calcul du mois suivant proprement
-    y, m = int(current_month_str[:4]), int(current_month_str[5:7])
-    if m < 12:
-        next_month = f"{y}-{m+1:02d}-01"
+    if month and len(month) == 7:
+        try:
+            y, m = int(month[:4]), int(month[5:7])
+        except ValueError:
+            y, m = now.year, now.month
     else:
-        next_month = f"{y+1}-01-01"
-    current_month_start = f"{current_month_str}-01"
+        y, m = now.year, now.month
+
+    month_start = f"{y}-{m:02d}-01"
+    if m < 12:
+        month_end = f"{y}-{m+1:02d}-01"
+    else:
+        month_end = f"{y+1}-01-01"
 
     cur.execute("""
         SELECT ts_utc, event, payload_json, session_id
@@ -516,21 +503,28 @@ def kpi_user_stats(authorization: str | None = Header(default=None)):
         WHERE ts_utc >= ? AND ts_utc < ?
           AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera')
         ORDER BY ts_utc DESC LIMIT 500
-    """, (current_month_start, next_month))
+    """, (month_start, month_end))
+
     feed_rows = []
     for ts, ev, pj, sid in cur.fetchall():
         try:
             payload = json.loads(pj) if pj else {}
         except Exception:
             payload = {}
-        feed_rows.append({"ts": ts, "event": ev, "session_id": (sid or "")[:12], "payload": payload})
+        feed_rows.append({
+            "ts": ts,
+            "event": ev,
+            "session_id": (sid or "")[:12],
+            "payload": payload
+        })
 
     con.close()
     return {
-        "visits":  {"total": total("page_view"),        "by_month": monthly("page_view"),        "by_day": daily("page_view")},
-        "summary": {"total": total("reach_summary"),     "by_month": monthly("reach_summary"),     "by_day": daily("reach_summary")},
-        "exports": {"total": total("export_pdf_click"),  "by_month": monthly("export_pdf_click"),  "by_day": daily("export_pdf_click")},
-        "feed":    feed_rows,
+        "month": f"{y}-{m:02d}",
+        "visits":  {"total": total_ev("page_view"),       "by_month": monthly("page_view"),       "by_day": daily("page_view")},
+        "summary": {"total": total_ev("reach_summary"),   "by_month": monthly("reach_summary"),   "by_day": daily("reach_summary")},
+        "exports": {"total": total_ev("export_pdf_click"),"by_month": monthly("export_pdf_click"),"by_day": daily("export_pdf_click")},
+        "feed": feed_rows,
     }
 
 
