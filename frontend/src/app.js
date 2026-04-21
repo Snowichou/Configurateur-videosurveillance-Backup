@@ -1345,76 +1345,64 @@ const KPI = (() => {
 
     const nvr_id = proj?.nvrPick?.nvr?.id || proj?.nvr?.id || null;
 
-    // ⚠️ adapte si ton champ exact diffère (on couvre plusieurs cas)
-    const retention_days =
-      Number(proj?.storage?.days ?? proj?.storageDays ?? proj?.retention_days ?? proj?.retentionDays ?? NaN);
-    const retention_days_ok = Number.isFinite(retention_days) ? retention_days : null;
-
-    // ⚠️ config_type : MODEL.projectUseCase est la source de vérité (type de site saisi par l'utilisateur)
+    // ── Config type ──
     const config_type =
       MODEL?.projectUseCase ||
-      proj?.siteType ||
-      proj?.vertical ||
-      proj?.environment ||
+      proj?.siteType || proj?.vertical || proj?.environment ||
       (cam_total_qty >= 8 ? "multi-cam" : "petit-site");
 
+    // ── Compléments ──
     const comp = MODEL?.complements || {};
-    const screen_enabled = !!comp?.screen?.enabled;
+    const screen_enabled    = !!comp?.screen?.enabled;
     const enclosure_enabled = !!comp?.enclosure?.enabled;
-    const signage_enabled = !!comp?.signage?.enabled;
+    const signage_enabled   = !!comp?.signage?.enabled;
+    const screen_size_inch  = screen_enabled ? (Number(comp?.screen?.sizeInch || 0) || null) : null;
+    const screen_qty        = screen_enabled ? (Number(comp?.screen?.qty || 1) || 1) : null;
+    const signage_scope     = signage_enabled ? String(comp?.signage?.scope || "Public") : null;
+    const signage_qty       = signage_enabled ? (Number(comp?.signage?.qty || 1) || 1) : null;
 
-    const screen_size_inch = screen_enabled ? (Number(comp?.screen?.sizeInch || 0) || null) : null;
-    const screen_qty = screen_enabled ? (Number(comp?.screen?.qty || 1) || 1) : null;
-
-    const signage_scope = signage_enabled ? String(comp?.signage?.scope || "Public") : null;
-    const signage_qty = signage_enabled ? (Number(comp?.signage?.qty || 1) || 1) : null;
-
-    // HDD recommandé
-    const hdd_ref = proj?.disks?.hddRef || null;
-    const hdd_id  = hdd_ref?.id || null;
+    // ── HDD ──
+    const hdd_ref  = proj?.disks?.hddRef || null;
+    const hdd_id   = hdd_ref?.id || null;
     const hdd_name = hdd_ref?.name || null;
     const hdd_qty  = (hdd_ref && proj?.disks?.count) ? Number(proj.disks.count) : null;
 
-    // ── Stockage et enregistrement (depuis proj.storageParams) ──
+    // ── Stockage — lire depuis proj.storageParams (source de vérité de computeProject) ──
     const sp = proj?.storageParams || {};
-    const required_tb  = Number(proj?.requiredTB)  > 0 ? Number(proj.requiredTB)  : null;
-    const total_mbps   = Number(proj?.totalInMbps) > 0 ? Number(proj.totalInMbps) : null;
-    const days_retention = sp.daysRetention ?? null;
-    const hours_per_day  = sp.hoursPerDay  ?? null;
-    const codec = sp.codec ?? null;
-    const fps   = sp.ips   ?? null;
-    const rec_mode = sp.mode ?? null;
+    const required_tb = Number(proj?.requiredTB ?? proj?.rawRequiredTB ?? 0) > 0
+      ? Number(proj?.requiredTB ?? proj?.rawRequiredTB) : null;
+    const total_mbps  = Number(proj?.totalInMbps ?? 0) > 0
+      ? Number(proj.totalInMbps) : null;
+
+    // ── Enregistrement ──
+    const rec_codec = sp.codec ?? MODEL?.recording?.codec ?? null;
+    const rec_fps   = sp.ips   ?? MODEL?.recording?.fps   ?? null;
+    const rec_days  = sp.daysRetention  ?? MODEL?.recording?.daysRetention  ?? null;
+    const rec_hours = sp.hoursPerDay    ?? MODEL?.recording?.hoursPerDay    ?? null;
+    const rec_mode  = sp.mode           ?? MODEL?.recording?.mode           ?? null;
 
     return {
       sid: getSessionId(),
       config_type,
       cam_total_qty,
       unique_cam_models: cams.length,
-      cameras: cams, // 📊 KPI le plus utile
+      cameras: cams,
       nvr_id,
-      retention_days: retention_days_ok,
-      hdd_id,
-      hdd_name,
-      hdd_qty,
-      // ── Stockage ──
-      required_tb,
-      total_mbps,
-      // ── Enregistrement ──
+      // ── Stockage (noms alignés avec kpiConfigSnapshot) ──
+      requiredTB:  required_tb,
+      totalInMbps: total_mbps,
       recording: {
-        days_retention,
-        hours_per_day,
-        codec,
-        fps,
-        mode: rec_mode,
+        daysRetention: rec_days,
+        hoursPerDay:   rec_hours,
+        codec:         rec_codec,
+        fps:           rec_fps,
+        mode:          rec_mode,
       },
+      hdd_id, hdd_name, hdd_qty,
       complements: {
-        screen_enabled,
-        screen_size_inch,
-        screen_qty,
+        screen_enabled, screen_size_inch, screen_qty,
         enclosure_enabled,
-        signage_enabled,
-        signage_scope,
-        signage_qty,
+        signage_enabled, signage_scope, signage_qty,
       },
     };
   }
@@ -9035,14 +9023,11 @@ bind(DOM.btnCompute, "click", () => {
     MODEL.ui.resultsShown = true;
     const summaryIdx = STEPS.findIndex(s => s.id === "summary");
     MODEL.stepIndex = summaryIdx >= 0 ? summaryIdx : MODEL.stepIndex + 1;
-
-    // ── KPI : projet finalisé (page récapitulatif atteinte) ──
+    // ── KPI : projet finalisé ──
     try {
-      if (typeof KPI !== "undefined" && KPI?.sendNowait) {
+      if (typeof KPI !== "undefined" && KPI?.sendNowait)
         KPI.sendNowait("reach_summary", KPI.snapshot(proj));
-      }
     } catch {}
-
     syncResultsUI();
     render();
     return;

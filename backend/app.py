@@ -445,9 +445,15 @@ def kpi_export(authorization: str | None = Header(default=None)):
         headers={"Content-Disposition": 'attachment; filename="kpi_export.csv"'}
     )
 
+@app.get("/api/kpi/user-logins")
+def kpi_user_logins(authorization: str | None = Header(default=None)):
+    """Rétrocompatibilité — redirige vers /api/kpi/user-stats."""
+    return kpi_user_stats(authorization)
+
+
 @app.get("/api/kpi/user-stats")
 def kpi_user_stats(authorization: str | None = Header(default=None)):
-    """Statistiques activité utilisateurs : visites, projets finalisés, exports."""
+    """Statistiques activité : visites de page, projets finalisés, exports PDF."""
     require_auth(authorization)
     con = _db()
     cur = con.cursor()
@@ -472,26 +478,59 @@ def kpi_user_stats(authorization: str | None = Header(default=None)):
         cur.execute("SELECT COUNT(*) FROM kpi_events WHERE event = ?", (event_name,))
         return cur.fetchone()[0]
 
-    # Visites de page (page_view)
-    visits_by_month = monthly("page_view")
-    visits_by_day   = daily("page_view")
-    visits_total    = total("page_view")
+    def feed(month_str):
+        """Fil de l'eau du mois : tous les events utiles triés par date desc."""
+        cur.execute("""
+            SELECT ts_utc, event, payload_json, session_id
+            FROM kpi_events
+            WHERE ts_utc >= ? AND ts_utc < ?
+              AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera')
+            ORDER BY ts_utc DESC
+            LIMIT 500
+        """, (month_str + "-01", month_str[:4] + "-" + str(int(month_str[5:7]) % 12 + 1).zfill(2) + "-01"
+              if month_str[5:7] != "12"
+              else str(int(month_str[:4]) + 1) + "-01-01"))
+        rows = []
+        for ts, ev, pj, sid in cur.fetchall():
+            try:
+                payload = json.loads(pj) if pj else {}
+            except Exception:
+                payload = {}
+            rows.append({"ts": ts, "event": ev, "session_id": sid or "", "payload": payload})
+        return rows
 
-    # Projets finalisés (reach_summary)
-    summary_by_month = monthly("reach_summary")
-    summary_by_day   = daily("reach_summary")
-    summary_total    = total("reach_summary")
+    # Mois en cours pour le fil de l'eau
+    now = datetime.now(timezone.utc)
+    current_month_str = now.strftime("%Y-%m")
+    # Gérer le calcul du mois suivant proprement
+    y, m = int(current_month_str[:4]), int(current_month_str[5:7])
+    if m < 12:
+        next_month = f"{y}-{m+1:02d}-01"
+    else:
+        next_month = f"{y+1}-01-01"
+    current_month_start = f"{current_month_str}-01"
 
-    # Exports PDF (export_pdf_click)
-    export_by_month = monthly("export_pdf_click")
-    export_by_day   = daily("export_pdf_click")
-    export_total    = total("export_pdf_click")
+    cur.execute("""
+        SELECT ts_utc, event, payload_json, session_id
+        FROM kpi_events
+        WHERE ts_utc >= ? AND ts_utc < ?
+          AND event IN ('page_view','compute_project','reach_summary','export_pdf_click','validate_camera')
+        ORDER BY ts_utc DESC LIMIT 500
+    """, (current_month_start, next_month))
+    feed_rows = []
+    for ts, ev, pj, sid in cur.fetchall():
+        try:
+            payload = json.loads(pj) if pj else {}
+        except Exception:
+            payload = {}
+        feed_rows.append({"ts": ts, "event": ev, "session_id": (sid or "")[:12], "payload": payload})
 
     con.close()
     return {
-        "visits":  {"total": visits_total,  "by_month": visits_by_month,  "by_day": visits_by_day},
-        "summary": {"total": summary_total, "by_month": summary_by_month, "by_day": summary_by_day},
-        "exports": {"total": export_total,  "by_month": export_by_month,  "by_day": export_by_day},
+        "visits":  {"total": total("page_view"),        "by_month": monthly("page_view"),        "by_day": daily("page_view")},
+        "summary": {"total": total("reach_summary"),     "by_month": monthly("reach_summary"),     "by_day": daily("reach_summary")},
+        "exports": {"total": total("export_pdf_click"),  "by_month": monthly("export_pdf_click"),  "by_day": daily("export_pdf_click")},
+        "feed":    feed_rows,
     }
 
 
@@ -502,31 +541,33 @@ def kpi_export_range(
     event: str = None,
     authorization: str | None = Header(default=None)
 ):
-    """Export CSV KPI sur une plage de dates personnalisée (YYYY-MM-DD)."""
+    """Export CSV KPI sur plage de dates personnalisée. date_from et date_to au format YYYY-MM-DD."""
     require_auth(authorization)
-    # Validation basique
-    import re
-    date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-    if not date_re.match(date_from) or not date_re.match(date_to):
+    import re as _re
+    if not _re.match(r"^\d{4}-\d{2}-\d{2}$", date_from) or not _re.match(r"^\d{4}-\d{2}-\d{2}$", date_to):
         raise HTTPException(400, "Format attendu : YYYY-MM-DD")
     con = _db()
     cur = con.cursor()
+    ts_to = date_to + "T23:59:59"
     if event:
         cur.execute(
-            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events WHERE ts_utc >= ? AND ts_utc < ? AND event = ? ORDER BY id DESC",
-            (date_from, date_to + "T23:59:59", event)
+            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events "
+            "WHERE ts_utc >= ? AND ts_utc <= ? AND event = ? ORDER BY id DESC",
+            (date_from, ts_to, event)
         )
     else:
         cur.execute(
-            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events WHERE ts_utc >= ? AND ts_utc < ? ORDER BY id DESC",
-            (date_from, date_to + "T23:59:59")
+            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events "
+            "WHERE ts_utc >= ? AND ts_utc <= ? ORDER BY id DESC",
+            (date_from, ts_to)
         )
     out = io.StringIO()
     w = csv.writer(out, delimiter=";")
     w.writerow(["ts_utc", "session_id", "event", "payload_json", "path", "ua", "ip"])
     w.writerows(cur.fetchall())
     con.close()
-    fname = f"kpi_{date_from}_{date_to}{('_' + event) if event else ''}.csv"
+    safe_event = ("_" + event) if event else ""
+    fname = f"kpi_{date_from}_{date_to}{safe_event}.csv"
     return Response(
         content=out.getvalue().encode("utf-8"),
         media_type="text/csv; charset=utf-8",
