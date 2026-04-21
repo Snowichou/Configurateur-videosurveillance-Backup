@@ -445,53 +445,93 @@ def kpi_export(authorization: str | None = Header(default=None)):
         headers={"Content-Disposition": 'attachment; filename="kpi_export.csv"'}
     )
 
-@app.get("/api/kpi/user-logins")
-def kpi_user_logins(authorization: str | None = Header(default=None)):
-    """Statistiques de connexion Azure SSO par mois et par utilisateur."""
+@app.get("/api/kpi/user-stats")
+def kpi_user_stats(authorization: str | None = Header(default=None)):
+    """Statistiques activité utilisateurs : visites, projets finalisés, exports."""
     require_auth(authorization)
     con = _db()
     cur = con.cursor()
 
-    cur.execute("""
-        SELECT substr(ts_utc,1,7) m, COUNT(*) c
-        FROM kpi_events WHERE event = 'azure_login'
-        GROUP BY m ORDER BY m DESC LIMIT 12
-    """)
-    by_month = [{"month": m, "count": c} for m, c in cur.fetchall()][::-1]
+    def monthly(event_name):
+        cur.execute("""
+            SELECT substr(ts_utc,1,7) m, COUNT(*) c
+            FROM kpi_events WHERE event = ?
+            GROUP BY m ORDER BY m DESC LIMIT 12
+        """, (event_name,))
+        return [{"month": m, "count": c} for m, c in cur.fetchall()][::-1]
 
-    cur.execute("""
-        SELECT json_extract(payload_json,'$.email') email,
-               json_extract(payload_json,'$.name')  name,
-               COUNT(*) c
-        FROM kpi_events WHERE event = 'azure_login'
-        GROUP BY email ORDER BY c DESC LIMIT 20
-    """)
-    top_users = [{"email": e or "?", "name": n or "?", "count": c} for e, n, c in cur.fetchall()]
+    def daily(event_name):
+        cur.execute("""
+            SELECT substr(ts_utc,1,10) d, COUNT(*) c
+            FROM kpi_events WHERE event = ?
+            GROUP BY d ORDER BY d DESC LIMIT 30
+        """, (event_name,))
+        return [{"date": d, "count": c} for d, c in cur.fetchall()][::-1]
 
-    cur.execute("""
-        SELECT substr(ts_utc,1,10) d, COUNT(*) c
-        FROM kpi_events WHERE event = 'azure_login'
-        GROUP BY d ORDER BY d DESC LIMIT 30
-    """)
-    by_day = [{"date": d, "count": c} for d, c in cur.fetchall()][::-1]
+    def total(event_name):
+        cur.execute("SELECT COUNT(*) FROM kpi_events WHERE event = ?", (event_name,))
+        return cur.fetchone()[0]
 
-    cur.execute("SELECT COUNT(*) FROM kpi_events WHERE event = 'azure_login'")
-    total = cur.fetchone()[0]
+    # Visites de page (page_view)
+    visits_by_month = monthly("page_view")
+    visits_by_day   = daily("page_view")
+    visits_total    = total("page_view")
 
-    cur.execute("""
-        SELECT COUNT(DISTINCT json_extract(payload_json,'$.email'))
-        FROM kpi_events WHERE event = 'azure_login'
-    """)
-    unique_users = cur.fetchone()[0]
+    # Projets finalisés (reach_summary)
+    summary_by_month = monthly("reach_summary")
+    summary_by_day   = daily("reach_summary")
+    summary_total    = total("reach_summary")
+
+    # Exports PDF (export_pdf_click)
+    export_by_month = monthly("export_pdf_click")
+    export_by_day   = daily("export_pdf_click")
+    export_total    = total("export_pdf_click")
 
     con.close()
     return {
-        "total": total,
-        "unique_users": unique_users,
-        "by_month": by_month,
-        "by_day": by_day,
-        "top_users": top_users,
+        "visits":  {"total": visits_total,  "by_month": visits_by_month,  "by_day": visits_by_day},
+        "summary": {"total": summary_total, "by_month": summary_by_month, "by_day": summary_by_day},
+        "exports": {"total": export_total,  "by_month": export_by_month,  "by_day": export_by_day},
     }
+
+
+@app.get("/api/kpi/export-range.csv")
+def kpi_export_range(
+    date_from: str,
+    date_to: str,
+    event: str = None,
+    authorization: str | None = Header(default=None)
+):
+    """Export CSV KPI sur une plage de dates personnalisée (YYYY-MM-DD)."""
+    require_auth(authorization)
+    # Validation basique
+    import re
+    date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    if not date_re.match(date_from) or not date_re.match(date_to):
+        raise HTTPException(400, "Format attendu : YYYY-MM-DD")
+    con = _db()
+    cur = con.cursor()
+    if event:
+        cur.execute(
+            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events WHERE ts_utc >= ? AND ts_utc < ? AND event = ? ORDER BY id DESC",
+            (date_from, date_to + "T23:59:59", event)
+        )
+    else:
+        cur.execute(
+            "SELECT ts_utc, session_id, event, payload_json, path, ua, ip FROM kpi_events WHERE ts_utc >= ? AND ts_utc < ? ORDER BY id DESC",
+            (date_from, date_to + "T23:59:59")
+        )
+    out = io.StringIO()
+    w = csv.writer(out, delimiter=";")
+    w.writerow(["ts_utc", "session_id", "event", "payload_json", "path", "ua", "ip"])
+    w.writerows(cur.fetchall())
+    con.close()
+    fname = f"kpi_{date_from}_{date_to}{('_' + event) if event else ''}.csv"
+    return Response(
+        content=out.getvalue().encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'}
+    )
 
 
 class ResetMonthIn(BaseModel):

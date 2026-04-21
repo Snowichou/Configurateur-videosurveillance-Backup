@@ -1375,6 +1375,16 @@ const KPI = (() => {
     const hdd_name = hdd_ref?.name || null;
     const hdd_qty  = (hdd_ref && proj?.disks?.count) ? Number(proj.disks.count) : null;
 
+    // ── Stockage et enregistrement (depuis proj.storageParams) ──
+    const sp = proj?.storageParams || {};
+    const required_tb  = Number(proj?.requiredTB)  > 0 ? Number(proj.requiredTB)  : null;
+    const total_mbps   = Number(proj?.totalInMbps) > 0 ? Number(proj.totalInMbps) : null;
+    const days_retention = sp.daysRetention ?? null;
+    const hours_per_day  = sp.hoursPerDay  ?? null;
+    const codec = sp.codec ?? null;
+    const fps   = sp.ips   ?? null;
+    const rec_mode = sp.mode ?? null;
+
     return {
       sid: getSessionId(),
       config_type,
@@ -1386,6 +1396,17 @@ const KPI = (() => {
       hdd_id,
       hdd_name,
       hdd_qty,
+      // ── Stockage ──
+      required_tb,
+      total_mbps,
+      // ── Enregistrement ──
+      recording: {
+        days_retention,
+        hours_per_day,
+        codec,
+        fps,
+        mode: rec_mode,
+      },
       complements: {
         screen_enabled,
         screen_size_inch,
@@ -9014,6 +9035,14 @@ bind(DOM.btnCompute, "click", () => {
     MODEL.ui.resultsShown = true;
     const summaryIdx = STEPS.findIndex(s => s.id === "summary");
     MODEL.stepIndex = summaryIdx >= 0 ? summaryIdx : MODEL.stepIndex + 1;
+
+    // ── KPI : projet finalisé (page récapitulatif atteinte) ──
+    try {
+      if (typeof KPI !== "undefined" && KPI?.sendNowait) {
+        KPI.sendNowait("reach_summary", KPI.snapshot(proj));
+      }
+    } catch {}
+
     syncResultsUI();
     render();
     return;

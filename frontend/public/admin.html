@@ -425,7 +425,7 @@
       <div class="tabs">
         <button class="tabBtn on" data-tab="catalog">Catalogues</button>
         <button class="tabBtn" data-tab="kpi">KPI Metier</button>
-        <button class="tabBtn" data-tab="users">Utilisateurs SSO</button>
+        <button class="tabBtn" data-tab="users">Activite Utilisateurs</button>
         <button class="tabBtn" data-tab="health">Sante BDD</button>
         <button class="tabBtn" data-tab="events">Evenements bruts</button>
       </div>
@@ -678,63 +678,88 @@
       </div>
     </section>
 
-    <!-- UTILISATEURS SSO -->
+    <!-- ACTIVITE UTILISATEURS -->
     <section id="tab_users" class="hidden">
-      <div class="row" style="margin-bottom:14px;justify-content:space-between">
-        <div style="font-weight:950;font-size:18px">Connexions Azure SSO</div>
-        <button id="btnRefreshUsers" class="btn">⟳ Rafraichir</button>
+      <div class="row" style="margin-bottom:14px;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="font-weight:950;font-size:18px">Activite Utilisateurs</div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button id="btnRefreshUsers" class="btn">⟳ Rafraichir</button>
+        </div>
       </div>
 
+      <!-- KPI tiles : 3 métriques clés -->
       <div class="kpiGrid" style="margin-bottom:14px">
         <div class="kpiTile">
-          <div class="kpiLabel">Total connexions</div>
-          <div id="kpiLoginTotal" class="kpiVal">--</div>
+          <div class="kpiLabel">Visites ce mois</div>
+          <div id="kpiVisitsMonth" class="kpiVal">--</div>
+          <div id="kpiVisitsTrend" class="kpiTrend"></div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Utilisateurs uniques</div>
-          <div id="kpiLoginUnique" class="kpiVal">--</div>
+          <div class="kpiLabel">Visites totales</div>
+          <div id="kpiVisitsTotal" class="kpiVal">--</div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Connexions ce mois</div>
-          <div id="kpiLoginMonth" class="kpiVal">--</div>
+          <div class="kpiLabel">Projets finalises (recap)</div>
+          <div id="kpiSummaryMonth" class="kpiVal">--</div>
+          <div id="kpiSummaryTrend" class="kpiTrend"></div>
         </div>
         <div class="kpiTile">
-          <div class="kpiLabel">Mois le plus actif</div>
-          <div id="kpiLoginBestMonth" class="kpiVal" style="font-size:18px">--</div>
+          <div class="kpiLabel">Exports PDF</div>
+          <div id="kpiExportMonth" class="kpiVal">--</div>
+          <div id="kpiExportTrend" class="kpiTrend"></div>
         </div>
       </div>
 
+      <!-- Graphiques : visites + projets finalisés -->
       <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
         <div class="card">
-          <div class="chartTitle">Connexions par mois (12 derniers mois)</div>
-          <div style="height:250px"><canvas id="chartUserLogins"></canvas></div>
+          <div class="chartTitle">Visites de page par mois (12 mois)</div>
+          <div style="height:230px"><canvas id="chartVisitsMonth"></canvas></div>
         </div>
         <div class="card">
-          <div class="chartTitle">Connexions par jour (30 derniers jours)</div>
-          <div style="height:250px"><canvas id="chartUserLoginsDay"></canvas></div>
+          <div class="chartTitle">Projets finalises + Exports par mois</div>
+          <div style="height:230px"><canvas id="chartFunnelMonth"></canvas></div>
         </div>
       </div>
 
+      <!-- Graphique journalier (30j) -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="chartTitle">Activite quotidienne — 30 derniers jours</div>
+        <div style="height:200px"><canvas id="chartActivityDay"></canvas></div>
+      </div>
+
+      <!-- Export personnalisé par plage de dates -->
       <div class="card">
-        <div class="h">
+        <div class="h" style="margin-bottom:12px">
           <div>
-            <div class="h1">Top utilisateurs</div>
-            <div class="h2">Classement par nombre de connexions</div>
+            <div class="h1">Export CSV par plage de dates</div>
+            <div class="h2">Extraction flexible selon la periode et le type d'evenement</div>
           </div>
         </div>
-        <div class="tableWrap" style="max-height:400px">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:40px">#</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th style="width:110px;text-align:right">Connexions</th>
-              </tr>
-            </thead>
-            <tbody id="topUsersTable"></tbody>
-          </table>
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Du</label>
+            <input type="date" id="exportDateFrom" class="in" style="min-width:160px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Au</label>
+            <input type="date" id="exportDateTo" class="in" style="min-width:160px">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase">Evenement</label>
+            <select id="exportEventType" class="in" style="min-width:200px">
+              <option value="">Tous les evenements</option>
+              <option value="page_view">page_view (visites)</option>
+              <option value="compute_project">compute_project</option>
+              <option value="reach_summary">reach_summary (recap)</option>
+              <option value="export_pdf_click">export_pdf_click</option>
+              <option value="validate_camera">validate_camera</option>
+              <option value="azure_login">azure_login</option>
+            </select>
+          </div>
+          <button id="btnExportRange" class="btn primary" style="white-space:nowrap">⬇ Telecharger CSV</button>
         </div>
+        <div id="exportRangeStatus" style="margin-top:10px;font-size:13px;font-weight:700;color:var(--green);display:none"></div>
       </div>
     </section>
 
@@ -837,8 +862,8 @@
   let chartDori = null;
   let chartEmplacement = null;
   let chartDistances = null;
-  let chartUserLogins = null;
-  let chartUserLoginsDay = null;
+  let chartUserLogins = null;    // conservé pour compat
+  let chartUserLoginsDay = null; // conservé pour compat
 
   // ==================== AUTH ====================
   function showAdmin() {
@@ -946,7 +971,7 @@
     });
     if(tab === "kpi") refreshKpiMetier();
     if(tab === "health") refreshHealth();
-    if(tab === "users") refreshUserLogins();
+    if(tab === "users") refreshUserActivity();
   }));
 
   // ==================== CATALOG ====================
@@ -1106,18 +1131,26 @@
           const hddLabel = hddName ? `${hddId} — ${hddName}` : hddId + (hddQty > 1 ? ` x${hddQty}` : "");
           hddCount[hddLabel] = (hddCount[hddLabel] || 0) + 1;
         }
-        if(st.required_tb > 0) { totalTB += st.required_tb; storageCount++; }
-        if(st.total_mbps > 0) { totalMbps += st.total_mbps; mbpsCount++; }
-        
-        // Enregistrement
+
+        // Stockage — required_tb au top-level (nouveau) ou dans p.storage (ancien)
+        const reqTB = Number(p.required_tb || st.required_tb || 0);
+        const totMbps = Number(p.total_mbps || st.total_mbps || 0);
+        if(reqTB > 0) { totalTB += reqTB; storageCount++; }
+        if(totMbps > 0) { totalMbps += totMbps; mbpsCount++; }
+
+        // Enregistrement — p.recording (nouveau champ) ou p.recording ancien format
         const rec = p.recording || {};
-        if(rec.days > 0) { totalRetentionDays += rec.days; retentionCount++; }
+        // jours rétention : recording.days_retention (nouveau), ou recording.daysRetention, ou retention_days top-level
+        const daysRet = Number(rec.days_retention ?? rec.daysRetention ?? p.retention_days ?? 0);
+        if(daysRet > 0) { totalRetentionDays += daysRet; retentionCount++; }
         if(rec.codec) {
           const c = String(rec.codec).toUpperCase();
           codecCount[c] = (codecCount[c] || 0) + 1;
         }
-        if(rec.fps > 0) {
-          fpsCount[rec.fps + " IPS"] = (fpsCount[rec.fps + " IPS"] || 0) + 1;
+        // fps : recording.fps (nouveau et ancien)
+        const fpsVal = rec.fps || rec.ips;
+        if(fpsVal > 0) {
+          fpsCount[fpsVal + " IPS"] = (fpsCount[fpsVal + " IPS"] || 0) + 1;
         }
         
         // Compléments
@@ -1694,86 +1727,195 @@
   const btnHealth = $("#btnRefreshHealth");
   if(btnHealth) btnHealth.addEventListener("click", refreshHealth);
 
-  // ==================== UTILISATEURS SSO ====================
-  async function refreshUserLogins() {
+  // ==================== ACTIVITE UTILISATEURS ====================
+  let chartVisitsMonth = null;
+  let chartFunnelMonth = null;
+  let chartActivityDay = null;
+
+  function trendLabel(curr, prev) {
+    if (!prev || prev === 0) return "";
+    const delta = Math.round(((curr - prev) / prev) * 100);
+    return (delta >= 0 ? "↑ +" : "↓ ") + delta + "% vs mois précédent";
+  }
+  function trendClass(curr, prev) {
+    if (!prev || prev === 0) return "";
+    return curr >= prev ? "up" : "down";
+  }
+
+  async function refreshUserActivity() {
     try {
-      const data = await api("/api/kpi/user-logins");
+      const data = await api("/api/kpi/user-stats");
 
-      $("#kpiLoginTotal").textContent  = data.total  || 0;
-      $("#kpiLoginUnique").textContent = data.unique_users || 0;
-
-      // Connexions ce mois
       const now = new Date();
       const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const thisEntry = (data.by_month || []).find(m => m.month === thisMonth);
-      $("#kpiLoginMonth").textContent = thisEntry ? thisEntry.count : 0;
+      const prevDate  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
 
-      // Mois le plus actif
-      const best = (data.by_month || []).reduce((a, b) => b.count > (a?.count||0) ? b : a, null);
-      if (best) {
-        const [y, m] = best.month.split("-");
-        const ml = ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(m)-1];
-        $("#kpiLoginBestMonth").textContent = ml + " " + y + " (" + best.count + ")";
-      } else {
-        $("#kpiLoginBestMonth").textContent = "--";
+      function monthVal(byMonth, m) {
+        return (byMonth || []).find(x => x.month === m)?.count || 0;
       }
 
-      // Graphique par mois
-      const monthLabels = (data.by_month || []).map(m => {
+      // ── Visites ──
+      const visitsNow  = monthVal(data.visits.by_month, thisMonth);
+      const visitsPrev = monthVal(data.visits.by_month, prevMonth);
+      $("#kpiVisitsMonth").textContent = visitsNow;
+      $("#kpiVisitsTotal").textContent = data.visits.total || 0;
+      const vTrend = $("#kpiVisitsTrend");
+      vTrend.textContent   = trendLabel(visitsNow, visitsPrev);
+      vTrend.className     = "kpiTrend " + trendClass(visitsNow, visitsPrev);
+
+      // ── Projets finalisés ──
+      const sumNow  = monthVal(data.summary.by_month, thisMonth);
+      const sumPrev = monthVal(data.summary.by_month, prevMonth);
+      $("#kpiSummaryMonth").textContent = sumNow;
+      const sTrend = $("#kpiSummaryTrend");
+      sTrend.textContent = trendLabel(sumNow, sumPrev);
+      sTrend.className   = "kpiTrend " + trendClass(sumNow, sumPrev);
+
+      // ── Exports PDF ──
+      const expNow  = monthVal(data.exports.by_month, thisMonth);
+      const expPrev = monthVal(data.exports.by_month, prevMonth);
+      $("#kpiExportMonth").textContent = expNow;
+      const eTrend = $("#kpiExportTrend");
+      eTrend.textContent = trendLabel(expNow, expPrev);
+      eTrend.className   = "kpiTrend " + trendClass(expNow, expPrev);
+
+      // ── Graphique visites par mois ──
+      const vLabels = (data.visits.by_month || []).map(m => {
         const [y, mo] = m.month.split("-");
         return ["Jan","Fev","Mar","Avr","Mai","Juin","Juil","Aout","Sep","Oct","Nov","Dec"][parseInt(mo)-1] + " " + y.slice(2);
       });
-      if (chartUserLogins) chartUserLogins.destroy();
-      const canM = document.getElementById("chartUserLogins");
-      if (canM) {
-        chartUserLogins = new Chart(canM, {
+      if (chartVisitsMonth) chartVisitsMonth.destroy();
+      const canV = document.getElementById("chartVisitsMonth");
+      if (canV) {
+        chartVisitsMonth = new Chart(canV, {
           type: "bar",
           data: {
-            labels: monthLabels,
-            datasets: [{ label: "Connexions", data: (data.by_month||[]).map(m=>m.count), backgroundColor: "rgba(0,188,112,0.6)", borderRadius: 6 }]
+            labels: vLabels,
+            datasets: [{
+              label: "Visites", data: (data.visits.by_month||[]).map(m=>m.count),
+              backgroundColor: "rgba(0,188,112,0.6)", borderRadius: 5
+            }]
           },
           options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
         });
       }
 
-      // Graphique par jour
-      if (chartUserLoginsDay) chartUserLoginsDay.destroy();
-      const canD = document.getElementById("chartUserLoginsDay");
-      if (canD) {
-        chartUserLoginsDay = new Chart(canD, {
+      // ── Graphique entonnoir : projets finalisés + exports par mois ──
+      // Aligner les labels sur les visites (12 mois)
+      const fLabels = vLabels;
+      const fMonths = (data.visits.by_month || []).map(m => m.month);
+      const sumData = fMonths.map(m => monthVal(data.summary.by_month, m));
+      const expData = fMonths.map(m => monthVal(data.exports.by_month, m));
+
+      if (chartFunnelMonth) chartFunnelMonth.destroy();
+      const canF = document.getElementById("chartFunnelMonth");
+      if (canF) {
+        chartFunnelMonth = new Chart(canF, {
+          type: "bar",
+          data: {
+            labels: fLabels,
+            datasets: [
+              { label: "Projets finalises", data: sumData, backgroundColor: "rgba(59,130,246,0.6)", borderRadius: 5 },
+              { label: "Exports PDF",       data: expData, backgroundColor: "rgba(245,158,11,0.6)", borderRadius: 5 }
+            ]
+          },
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ position:"top", labels:{ font:{ size:11, weight:"bold" } } } },
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } }, x:{ stacked:false } }
+          }
+        });
+      }
+
+      // ── Graphique journalier 30j : visites + finalisés + exports ──
+      const dLabels = (data.visits.by_day || []).map(d => d.date.slice(5));
+      const dDates  = (data.visits.by_day || []).map(d => d.date);
+      function dayVal(byDay, date) { return (byDay||[]).find(x => x.date === date)?.count || 0; }
+
+      if (chartActivityDay) chartActivityDay.destroy();
+      const canA = document.getElementById("chartActivityDay");
+      if (canA) {
+        chartActivityDay = new Chart(canA, {
           type: "line",
           data: {
-            labels: (data.by_day||[]).map(d => d.date.slice(5)),
-            datasets: [{ label: "Connexions", data: (data.by_day||[]).map(d=>d.count), borderColor:"#3B82F6", backgroundColor:"rgba(59,130,246,0.1)", fill:true, tension:0.3, pointRadius:3 }]
+            labels: dLabels,
+            datasets: [
+              {
+                label: "Visites", data: (data.visits.by_day||[]).map(d=>d.count),
+                borderColor:"#00BC70", backgroundColor:"rgba(0,188,112,0.08)", fill:true, tension:0.3, pointRadius:2
+              },
+              {
+                label: "Recaps", data: dDates.map(d => dayVal(data.summary.by_day, d)),
+                borderColor:"#3B82F6", backgroundColor:"transparent", tension:0.3, pointRadius:3, borderWidth:2
+              },
+              {
+                label: "Exports", data: dDates.map(d => dayVal(data.exports.by_day, d)),
+                borderColor:"#F59E0B", backgroundColor:"transparent", tension:0.3, pointRadius:3, borderWidth:2
+              }
+            ]
           },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ position:"top", labels:{ font:{ size:11, weight:"bold" } } } },
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+          }
         });
       }
 
-      // Tableau top utilisateurs
-      const tbody = document.getElementById("topUsersTable");
-      if (tbody) {
-        const users = data.top_users || [];
-        if (users.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:20px">Aucune connexion Azure enregistree</td></tr>`;
-        } else {
-          tbody.innerHTML = users.map((u, i) => `
-            <tr>
-              <td><span class="rank ${i<3?'top3':''}">${i+1}</span></td>
-              <td style="font-weight:800">${u.name||"—"}</td>
-              <td class="muted mono" style="font-size:12px">${u.email||"—"}</td>
-              <td style="text-align:right;font-weight:900">${u.count}</td>
-            </tr>`).join("");
-        }
-      }
     } catch(e) {
-      console.error("User logins error:", e);
-      const tbody = document.getElementById("topUsersTable");
-      if(tbody) tbody.innerHTML = `<tr><td colspan="4" class="muted" style="padding:12px">Erreur : ${e.message}</td></tr>`;
+      console.error("User activity error:", e);
     }
   }
 
-  $("#btnRefreshUsers")?.addEventListener("click", () => refreshUserLogins());
+  $("#btnRefreshUsers")?.addEventListener("click", () => refreshUserActivity());
+
+  // ── Export CSV par plage de dates ──
+  (function initExportRange() {
+    // Valeurs par défaut : mois en cours
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const firstDay = `${y}-${m}-01`;
+    const today    = `${y}-${m}-${d}`;
+    const fromEl = document.getElementById("exportDateFrom");
+    const toEl   = document.getElementById("exportDateTo");
+    if (fromEl) fromEl.value = firstDay;
+    if (toEl)   toEl.value   = today;
+  })();
+
+  document.getElementById("btnExportRange")?.addEventListener("click", async () => {
+    const from  = document.getElementById("exportDateFrom")?.value;
+    const to    = document.getElementById("exportDateTo")?.value;
+    const event = document.getElementById("exportEventType")?.value;
+    const status = document.getElementById("exportRangeStatus");
+
+    if (!from || !to) { alert("Veuillez renseigner les deux dates."); return; }
+    if (from > to)    { alert("La date de début doit être avant la date de fin."); return; }
+
+    let url = `/api/kpi/export-range.csv?date_from=${from}&date_to=${to}`;
+    if (event) url += `&event=${encodeURIComponent(event)}`;
+
+    try {
+      const btn = document.getElementById("btnExportRange");
+      btn.disabled = true; btn.textContent = "Export en cours...";
+      const res = await fetch(url, { headers: { "Authorization": "Bearer " + token } });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const blob = await res.blob();
+      const fname = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "kpi_export.csv";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2500);
+      if (status) { status.textContent = "✅ Export téléchargé"; status.style.display = "block"; setTimeout(() => status.style.display = "none", 3000); }
+    } catch(e) {
+      alert("Erreur export : " + (e?.message || e));
+    } finally {
+      const btn = document.getElementById("btnExportRange");
+      btn.disabled = false; btn.textContent = "⬇ Telecharger CSV";
+    }
+  });
 
   // ==================== INIT ====================
   checkAuth();
