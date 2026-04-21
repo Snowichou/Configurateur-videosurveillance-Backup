@@ -518,14 +518,16 @@ def kpi_user_stats(
             "payload": payload
         })
 
-    con.close()
-    return {
+    # ⚠️ Construire le résultat AVANT con.close() — les fonctions monthly/daily/total_ev utilisent cur
+    result = {
         "month": f"{y}-{m:02d}",
-        "visits":  {"total": total_ev("page_view"),       "by_month": monthly("page_view"),       "by_day": daily("page_view")},
-        "summary": {"total": total_ev("reach_summary"),   "by_month": monthly("reach_summary"),   "by_day": daily("reach_summary")},
-        "exports": {"total": total_ev("export_pdf_click"),"by_month": monthly("export_pdf_click"),"by_day": daily("export_pdf_click")},
+        "visits":  {"total": total_ev("page_view"),        "by_month": monthly("page_view"),        "by_day": daily("page_view")},
+        "summary": {"total": total_ev("reach_summary"),    "by_month": monthly("reach_summary"),    "by_day": daily("reach_summary")},
+        "exports": {"total": total_ev("export_pdf_click"), "by_month": monthly("export_pdf_click"), "by_day": daily("export_pdf_click")},
         "feed": feed_rows,
     }
+    con.close()
+    return result
 
 
 @app.get("/api/kpi/export-range.csv")
