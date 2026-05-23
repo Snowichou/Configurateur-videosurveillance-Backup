@@ -1,0 +1,84 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderCameraPickCard > snapshot stable 1`] = `
+"
+    <div class="cameraPickCard lvl-ok" style="border-left:4px solid #0f0">
+      <div class="cameraPickTop">
+        <div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--muted);font-size:24px">📷</div>
+
+        <div class="cameraPickMeta">
+          <!-- Header avec nom et score -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="min-width:0;flex:1">
+              <div class="cameraPickTitle" style="font-size:14px;font-weight:900;color:var(--cosmos)">CAM-1</div>
+              <div class="cameraPickName" style="font-size:12px;color:var(--muted);margin-top:2px">Camera One</div>
+            </div>
+            <div style="min-width:55px;padding:8px 10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);text-align:center">
+              <div style="font-size:16px;font-weight:900;color:var(--cosmos)">92</div>
+              <div style="font-size:10px;color:var(--muted)">/100</div>
+            </div>
+          </div>
+
+          <!-- Verdict clair -->
+          <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#efe;border:1px solid #0f030">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px">✅</span>
+              <span style="font-weight:900;color:#0f0">i18n(cam_optimal)</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Parfait</div>
+          </div>
+
+          <!-- Specs clés en badges -->
+          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+            <span class="badgePill" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);color:#1d4ed8;font-weight:900">Turret</span>
+            <span class="badgePill" style="font-weight:900">4 MP</span>
+            <span class="badgePill">IR 30m</span>
+            <span class="badgePill">IP67</span>
+            
+                        
+          </div>
+
+          <!-- Actions -->
+          <div class="cameraPickActions" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button
+              data-action="validateCamera"
+              data-camid="CAM-1"
+              class="btnPrimary"
+              style="flex:1;min-width:140px"
+            >
+              i18n(cam_choose_camera)
+            </button>
+
+            
+              <a class="btnGhost btnDatasheet" href="/data/cam.pdf?lang=fr" target="_blank" rel="noreferrer" style="text-decoration:none">
+                i18n(btn_datasheet)
+              </a>
+            
+            <button
+              class="btnCompare"
+              data-action="uiToggleCompare"
+              data-camid="CAM-1"
+              title="Comparer cette caméra"
+            >⇄ Comparer</button>
+          </div>
+
+          <!-- Détails (accordéon) -->
+          <details style="margin-top:10px">
+            <summary style="cursor:pointer;font-size:12px;font-weight:900;color:var(--muted);padding:6px 0">
+              + i18n(cam_see_details)
+            </summary>
+            <div style="padding:10px;margin-top:6px;background:var(--panel2);border-radius:10px;font-size:12px">
+              <div style="margin-bottom:8px">Parfait</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;color:var(--muted)">
+                <div>• i18n(cam_range): NEXT</div>
+                <div>• i18n(cam_focal): —mm</div>
+                <div>• i18n(cam_low_light): i18n(cam_no)</div>
+                <div>• i18n(cam_poe): —W</div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  "
+`;
