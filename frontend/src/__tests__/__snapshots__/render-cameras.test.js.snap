@@ -1,0 +1,155 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepCameras > snapshot stable nominal 1`] = `
+"
+      <div class="stepSplit">
+        <div class="blocksCol">
+          
+        <div class="recoCard cameraBlockCard" data-action="setActiveBlock" data-bid="b1"
+             style="padding:12px;cursor:pointer;outline:1px solid rgba(0,150,255,.35)">
+          <div class="recoHeader">
+            <div>
+              <div class="recoName">
+                i18n(cam_block) 1
+                
+                • i18n(cam_in_progress)
+                <span style="margin-left:8px" class="badgePill">i18n(cam_active)</span>
+              </div>
+              <div class="muted">i18n(cam_fill_hint)</div>
+            </div>
+            <div class="score">1x</div>
+          </div>
+
+                    <div style="margin-top:10px">
+            <strong>i18n(cam_block_name)</strong>
+            <input
+              data-action="inputBlockLabel"
+              data-bid="b1"
+              type="text"
+              maxlength="60"
+              value=""
+              placeholder="ex: Parking entrée, Couloir RDC…"
+              style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"
+            />
+          </div>
+
+          <div class="kv" style="margin-top:12px">
+            <div>
+              <strong>
+                📍 i18n(cam_placement) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="Intérieur ou extérieur ? Cela détermine la protection IP nécessaire et les caméras compatibles.">i</span>
+              </strong>
+              <select data-action="changeBlockField" data-bid="b1" data-field="emplacement"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
+                <option value="">— Choisir l'emplacement —</option>
+                <option value="interieur" selected>🏠 i18n(cam_interior)</option>
+                <option value="exterieur" >🌧️ i18n(cam_exterior)</option>
+              </select>
+            </div>
+
+            <div>
+              <strong>
+                🎯 i18n(cam_objective) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="Norme EN 62676-4 : Détection = présence humaine | Observation = détails d'une scène | Reconnaissance = distinguer une personne | Identification = reconnaître un visage.">i</span>
+              </strong>
+              <select data-action="changeBlockField" data-bid="b1" data-field="objective"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
+                <option value="">i18n(cam_choose_objective)</option>
+                <option value="detection" selected>👤 i18n(cam_detection_long)</option>
+                <option value="observation" >👁️ i18n(cam_observation_long)</option>
+                <option value="reconnaissance" >🔍 i18n(cam_recognition_long)</option>
+                <option value="identification" >🪪 i18n(cam_identification_long)</option>
+              </select>
+            </div>
+
+            <div>
+              <strong>
+                📏 i18n(cam_distance) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="i18n(cam_tip_distance)">i</span>
+              </strong>
+              <input data-action="inputBlockField" data-bid="b1" data-field="distance_m" type="number" min="1" max="999"
+                value="15" placeholder="Ex: 15"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)" />
+              <div class="muted" style="margin-top:6px">
+                i18n(cam_dori_norm) : OBJ(detection)
+              </div>
+            </div>
+
+            <div>
+              <strong>
+                🔧 i18n(cam_mount_type)
+                <span class="infoTip" data-tip="i18n(cam_tip_mounting)">i</span>
+              </strong>
+              <select data-action="changeBlockField" data-bid="b1" data-field="mounting"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
+                <option value="wall" >🧱 i18n(cam_wall_option)</option>
+                <option value="ceiling" >⬆️ i18n(cam_ceiling_option)</option>
+              </select>
+            </div>
+
+            <div>
+              <strong>
+                🔢 i18n(cam_quantity)
+                <span class="infoTip" data-tip="i18n(cam_tip_quantity)">i</span>
+              </strong>
+              <input data-action="inputBlockQty" data-bid="b1" type="number" min="1" max="999"
+                value="1"
+                title="Combien de caméras identiques souhaitez-vous pour cette configuration ?"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)" />
+            </div>
+
+            <div>
+              <strong title="i18n(cam_quality_title_full)">
+                ⭐ i18n(cam_quality)
+              </strong>
+              <select data-action="changeBlockQuality" data-bid="b1"
+                title="i18n(cam_quality_title)"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
+                <option value="low" >💰 i18n(cam_quality_economic)</option>
+                <option value="standard" selected>⭐ i18n(cam_quality_standard)</option>
+                <option value="high" >💎 i18n(cam_hd)</option>
+              </select>
+            </div>
+          </div>
+          <div class="reasons" style="margin-top:12px">
+            ✅ i18n(cam_criteria_ok)
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+            
+            <button data-action="removeBlock" data-bid="b1" class="btnGhost" type="button">i18n(cam_remove_block)</button>
+          </div>
+        </div>
+      
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button data-action="addBlock" class="btnGhost" type="button">+ i18n(cam_add_block)</button>
+          </div>
+        </div>
+
+        <div class="proposalsCol">
+          
+      <div class="recoCard" style="padding:12px">
+        <div class="proposalsTitle">
+          <div>
+            <div class="recoName">i18n(cam_proposals)</div>
+            <div class="muted">
+              i18n(cam_active_block) :
+              <strong>—</strong> •
+              interieur •
+              detection •
+              15m
+            </div>
+          </div>
+          <div class="score">📊</div>
+        </div>
+      </div>
+    
+    <div class="cameraCards">
+      <div class="camPickCard" data-id="CAM-1">Meilleur choix</div><div class="camPickCard" data-id="CAM-2">Alternative</div>
+    </div>
+  
+        </div>
+      </div>
+    "
+`;
