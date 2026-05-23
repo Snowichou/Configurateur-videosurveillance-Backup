@@ -1555,49 +1555,14 @@ function invalidateIfNeeded(block, reason = "Modification") {
    * Règle : le score le plus faible parmi les blocs validés
    */
   function computeCriticalProjectScore() {
-    let worst = null;
-
-    for (const blk of MODEL.cameraBlocks || []) {
-      if (!blk.validated) continue;
-
-      const s = Number(blk.selectedCameraScore);
-      if (!Number.isFinite(s)) continue;
-
-      if (worst === null || s < worst) {
-        worst = s;
-      }
-    }
-
-    return worst; // null si aucun bloc validé
+    // ✅ Phase 2 — logique extraite dans src/engine/totals.js
+    return window._computeCriticalProjectScorePure(MODEL.cameraBlocks);
   }
 
-  function estimateCameraBitrateMbps(camera, rec, quality) {
-    let br = camera.bitrate_mbps_typical ?? ((camera.resolution_mp ?? 4) * 1.2);
-    br *= (rec.fps / 15);
-    if (rec.codec === "h264") br *= 1.35;
-    if (rec.mode === "motion") br *= 0.40;
-
-    const q = (quality || "standard").toLowerCase();
-    if (q === "low") br *= 0.75;
-    else if (q === "high") br *= 1.20;
-
-    return Math.max(0.5, br);
-  }
 
   function computeTotals() {
-    const rec = MODEL.recording;
-    let totalInMbps = 0;
-    let totalPoeW = 0;
-
-    for (const line of MODEL.cameraLines) {
-      const cam = getCameraById(line.cameraId);
-      if (!cam) continue;
-      const qty = line.qty || 0;
-      totalPoeW += qty * (cam.poe_w ?? 0);
-      const perCam = estimateCameraBitrateMbps(cam, rec, line.quality);
-      totalInMbps += qty * perCam;
-    }
-    return { totalInMbps, totalPoeW };
+    // ✅ Phase 2 — logique extraite dans src/engine/totals.js
+    return window._computeTotalsPure(MODEL.cameraLines, MODEL.recording, { getCameraById });
   }
 
   function pickNvr(totalCameras, totalInMbps, requiredTB) {
