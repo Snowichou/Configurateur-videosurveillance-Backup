@@ -62,7 +62,7 @@
         const v = window.T(key);
         return (v && v !== key) ? v : fallback;
       }
-    } catch (_) {}
+    } catch {}
     return fallback;
   }
   function getChipDefs() {

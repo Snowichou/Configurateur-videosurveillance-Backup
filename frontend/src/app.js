@@ -64,7 +64,7 @@ const KPI = (() => {
         body: JSON.stringify(body),
         keepalive: true,
       });
-    } catch (e) {
+    } catch {
       // jamais casser l'app pour un KPI
     }
   }
@@ -178,7 +178,7 @@ function kpiConfigSnapshot(proj) {
         },
       }
     };
-  } catch (e) {
+  } catch {
     return { error: "snapshot_failed" };
   }
 }
@@ -192,7 +192,6 @@ function kpiConfigSnapshot(proj) {
   // GLOBALS (doivent exister AVANT toute utilisation)
   // ==========================================================
   let LAST_PROJECT = null;
-  let btnToggleResults = null;
   let _renderProjectCache = null;
   // Invalide le cache projet — à appeler à chaque mutation du MODEL
     function invalidateProjectCache() {
@@ -200,17 +199,6 @@ function kpiConfigSnapshot(proj) {
       LAST_PROJECT = null;
     }
 
-  // Mutation safe du MODEL avec invalidation automatique
-  function mutateModel(path, value) {
-    const keys = path.split(".");
-    let obj = MODEL;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (obj[keys[i]] == null) obj[keys[i]] = {};
-      obj = obj[keys[i]];
-    }
-    obj[keys[keys.length - 1]] = value;
-    invalidateProjectCache();
-  }
 
 
   window.addEventListener("error", (e) => {
@@ -238,7 +226,7 @@ function kpiConfigSnapshot(proj) {
       // Si rien n'existe, on stub en no-op pour ne jamais casser l'app
       if (typeof k.sendNowait !== "function") k.sendNowait = () => {};
       if (typeof k.send !== "function") k.send = () => {};
-    } catch (e) {
+    } catch {
       // no-op
     }
   })();
@@ -248,7 +236,7 @@ function kpiConfigSnapshot(proj) {
   // 0) HELPERS
   // ==========================================================
   const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const safeHtml = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (m) => ({
@@ -259,35 +247,7 @@ function kpiConfigSnapshot(proj) {
       "'": "&#039;",
     }[m]));
 
-function getUiMode(){
-  const m = String(MODEL?.ui?.mode || "simple").toLowerCase();
-  return (m === "expert") ? "expert" : "simple";
-}
-function getSessionId() {
-  const k = "cfg_session_id";
-  let v = localStorage.getItem(k);
-  if (!v) {
-    v = (crypto?.randomUUID?.() || String(Math.random()).slice(2)) + "-" + Date.now();
-    localStorage.setItem(k, v);
-  }
-  return v;
-}
 
-async function track(event, payload = {}) {
-  try {
-    await fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id: getSessionId(),
-        event,
-        payload
-      })
-    });
-  } catch (e) {
-    // silent
-  }
-}
 
   const isFalseLike = (v) => {
     if (v == null) return true;
@@ -327,26 +287,8 @@ async function track(event, payload = {}) {
   // ==========================================================
 // BRANDING COMELIT (PDF)
 // ==========================================================
-const COMELIT = {
-  GREEN: "#00BF6F",      // Pantone 7480 C approx
-  BLUE:  "#1C1F2A",      // Pantone 532 C approx
-  WHITE: "#FFFFFF",
-  TITLE_FONT: '"Arial Black", Arial, sans-serif',
-  TEXT_FONT: 'Arial, sans-serif',
-};
 
 // Essaie plusieurs noms possibles (tu ajusteras si besoin)
-// Objectif: ne pas casser si le fichier exact change.
-function getComelitLogoCandidates() {
-  return [
-    "/assets/logo/logo.png",
-    "/assets/logo/logo.svg",
-    "/assets/logo/comelit.png",
-    "/assets/logo/comelit.svg",
-    "/assets/logo/COMELIT.png",
-    "/assets/logo/COMELIT.svg",
-  ];
-}
 
   // ✅ Phase 2 — extrait dans src/state/actions.js
   const uid = window._uid;
@@ -401,17 +343,6 @@ function getComelitLogoCandidates() {
   const num = Number(String(v ?? "").replace(",", "."));
   return Number.isFinite(num) && num > 0 ? num : null;
 }
-  function getAvailableScreenSizes() {
-    const screens = CATALOG.SCREENS || [];
-    const sizes = new Set();
-
-    for (const s of screens) {
-      const v = Number(s.size_inch);
-      if (Number.isFinite(v) && v > 0) sizes.add(v); // ✅ filtre 0 et valeurs invalides
-    }
-
-    return Array.from(sizes).sort((a, b) => a - b);
-  }
 
 
 function pickScreenBySize(sizeInch) {
@@ -474,188 +405,24 @@ function pickBestEnclosure(proj, screen) {
   // Pas d’écran : on prend le meilleur compatible NVR
   return { enclosure: encNvrCompatible[0], reason: "nvr_ok_no_screen", screenInsideOk: false };
 }
-function getNvrHdmiOutputs(proj) {
-  const nvr = proj?.nvrPick?.nvr || null;
-  if (!nvr) return null;
-  return clampInt(nvr.nvr_output ?? 1, 1, 8);
-}
-
-function screenQtyWarning(proj) {
-  if (!MODEL.complements.screen.enabled) return null;
-  const qty = clampInt(MODEL.complements.screen.qty ?? 1, 1, 99);
-  const outputs = getNvrHdmiOutputs(proj);
-  if (!outputs) return null;
-
-  if (qty > outputs) {
-    if (outputs === 1) return "Attention, l’enregistreur n’a qu’une sortie HDMI.";
-    return `Attention, l’enregistreur a ${outputs} sorties HDMI.`;
-  }
-  return null;
-}
-function questionSvg(kind) {
-  // kind: "screen" | "enclosure" | "signage"
-  const title =
-    kind === "screen" ? "Écran" :
-    kind === "enclosure" ? "Boîtier" :
-    "Panneau";
-
-  // Outline icons: color driven by parent (currentColor)
-  // CSS handles border/background via .qSvg
-  const base = `class="qSvg" width="56" height="56" viewBox="0 0 64 64" aria-label="${title}" role="img"`;
-
-  if (kind === "enclosure") {
-    return `
-      <svg ${base}>
-        <rect x="16" y="14" width="32" height="36" rx="7" fill="none" stroke="currentColor" stroke-width="2.4"/>
-        <path d="M20 24h24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-        <path d="M20 30h18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
-        <path d="M20 36h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".35"/>
-        <circle cx="44" cy="40" r="2.2" fill="currentColor" opacity=".9"/>
-      </svg>
-    `;
-  }
-
-  if (kind === "signage") {
-    return `
-      <svg ${base}>
-        <rect x="14" y="12" width="36" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="2.4"/>
-        <path d="M20 20h24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-        <path d="M20 26h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
-        <path d="M32 38v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-        <path d="M24 48h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-      </svg>
-    `;
-  }
-
-  // screen (default)
-  return `
-    <svg ${base}>
-      <rect x="12" y="16" width="40" height="24" rx="7" fill="none" stroke="currentColor" stroke-width="2.4"/>
-      <path d="M24 44h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-      <path d="M28 48h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".9"/>
-      <circle cx="46" cy="34" r="1.9" fill="currentColor" opacity=".7"/>
-    </svg>
-  `;
-}
 
 
-function renderEnclosureDecisionMessage(proj, screen, enclosureAuto) {
-  const nvrId = proj?.nvrPick?.nvr?.id || null;
 
-  if (!nvrId) {
-    return `<div class="alert info" style="margin-top:10px">Aucun NVR sélectionné → impossible de proposer un boîtier.</div>`;
-  }
 
-  if (!enclosureAuto?.enclosure) {
-    return `<div class="alert warn" style="margin-top:10px">Aucun boîtier compatible avec cet enregistreur.</div>`;
-  }
-
-  if (screen && enclosureAuto.reason === "nvr_ok_screen_not_inside") {
-    return `<div class="alert warn" style="margin-top:10px">
-      Boîtier compatible NVR, mais <strong>l’écran ne peut pas se mettre à l’intérieur</strong> du boîtier.
-    </div>`;
-  }
-
-  if (screen && enclosureAuto.reason === "nvr_and_screen_ok") {
-    return `<div class="alert ok" style="margin-top:10px">
-      Boîtier compatible avec le NVR et <strong>l’écran peut être intégré</strong>.
-    </div>`;
-  }
-
-  return `<div class="alert ok" style="margin-top:10px">
-    Boîtier compatible avec le NVR.
-  </div>`;
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => {
-      const res = String(r.result || "");
-      const base64 = res.split(",", 2)[1] || "";
-      resolve(base64);
-    };
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
-}
 
 // ==========================================================
 // Score global projet (pondéré par quantité)
-// ==========================================================
-function computeProjectScoreWeighted(){
-  let sumQty = 0;
-  let sumScore = 0;
-
-  for (const blk of (MODEL.cameraBlocks || [])) {
-    if (!blk.validated) continue;
-
-    const line = (MODEL.cameraLines || []).find(l => l.fromBlockId === blk.id);
-    if (!line) continue;
-
-    const qty = clampInt(line.qty || 1, 1, 999);
-
-    const s = Number(blk.selectedCameraScore);
-    const used = Number.isFinite(s) ? s : 50;
-
-    sumQty += qty;
-    sumScore += used * qty;
-  }
-
-  if (sumQty <= 0) return null;
-
-  const avg = Math.round(sumScore / sumQty);
-  return clamp(avg, 0, 100);
-}
 
 
 // ==========================================================
 // AXE 1 — Lecture “pastilles” (strict)
-// ==========================================================
-function levelFromScore(score){
-  const s = Number(score);
-  if (!Number.isFinite(s)) {
-    return { level: "LIM", dot: "\u{1F7E1}", label: "LIM" };
-  }
-  if (s >= 78) return { level: "OK",  dot: "\u{1F7E2}", label: "OK"  };
-  if (s >= 60) return { level: "LIM", dot: "\u{1F7E1}", label: "LIM" };
-  return          { level: "BAD", dot: "\u{1F534}", label: "BAD" };
-}
 
 // ==========================================================
 // Adaptateur score -> niveaux stricts (ok/warn/bad)
-// ==========================================================
-function levelFromScoreStrict(score){
-  const base = levelFromScore(score); // { level:"OK"|"LIM"|"BAD", dot, label }
-  const lvl =
-    base.level === "OK"  ? "ok" :
-    base.level === "LIM" ? "warn" : "bad";
-
-  return { ...base, level: lvl };
-}
 
 
 // ==========================================================
 // Comptage des niveaux de risque (AXE 1)
-// ==========================================================
-function computeRiskCounters(){
-  let ok = 0, warn = 0, bad = 0;
-
-  for (const blk of (MODEL.cameraBlocks || [])){
-    if (!blk.validated) continue;
-
-    const sc = Number(blk.selectedCameraScore);
-    const safeScore = Number.isFinite(sc) ? sc : 60; // défaut "LIM" plutôt que crash/rouge
-
-    const lvl = levelFromScoreStrict(safeScore).level;
-
-    if (lvl === "ok") ok++;
-    else if (lvl === "warn") warn++;
-    else bad++;
-  }
-
-  return { ok, warn, bad, total: ok + warn + bad };
-}
 
 
   /**
@@ -777,7 +544,7 @@ function interpretScoreForBlock(block, cam){
   const ans = block?.answers || {};
   const obj = String(ans.objective || "").toLowerCase();
   const empl = normalizeEmplacement(ans.emplacement);
-  const useCase = String(ans.use_case || "").trim();
+  String(ans.use_case || "").trim();
 
   let level = "ok";
   let badge = "OK";
@@ -796,10 +563,8 @@ function interpretScoreForBlock(block, cam){
   }
 
   // Hard rule TYPE — caméra inadaptée au contexte
-  let typeRule = false;
   if (sc.typeWarning) {
     if (level !== "bad") { level = "warn"; badge = "LIMITE"; }
-    typeRule = true;
   }
 
   const ansObj = String(ans.objective || "").toLowerCase();
@@ -809,8 +574,7 @@ function interpretScoreForBlock(block, cam){
   const mp = getMpFromCam(cam);
   const ir = getIrFromCam(cam);
   const ratioTxt = (sc.ratio != null && Number.isFinite(sc.ratio)) ? `DORI x${sc.ratio.toFixed(2)}` : null;
-  const camType = String(cam.type || "").toLowerCase().trim();
-  const camTypeLabel = ({turret:"Tourelle",dome:"Dôme",bullet:"Bullet",ptz:"PTZ","fish-eye":"Fisheye",lpr:"LPR"})[camType] || camType;
+  String(cam.type || "").toLowerCase().trim();
 
   // Point critique
   let keyPoint = "Point critique : —";
@@ -833,7 +597,6 @@ function interpretScoreForBlock(block, cam){
   // Message simplifié pour les commerciaux — nuancé selon le score
   try {
     const score = sc.score;
-    const camName = camTypeLabel || "Caméra";
     const objLow = objectiveLbl.toLowerCase();
     const emLow = emplLbl;
 
@@ -863,67 +626,6 @@ function interpretScoreForBlock(block, cam){
 }
 
 
-/**
- * Motif principal "propre" (sans parsing de texte)
- * On sort: "DORI" | "Détails" | "Nuit/IR" | "Cohérence"
- */
-function computeMainReason(block, cam, sc){
-  // On ré-estime chaque sous-part (mêmes barèmes que scoreCameraForBlock)
-  const ans = block?.answers || {};
-  const required = Number(ans.distance_m || 0);
-  const objective = ans.objective || "";
-  const empl = normalizeEmplacement(ans.emplacement);
-
-  // DORI
-  let scoreDori = 18;
-  const dori = getDoriForObjective(cam, objective);
-  const ratio = (required > 0 && dori && dori > 0) ? (dori / required) : null;
-  if (ratio != null){
-    const r = ratio;
-    if (r >= 1.3) scoreDori = 60;
-    else if (r >= 1.0) scoreDori = 52 + (r - 1.0) * (60 - 52) / 0.3;
-    else if (r >= 0.8) scoreDori = 40 + (r - 0.8) * (52 - 40) / 0.2;
-    else if (r >= 0.6) scoreDori = 25 + (r - 0.6) * (40 - 25) / 0.2;
-    else if (r >= 0.4) scoreDori = 10 + (r - 0.4) * (25 - 10) / 0.2;
-    else scoreDori = 6;
-    scoreDori = clamp(Math.round(scoreDori), 0, 60);
-  }
-
-  // MP
-  const mp = getMpFromCam(cam);
-  let scoreMp = 7;
-  if (mp == null) scoreMp = 7;
-  else if (mp >= 8) scoreMp = 15;
-  else if (mp >= 5) scoreMp = 13;
-  else if (mp >= 4) scoreMp = 11;
-  else if (mp >= 2) scoreMp = 9;
-
-  // IR
-  const ir = getIrFromCam(cam);
-  let scoreIr = 7;
-  if (ir == null) scoreIr = 7;
-  else if (ir >= 60) scoreIr = 15;
-  else if (ir >= 40) scoreIr = 13;
-  else if (ir >= 30) scoreIr = 11;
-  else if (ir >= 20) scoreIr = 9;
-
-  // Bonus cohérence
-  let bonus = 0;
-  if (empl === "exterieur" && ir != null && ir >= 30) bonus += 6;
-  if (empl === "interieur" && mp != null && mp >= 4) bonus += 6;
-  if (ratio != null && ratio >= 1.15) bonus += 4;
-  bonus = clamp(bonus, 0, 10);
-
-  // On veut le "point faible" => normaliser en % de leur max
-  const norm = [
-    { key: "DORI",       val: scoreDori / 60 },
-    { key: "Détails",    val: scoreMp   / 15 },
-    { key: "Nuit/IR",    val: scoreIr   / 15 },
-    { key: "Cohérence",  val: bonus     / 10 },
-  ].sort((a,b) => a.val - b.val);
-
-  return String(norm[0]?.key || "DORI");
-}
 
 function objectiveLabel(obj){
   const labels = {
@@ -936,9 +638,6 @@ function objectiveLabel(obj){
   return labels[obj] || T("cam_identification").split("(")[0].trim();
 }
 
-function mountingLabel(m){
-  return ({ wall: T("cam_wall"), ceiling: T("cam_ceiling") }[m] || T("cam_wall"));
-}
 
 function accessoryTypeLabel(t){
   return ({
@@ -948,32 +647,11 @@ function accessoryTypeLabel(t){
   }[t] || t);
 }
 
-  const badgeHtml = (text) => {
+  (text) => {
     const t = safeHtml(text || "");
     if (!t) return "";
     return `<span class="badgePill">${t}</span>`;
   };
-function renderBadgesWithMore(badgesHtmlArr, maxVisible = 8) {
-  const arr = (badgesHtmlArr || []).filter(Boolean);
-  if (arr.length <= maxVisible) {
-    return `<div class="badgeRow">${arr.join("")}</div>`;
-  }
-  const visible = arr.slice(0, maxVisible).join("");
-  const hidden = arr.slice(maxVisible).join("");
-  const more = arr.length - maxVisible;
-
-  return `
-    <div class="badgeRow badgeRowClamp">${visible}</div>
-    <div class="badgeMoreLine">
-      <details class="pickDetails">
-        <summary class="pickDetailsSum">+${more} caractéristiques</summary>
-        <div class="pickDetailsBody">
-          <div class="badgeRow">${hidden}</div>
-        </div>
-      </details>
-    </div>
-  `;
-}
 
   function extractUseCasesFromRow(raw) {
     const cols = ["use_cases_01", "use_cases_02", "use_cases_03"];
@@ -994,46 +672,7 @@ function renderBadgesWithMore(badgesHtmlArr, maxVisible = 8) {
 
     return [...new Set(out)].filter(Boolean);
   }
-  function waitForImages(root, timeoutMs = 3500) {
-  const imgs = Array.from(root.querySelectorAll("img"));
-  const pending = imgs.filter((img) => !img.complete);
 
-  if (!pending.length) return Promise.resolve(true);
-
-  return new Promise((resolve) => {
-    let done = false;
-    const t = setTimeout(() => {
-      if (done) return;
-      done = true;
-      resolve(false);
-    }, timeoutMs);
-
-    const onDone = () => {
-      if (done) return;
-      const still = pending.filter((img) => !img.complete);
-      if (still.length) return;
-      done = true;
-      clearTimeout(t);
-      resolve(true);
-    };
-
-    pending.forEach((img) => {
-      img.addEventListener("load", onDone, { once: true });
-      img.addEventListener("error", onDone, { once: true });
-    });
-  });
-}
-
-function buildPdfRootForExport(proj) {
-  const wrap = document.createElement("div");
-  wrap.style.position = "fixed";
-  wrap.style.left = "-99999px";
-  wrap.style.top = "0";
-  wrap.style.width = "794px"; // largeur A4 portrait ~ 210mm @ 96dpi (approx)
-  wrap.innerHTML = buildPdfHtml(proj);
-  document.body.appendChild(wrap);
-  return wrap;
-}
 
   // ==========================================================
   // 0B) CSV PARSER (no deps)
@@ -1246,7 +885,7 @@ const KPI = (() => {
         body: JSON.stringify(body),
         keepalive: true,
       });
-    } catch (e) {
+    } catch {
       // ne casse jamais l'app
     }
   }
@@ -1264,7 +903,7 @@ const KPI = (() => {
         body: JSON.stringify(body),
         keepalive: true,
       }).catch(() => {});
-    } catch (e) {}
+    } catch {}
   }
 
   // ------------------------------------------------------------
@@ -1366,7 +1005,7 @@ const KPI = (() => {
     };
   }
 
-  return { send, sendNowait, sendNowait: sendNowait, getSessionId, snapshot };
+  return { send, sendNowait, getSessionId, snapshot };
 })();
 
   const STEPS = [
@@ -1550,10 +1189,6 @@ function localizedDatasheetUrl(url) {
   return result;
 }
 
-function safeNum(v) {
-  const n = Number((v ?? "").toString().replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-}
 
 /** "A|B|C|" => ["A","B","C"] */
 function parsePipeList(v) {
@@ -2031,39 +1666,12 @@ window._getCameraById = getCameraById;
 // ==========================================================
 // UI PREFS (localStorage) + mode démo
 // ==========================================================
-const UI_PREFS_KEY = "cfg_ui_prefs_v1";
 
 function applyDemoClass() {
   document.body.classList.toggle("demoMode", !!MODEL?.ui?.demo);
 }
 
-function loadUIPrefs() {
-  try {
-    const raw = localStorage.getItem(UI_PREFS_KEY);
-    if (!raw) return;
-    const p = JSON.parse(raw);
 
-    if (p && typeof p === "object") {
-      if (p.mode === "simple" || p.mode === "expert") MODEL.ui.mode = p.mode;
-      if (typeof p.demo === "boolean") MODEL.ui.demo = p.demo;
-      if (typeof p.onlyFavs === "boolean") MODEL.ui.onlyFavs = p.onlyFavs;
-      if (Array.isArray(p.favorites)) MODEL.ui.favorites = p.favorites.map(String);
-    }
-  } catch {}
-  applyDemoClass();
-}
-
-function saveUIPrefs() {
-  try {
-    const p = {
-      mode: MODEL.ui.mode,
-      demo: !!MODEL.ui.demo,
-      onlyFavs: !!MODEL.ui.onlyFavs,
-      favorites: Array.isArray(MODEL.ui.favorites) ? MODEL.ui.favorites : [],
-    };
-    localStorage.setItem(UI_PREFS_KEY, JSON.stringify(p));
-  } catch {}
-}
 // ==========================================================
 // 8) ENGINE - BLOCKS SANITY + VALIDATION
 // ==========================================================
@@ -2502,130 +2110,9 @@ function invalidateIfNeeded(block, reason = "Modification") {
     const hddRef = CATALOG.HDDS.find((h) => h.capacity_tb === best.sizeTB) || null;
     return { ...best, maxTotalTB, hddRef };
   }
-  function getStorageParams() {
-  // Valeurs par défaut + lecture des champs existants si tu les as déjà
-  const days =
-    MODEL?.storage?.days ??
-    MODEL?.storageDays ??
-    MODEL?.storage_retention_days ??
-    14;
 
-  const ips =
-    MODEL?.storage?.ips ??
-    MODEL?.storage?.fps ??
-    MODEL?.storageIps ??
-    MODEL?.storageFps ??
-    12; // IPS par défaut
 
-  const codec =
-    MODEL?.storage?.codec ??
-    MODEL?.storageCodec ??
-    "H.265";
 
-  const marginPct =
-    MODEL?.storage?.marginPct ??
-    MODEL?.storageMarginPct ??
-    15;
-
-  const hoursPerDay =
-    MODEL?.storage?.hoursPerDay ??
-    MODEL?.storageHoursPerDay ??
-    24;
-
-  const recordingMode =
-    MODEL?.storage?.mode ??
-    MODEL?.storageMode ??
-    T("pdf_continuous");
-
-  return { days, ips, codec, marginPct, hoursPerDay, recordingMode };
-}
-
-// Tente de récupérer un "Mbps par caméra" depuis l'objet cam (si ton CSV le fournit)
-function pickCamMbpsFromCatalog(cam) {
-  if (!cam) return null;
-
-  const candidates = [
-    cam.mbps,
-    cam.bitrate_mbps,
-    cam.bandwidth_mbps,
-    cam.stream_mbps,
-    cam.bitrate,         // si déjà en Mbps
-    cam.bandwidth,       // idem
-  ];
-
-  for (const v of candidates) {
-    const n = Number(v);
-    if (Number.isFinite(n) && n > 0) return n;
-  }
-  return null;
-}
-
-// Estimation fallback (pro mais simple) si pas de Mbps en catalog
-function estimateCamMbpsFallback(cam, ips, codec) {
-  // Récupère une “résolution” si possible (mp / width/height)
-  const mpRaw = cam?.mp ?? cam?.megapixel ?? cam?.resolution_mp ?? cam?.sensor_mp;
-  let mp = Number(mpRaw);
-  if (!Number.isFinite(mp) || mp <= 0) {
-    // si tu as width/height dans le CSV
-    const w = Number(cam?.width);
-    const h = Number(cam?.height);
-    if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
-      mp = (w * h) / 1_000_000;
-    } else {
-      mp = 4; // fallback 4MP
-    }
-  }
-
-  // Heuristique : Mbps ~ MP * (ips/12) * facteurCodec * facteurQualité
-  // H.265 ≈ -35% vs H.264 (ordre de grandeur)
-  const codecFactor = String(codec).toUpperCase().includes("265") ? 0.65 : 1.0;
-
-  // Qualité “standard” (si tu veux, on pourra brancher un slider)
-  const qualityFactor = 1.0;
-
-  const baseAt12ips = mp * 1.2; // 4MP @ 12ips ≈ 4.8 Mbps (ordre de grandeur)
-  const mbps = baseAt12ips * (Number(ips) / 12) * codecFactor * qualityFactor;
-
-  // Limites raisonnables pour éviter des aberrations
-  return Math.max(0.6, Math.min(mbps, 16));
-}
-
-// Construit le tableau par caméra + total
-function computePerCameraBitrates() {
-  const { ips, codec } = getStorageParams();
-
-  const rows = [];
-
-  (MODEL.cameraLines || []).forEach((l) => {
-    const cam = (typeof getCameraById === "function") ? getCameraById(l.cameraId) : null;
-    if (!cam) return;
-
-    const qty = Number(l.qty || 0);
-    if (!qty) return;
-
-    // 1) Mbps du catalog si dispo, sinon estimation
-    const mbpsPerCam = pickCamMbpsFromCatalog(cam) ?? estimateCamMbpsFallback(cam, ips, codec);
-
-    // 2) Label bloc (optionnel)
-    const blk = (MODEL.cameraBlocks || []).find((b) => b.id === l.fromBlockId) || null;
-    const label = blk?.label ? `${blk.label}` : "";
-
-    rows.push({
-      blockLabel: label,
-      cameraId: String(cam.id || ""),
-      cameraName: String(cam.name || ""),
-      qty,
-      ips: Number(ips),
-      codec: String(codec),
-      mbpsPerCam: Number(mbpsPerCam),
-      mbpsLine: Number(mbpsPerCam) * qty,
-    });
-  });
-
-  const totalInMbps = rows.reduce((s, r) => s + (r.mbpsLine || 0), 0);
-
-  return { rows, totalInMbps };
-}
 
  function computeProject() {
   const totalCameras = getTotalCameras();
@@ -2874,7 +2361,7 @@ function computePerCameraBitrates() {
         switch_required: !!proj.switches?.required,
       });
     }
-  } catch (e) {
+  } catch {
     // silence
   }
 
@@ -2974,58 +2461,8 @@ function getSelectedOrRecommendedEnclosure(proj) {
     return _renderProjectCache;
   }
 
-  function canGoNext() {
-    // règle simple : au moins 1 ligne caméra validée
-    return Array.isArray(MODEL.cameraLines) && MODEL.cameraLines.length > 0 && getTotalCameras() > 0;
-  }
 
   // ==========================================================
-  // 9) UI - RESULTS
-  // ==========================================================
-  function ensureToggleButton() {
-    if (btnToggleResults) return;
-    const headerActions = document.querySelector(".actions");
-
-    btnToggleResults = document.createElement("button");
-    btnToggleResults.id = "btnToggleResults";
-    btnToggleResults.type = "button";
-    btnToggleResults.className = "btn secondary";
-    btnToggleResults.textContent = "Afficher résultats";
-    btnToggleResults.addEventListener("click", () => {
-      MODEL.ui.resultsShown = !MODEL.ui.resultsShown;
-      syncResultsUI();
-    });
-
-    if (headerActions) headerActions.appendChild(btnToggleResults);
-    else if (DOM.results?.parentElement) DOM.results.parentElement.prepend(btnToggleResults);
-  }
-
-  function setToggleLabel() {
-    if (!btnToggleResults) return;
-    btnToggleResults.textContent = MODEL.ui.resultsShown ? "Masquer résultats" : "Afficher résultats";
-  }
-
-  function showResultsUI() {
-    if (DOM.resultsEmpty) DOM.resultsEmpty.classList.add("hidden");
-    if (DOM.results) DOM.results.classList.remove("hidden");
-  }
-
-  function hideResultsUI() {
-    if (DOM.resultsEmpty) DOM.resultsEmpty.classList.remove("hidden");
-    if (DOM.results) DOM.results.classList.add("hidden");
-  }
-
-
-  function renderAlerts(alerts) {
-    DOM.alertsEl.innerHTML = "";
-    for (const al of alerts) {
-      const li = document.createElement("li");
-      if (al.level === "danger") li.classList.add("danger");
-      if (al.level) li.classList.add(al.level);
-      li.textContent = al.text;
-      DOM.alertsEl.appendChild(li);
-    }
-  }
 
   function renderFinalSummary(proj) {
   const projectScore =
@@ -3300,36 +2737,12 @@ function getSelectedOrRecommendedEnclosure(proj) {
 }
 
 
-function setFinalContent(proj) {
-  // Source de vérité pour export PDF / boutons / etc.
-  LAST_PROJECT = proj;
-
-  // 1) On génère le HTML du résumé
-  const html = renderFinalSummary(proj);
-
-  // 2) On l'injecte là où ton PDF allait le chercher "avant"
-  if (DOM?.primaryRecoEl) DOM.primaryRecoEl.innerHTML = html;
-
-  // 3) Si tu as une étape "summary" dédiée, tu peux aussi alimenter son conteneur
-  // (mets ici le bon id/element si tu l'as)
-  if (DOM?.summaryEl) DOM.summaryEl.innerHTML = html;
-
-  // 4) Alertes (si utilisées)
-  if (typeof renderAlerts === "function") renderAlerts(proj.alerts);
-
-  // 5) On nettoie les alternatives si tu ne veux plus les afficher
-  if (DOM?.alternativesEl) DOM.alternativesEl.innerHTML = "";
-
-  MODEL.ui = MODEL.ui || {};
-  MODEL.ui.resultsShown = true;
-}
 
 
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY)
 // ==========================================================
 const LOCAL_IMG_ROOT = "/data/Images";
-const IMG_EXTS = ["png", "jpg", "jpeg", "webp"];
 const __thumbCache = new Map();
 
 function getThumbSrc(family, id) {
@@ -3407,26 +2820,6 @@ function applyLocalMediaToCatalog() {
 }
 
 
-function imgTag(family, ref) {
-  // 1. Chercher l'image_url dans le catalogue (CDN Comelit)
-  let src = "";
-  try {
-    const catalogMap = {
-      cameras: CATALOG?.CAMERAS, nvrs: CATALOG?.NVRS,
-      hdds: CATALOG?.HDDS, switches: CATALOG?.SWITCHES,
-      accessories: CATALOG?.ACCESSORIES, screens: CATALOG?.SCREENS,
-      enclosures: CATALOG?.ENCLOSURES, signage: CATALOG?.SIGNAGE,
-    };
-    const list = catalogMap[String(family || "").toLowerCase()];
-    const obj = Array.isArray(list) ? list.find(x => x.id === ref) : null;
-    if (obj && obj.image_url && obj.image_url !== "false") src = obj.image_url;
-  } catch(e) {}
-  // 2. Fallback chemin local
-  if (!src) src = getThumbSrc(family, ref);
-  if (!src) return "—";
-  return `<img class="thumb" src="${src}" alt="${ref}"
-    />`;
-}
 
   function buildPdfHtml(proj) {
   const now = new Date();
@@ -3496,7 +2889,7 @@ function imgTag(family, ref) {
       const list = catalogMap[family] || catalogMap[String(family||"").toLowerCase()];
       const obj = Array.isArray(list) ? list.find(x => x.id === ref) : null;
       if (obj && obj.image_url && obj.image_url !== "false") src = obj.image_url;
-    } catch(e) {}
+    } catch {}
     // 2. Fallback chemin local
     if (!src) src = getThumbSrc(family, ref);
     if (!src) return "—";
@@ -3591,7 +2984,7 @@ function imgTag(family, ref) {
   // =========================================================================
 
   // 1) Extraction produits en ARRAY (pour pagination)
-  const camsRowsArray = (MODEL.cameraLines || [])
+  (MODEL.cameraLines || [])
     .map((l) => {
       const cam = typeof getCameraById === "function" ? getCameraById(l.cameraId) : null;
       if (!cam) return "";
@@ -3601,7 +2994,7 @@ function imgTag(family, ref) {
     })
     .filter(Boolean);
 
-  const accRowsArray = (MODEL.accessoryLines || [])
+  (MODEL.accessoryLines || [])
     .map((a) => row4(a.qty || 0, a.accessoryId || "—", a.name || a.accessoryId || "", "accessories", a.image_url || false))
     .filter(Boolean);
 
@@ -3694,7 +3087,7 @@ function imgTag(family, ref) {
           level: interp.level || "warn",
           context: interp.message || ""
         };
-      } catch (e) {}
+      } catch {}
     }
 
     const ans = blk.answers || {};
@@ -5522,40 +4915,6 @@ if (btnPrev) {
     });
   }
 
-  function doriBadgesHTML(cam) {
-    const d = cam.dori_detection_m ?? 0;
-    const o = cam.dori_observation_m ?? 0;
-    const r = cam.dori_recognition_m ?? 0;
-    const i = cam.dori_identification_m ?? 0;
-
-    return `
-      <div class="badgeRow">
-        ${badgeHtml(`Détection: ${d} m`)}
-        ${badgeHtml(`Observation: ${o} m`)}
-        ${badgeHtml(`Reconnaissance: ${r} m`)}
-        ${badgeHtml(`Identification: ${i} m`)}
-      </div>
-    `;
-  }
-  function renderBadgesWithMore(badgesHtmlArr, maxVisible = 8) {
-  const arr = (badgesHtmlArr || []).filter(Boolean);
-  if (arr.length <= maxVisible) {
-    return `<div class="badgeRow">${arr.join("")}</div>`;
-  }
-  const visible = arr.slice(0, maxVisible).join("");
-  const hidden = arr.slice(maxVisible).join("");
-  const more = arr.length - maxVisible;
-
-  return `
-    <div class="badgeRow badgeRowClamp">${visible}</div>
-    <details class="pickDetails">
-      <summary class="pickDetailsSum">+${more} caractéristiques</summary>
-      <div class="pickDetailsBody">
-        <div class="badgeRow">${hidden}</div>
-      </div>
-    </details>
-  `;
-}
 
 function camPickCardHTML(blk, cam, label) {
   if (!cam) return "";
@@ -6153,7 +5512,7 @@ function generateQRDataUrl(text, size = 150) {
     document.body.appendChild(div);
     
     // Générer le QR
-    const qr = new QRCode(div, {
+    new QRCode(div, {
       text: text,
       width: size,
       height: size,
@@ -6685,87 +6044,7 @@ async function buildPdfBlobProFromProject(proj) {
   }
 }
 
-// Alias
-async function buildPdfBlobFromProject(proj) {
-  return await buildPdfBlobProFromProject(proj);
-}
 
-function renderCameraPickCard(cam, blk, sc, mainReason) {
-  if (!cam) return "";
-
-  const interp = interpretScoreForBlock(blk, cam);
-  const isValidated = !!(blk?.validated && blk?.selectedCameraId === cam.id);
-
-  // Icône et couleur selon le niveau
-  const levelConfig = {
-    ok: { icon: "✅", label: T("cam_recommended"), color: "var(--comelit-green)" },
-    warn: { icon: "⚠️", label: T("cam_acceptable"), color: "#F59E0B" },
-    bad: { icon: "❌", label: T("cam_not_adapted"), color: CLR.danger }
-  };
-  const level = levelConfig[interp.level] || levelConfig.warn;
-
-  // Caractéristiques clés
-  const mp = cam.resolution_mp || cam.megapixels || "—";
-  const ir = cam.ir_range_m || cam.ir_distance_m || "—";
-  const lens = cam.lens_type || cam.varifocal ? "Varifocale" : "Fixe";
-
-  return `
-    <div class="cameraPickCard lvl-${safeHtml(interp.level)}" style="border-left:4px solid ${level.color}">
-      <div class="cameraPickTop">
-        ${cam.image_url 
-          ? `<img class="cameraPickImg" src="${cam.image_url}" alt="${safeHtml(cam.name)}" loading="lazy">`
-          : `<div class="cameraPickImg" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">📷</div>`
-        }
-
-        <div class="cameraPickMeta">
-          <!-- En-tête avec score -->
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-            <div>
-              <strong class="cameraPickTitle">${safeHtml(cam.id)}</strong>
-              <div class="cameraPickName">${safeHtml(cam.name || "")}</div>
-            </div>
-            <div class="score" style="min-width:60px;font-size:14px">
-              ${interp.score ?? "—"}/100
-            </div>
-          </div>
-
-          <!-- Statut clair -->
-          <div style="margin-top:10px;padding:8px 12px;border-radius:10px;background:${level.color}15;border:1px solid ${level.color}40">
-            <span style="font-weight:900;color:${level.color}">${level.icon} ${level.label}</span>
-            <span class="muted" style="margin-left:8px">${safeHtml(interp.message || mainReason)}</span>
-          </div>
-
-          <!-- Caractéristiques principales -->
-          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
-            <span class="badgePill">${mp} MP</span>
-            <span class="badgePill">IR ${ir}m</span>
-            <span class="badgePill">${lens}</span>
-            ${cam.ai_features ? `<span class="badgePill ok">IA</span>` : ""}
-            ${isValidated ? `<span class="badgePill ok">✅ Sélectionnée</span>` : ""}
-          </div>
-
-          <!-- Actions -->
-          <div class="cameraPickActions" style="margin-top:12px">
-            <button
-              data-action="validateCamera"
-              data-camid="${safeHtml(cam.id)}"
-              class="btnPrimary"
-              style="flex:1"
-            >
-              ${isValidated ? T("cam_camera_selected") : interp.level === "ok" ? T("cam_choose_camera") : T("cam_choose_camera")}
-            </button>
-
-            ${cam.datasheet_url ? `
-              <a class="btnGhost btnDatasheet" href="${localizedDatasheetUrl(cam.datasheet_url)}" target="_blank" rel="noreferrer">
-                ${T("btn_datasheet")}
-              </a>
-            ` : ""}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
 
 
 function onStepsClick(e) {
@@ -7425,7 +6704,7 @@ async function testPdfGeneration(verbose = true) {
     if (allFooters) log(true, "Toutes les pages ont un footer");
 
     // 8) Vérifier les dimensions des pages (styles inline)
-    const page0Style = getComputedStyle ? null : null; // Pas possible sans DOM réel
+ // Pas possible sans DOM réel
     log(true, "Dimensions: vérification manuelle via aperçu PDF");
 
     // 9) Test de génération réelle (si libs disponibles)
@@ -7461,17 +6740,6 @@ window.testPdfGeneration = testPdfGeneration;
 // EXPORT PACK (PDF + FICHES TECHNIQUES) -> ZIP
 // ==========================================================
 
-// Petit helper: download blob
-function downloadBlob(blob, filename) {
-  const a = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
 
 function sanitizeFilename(name) {
   return String(name || "file")
@@ -7591,50 +6859,6 @@ function collectDatasheetUrlsFromProject(proj) {
 }
 
 // Helper pour collecter les IDs produits
-function collectProductIdsForPack(proj) {
-  const ids = new Set();
-
-  for (const l of (MODEL?.cameraLines || [])) {
-    if (l?.cameraId) ids.add(l.cameraId);
-  }
-
-  const nvr = proj?.nvrPick?.nvr;
-  if (nvr?.id) ids.add(nvr.id);
-
-  const hdd = proj?.disks?.hddRef || proj?.disks?.disk;
-  if (hdd?.id) ids.add(hdd.id);
-
-  for (const p of (proj?.switches?.plan || [])) {
-    if (p?.item?.id) ids.add(p.item.id);
-  }
-
-  for (const a of (MODEL?.accessoryLines || [])) {
-    if (a?.accessoryId) ids.add(a.accessoryId);
-  }
-
-  try {
-    if (typeof getSelectedOrRecommendedScreen === "function") {
-      const scr = getSelectedOrRecommendedScreen(proj)?.selected;
-      if (scr?.id) ids.add(scr.id);
-    }
-  } catch {}
-
-  try {
-    if (typeof getSelectedOrRecommendedEnclosure === "function") {
-      const enc = getSelectedOrRecommendedEnclosure(proj)?.selected;
-      if (enc?.id) ids.add(enc.id);
-    }
-  } catch {}
-
-  try {
-    if (typeof getSelectedOrRecommendedSign === "function" && MODEL?.complements?.signage?.enabled) {
-      const sign = getSelectedOrRecommendedSign()?.sign;
-      if (sign?.id) ids.add(sign.id);
-    }
-  } catch {}
-
-  return Array.from(ids).filter(Boolean);
-}
 
 async function exportProjectPdfWithLocalDatasheetsZip() {
   // Récupérer le projet
@@ -7782,7 +7006,7 @@ async function exportProjectPdfWithLocalDatasheetsZip() {
               return;
             }
           }
-        } catch (e) { /* try next */ }
+        } catch { /* try next */ }
       }
       console.warn(`[ZIP] ❌ ${item.path}`);
       failedLinks.push(localizedUrl);
@@ -7833,9 +7057,6 @@ async function exportProjectPdfWithLocalDatasheetsZip() {
 }
 
 // Alias pour compatibilité
-async function exportProjectPdfPackPro() {
-  return await exportProjectPdfWithLocalDatasheetsZip();
-}
 
 // Alias pour compatibilité avec l'ancien nom
 async function exportProjectPdfPackPro() {
@@ -7843,104 +7064,10 @@ async function exportProjectPdfPackPro() {
 }
 
 
-function ensurePdfPackButton() {
-  const pdfBtn = document.querySelector("#btnExportPdf");
-  if (!pdfBtn) return false;
-  if (document.querySelector("#btnExportPdfPack")) return true;
-
-  const packBtn = document.createElement("button");
-  packBtn.id = "btnExportPdfPack";
-  packBtn.type = "button";
-  packBtn.className = (pdfBtn.className || "btn").replace("primary", "secondary");
-  packBtn.textContent = T("sum_export_pack");
-  packBtn.style.marginLeft = "8px";
-
-  pdfBtn.insertAdjacentElement("afterend", packBtn);
-
-  packBtn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    packBtn.disabled = true;
-    packBtn.textContent = "Génération...";
-    try {
-      await exportProjectPdfWithLocalDatasheetsZip();
-    } finally {
-      packBtn.disabled = false;
-      packBtn.textContent = T("sum_export_pack");
-    }
-  });
-
-  return true;
-}
 
 
-async function fetchAsBlob(url) {
-  const res = await fetch(url, { mode: "cors" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
-  return await res.blob();
-}
 
 
-function ensurePdfPackButton() {
-  const pdfBtn = document.querySelector("#btnExportPdf");
-  if (!pdfBtn) return false; // pas encore rendu
-
-  // 1) Bind PDF normal (IMPORTANT: le bind "DOM.btnExportPdf" ne marche pas car le bouton est injecté plus tard)
-  if (!pdfBtn.dataset.boundPdf) {
-    pdfBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      try {
-        exportProjectPdfPro();
-      } catch (err) {
-        console.error(err);
-        alert("Erreur export PDF (voir console).");
-      }
-    });
-    pdfBtn.dataset.boundPdf = "1";
-  }
-
-  // 2) Pack button : chez toi c'est btnExportPdfPackSummary (tu as aussi un ancien btnExportPdfPack)
-  let packBtn =
-    document.querySelector("#btnExportPdfPackSummary") ||
-    document.querySelector("#btnExportPdfPack");
-
-  // Si pas trouvé, on le crée à côté du bouton PDF
-  if (!packBtn) {
-    packBtn = document.createElement("button");
-    packBtn.id = "btnExportPdfPackSummary"; // ✅ ton id actuel
-    packBtn.type = "button";
-    packBtn.textContent = T("sum_export_pack");
-
-    // copie du style du bouton PDF
-    packBtn.className = pdfBtn.className || "";
-    pdfBtn.insertAdjacentElement("afterend", packBtn);
-  }
-
-  // Bind du pack
-  if (!packBtn.dataset.boundPack) {
-    packBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      try {
-        if (typeof exportProjectPdfWithLocalDatasheetsZip !== "function") {
-          console.warn("exportProjectPdfWithLocalDatasheetsZip non trouvée, tentative fallback...");
-          // Essayer un fallback
-          if (typeof exportProjectPdfPackPro === "function") {
-            await exportProjectPdfPackPro();
-            return;
-          }
-          alert("Export pack indisponible.");
-          return;
-        }
-        await exportProjectPdfWithLocalDatasheetsZip();
-      } catch (err) {
-        console.error(err);
-        alert("Erreur export pack (voir console).");
-      }
-    });
-    packBtn.dataset.boundPack = "1";
-  }
-
-  return true;
-}
 
 
   // ==========================================================
@@ -8054,8 +7181,8 @@ function bind(el, evt, fn) {
 bind(DOM.btnCompute, "click", () => {
   const stepId = STEPS[MODEL.stepIndex]?.id;
 
-  const summaryIdx = STEPS.findIndex(s => s.id === "summary");
-  const storageIdx = STEPS.findIndex(s => s.id === "storage");
+  STEPS.findIndex(s => s.id === "summary");
+  STEPS.findIndex(s => s.id === "storage");
 
   // 1) Projet => vérifie nom + use case
   if (stepId === "project") {
@@ -8253,53 +7380,6 @@ bind(DOM.btnDemo, "click", () => {
   });
 });
 
-function collectProductIdsForPack(proj) {
-  const ids = new Set();
-
-  // Caméras
-  (MODEL.cameraLines || []).forEach((l) => {
-    const cam = getCameraById(l.cameraId);
-    if (cam?.id) ids.add(String(cam.id).trim());
-  });
-
-  // Accessoires
-  (MODEL.accessoryLines || []).forEach((a) => {
-    if (a?.accessoryId) ids.add(String(a.accessoryId).trim());
-  });
-
-  // NVR
-  const nvr = proj?.nvrPick?.nvr;
-  if (nvr?.id) ids.add(String(nvr.id).trim());
-
-  // Switches
-  (proj?.switches?.plan || []).forEach((p) => {
-    const sw = p?.item;
-    if (sw?.id) ids.add(String(sw.id).trim());
-  });
-
-  // HDD
-  const hdd = proj?.disks?.hddRef;
-  if (hdd?.id) ids.add(String(hdd.id).trim());
-
-  // Complements
-  const scr = typeof getSelectedOrRecommendedScreen === "function"
-    ? getSelectedOrRecommendedScreen(proj)?.selected
-    : null;
-  if (scr?.id) ids.add(String(scr.id).trim());
-
-  const enc = typeof getSelectedOrRecommendedEnclosure === "function"
-    ? getSelectedOrRecommendedEnclosure(proj)?.selected
-    : null;
-  if (enc?.id) ids.add(String(enc.id).trim());
-
-  const signObj = (typeof getSelectedOrRecommendedSign === "function")
-    ? getSelectedOrRecommendedSign()
-    : null;
-  const sign = signObj?.sign || null;
-  if (sign?.id) ids.add(String(sign.id).trim());
-
-  return Array.from(ids);
-}
 
 // EXPORT (PDF)
 bind(DOM.btnExportPdf, "click", exportProjectPdfPro);
@@ -8461,7 +7541,6 @@ function setAdminMode(isAuthed){
   editorBox.classList.toggle("hidden", !isAuthed);
 }
 
-const ADMIN_PASSWORD = "Saddlebag0-Ripening5-Untapped0-Squeeze5-Caterer6";
 
 async function adminLogin(password){
   const msg = admin$("adminLoginMsg");
@@ -8559,7 +7638,7 @@ if (warn && msg) msg.textContent += ` • ⚠️ ${warn}`;
   try {
     await init();
     if (msg) msg.textContent += " • Données rechargées dans le configurateur";
-  } catch(e) {
+  } catch {
     if (msg) msg.textContent += " • ⚠️ Données sauvegardées, mais reload a échoué (voir console)";
   }
 }
@@ -8604,7 +7683,7 @@ function bindAdminPanel(){
       await adminLogin((pwd?.value || "").trim());
       const name = sel?.value || "cameras";
       await adminLoadCsv(name);
-    } catch(e) {
+    } catch {
       const msg = admin$("adminLoginMsg");
       if (msg) msg.textContent = "❌ Login failed";
     }
@@ -8614,7 +7693,7 @@ function bindAdminPanel(){
     try {
       const name = sel?.value || "cameras";
       await adminLoadCsv(name);
-    } catch(e) {
+    } catch {
       const msg = admin$("adminMsg");
       if (msg) msg.textContent = "❌ Load failed";
     }
@@ -8624,7 +7703,7 @@ function bindAdminPanel(){
     try {
       const name = sel?.value || "cameras";
       await adminSaveCsv(name, (ta?.value || ""));
-    } catch(e) {
+    } catch {
       const msg = admin$("adminMsg");
       if (msg) msg.textContent = "❌ Save failed";
     }
@@ -8765,11 +7844,6 @@ function renderAdminGrid(){
     syncGridMeta();
     return;
   }
-function scrollSelectedIntoView(){
-  const mount = q("adminTableMount");
-  const tr = mount?.querySelector(`.adminRow.selected`);
-  tr?.scrollIntoView({ block: "nearest" });
-}
 
   const ths = ADMIN_GRID.headers.map(h => `<th title="${escapeAttr(h)}">${escapeAttr(h)}</th>`).join("");
 
@@ -8803,34 +7877,6 @@ function scrollSelectedIntoView(){
   syncGridMeta();
 }
 
-function bindAdminGridEventsOnce(){
-  const mount = q("adminTableMount");
-  if (!mount) return;
-  if (mount.dataset.bound === "1") return;
-  mount.dataset.bound = "1";
-
-  mount.addEventListener("click", (e) => {
-    const cell = e.target.closest(".adminCell");
-    if (cell) return; // click dans input => ne pas sélectionner via row click ici
-
-    const tr = e.target.closest(".adminRow");
-    if (!tr) return;
-    ADMIN_GRID.selectedIndex = Number(tr.dataset.row);
-    renderAdminGrid(); // ok
-  });
-
-  mount.addEventListener("input", (e) => {
-    const inp = e.target.closest(".adminCell");
-    if (!inp) return;
-    const r = Number(inp.dataset.row);
-    const c = inp.dataset.col;
-    if (!ADMIN_GRID.rows[r]) return;
-    ADMIN_GRID.rows[r][c] = inp.value;
-    syncExpertTextareaIfOpen();
-    // Option: refresh meta sans rerender complet
-    // syncGridMeta();
-  });
-}
 
 
 function adminGridAddRow(){

@@ -514,7 +514,7 @@
       if (navigator.clipboard?.writeText) {
         navigator.clipboard.writeText(url.toString()).then(() => showToast("🔗 Lien copié !", "success")).catch(() => prompt("Copiez :", url.toString()));
       } else prompt("Copiez :", url.toString());
-    } catch (e) { showToast("⚠️ Erreur partage", "warn"); }
+    } catch { showToast("⚠️ Erreur partage", "warn"); }
   }
 
   function restoreFromURL() {
