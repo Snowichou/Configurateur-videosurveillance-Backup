@@ -1,0 +1,112 @@
+# ============================================================
+# CI — Configurateur Vidéosurveillance Comelit
+# ============================================================
+#
+# Workflow déclenché sur :
+#   - push sur main / develop
+#   - pull_request vers main
+#
+# Étapes :
+#   1. Checkout
+#   2. Install Node + cache npm
+#   3. Install dependencies (frontend)
+#   4. Lint (ESLint)
+#   5. Format check (Prettier)
+#   6. Tests (Vitest) + coverage
+#   7. Build (vite build) — vérifie que le bundle compile
+#
+# Aucune étape ne déploie : le déploiement est manuel via Railway.
+# ============================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Annule les runs précédents sur la même PR/branche
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint + test + build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Format check (Prettier)
+        run: npm run format:check
+        continue-on-error: true # Non bloquant pour l'instant (legacy code)
+
+      - name: Run tests
+        run: npm test
+
+      - name: Coverage report
+        run: npm run coverage
+        continue-on-error: true # Seuils peuvent ne pas être atteints au début
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: frontend/coverage/
+          retention-days: 7
+
+      - name: Upload test results (junit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: frontend/test-results/
+          retention-days: 7
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: true
+
+  backend:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax check (compile all .py)
+        run: python -m compileall -q backend
