@@ -1,9 +1,33 @@
 import "./style.css";
 import "./optimisations.css";
 import "./i18n.js";
+
+// ✅ Refactor — modules ESM (chargés AVANT app.js, exposés sur window
+//    pour rétro-compat avec le code legacy IIFE de app.js)
+//    Phase 1 = utils/engine/catalog (purs) ; Phase 2 = state/render/handlers
+import './utils/format.js';
+import './utils/csv.js';
+import './core/constants.js';
+import './engine/storage.js';
+import './engine/poe.js';
+import './engine/pick-nvr.js';
+import './engine/scoring.js';
+import './catalog/normalize.js';
+import './state/model.js';
+import './state/lookups.js';
+import './state/actions.js';
+import './render/projet.js';
+import './render/storage.js';
+import './render/options.js';
+import './render/accessories.js';
+import './render/nvr.js';
+import './render/summary.js';
+
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import './chips-enhancer.js';
+import './tooltip-fix.js';
 
 import Auth from './auth.js';
 
@@ -74,6 +98,8 @@ document.querySelector("#app").innerHTML = `
     </div>
     <div id="langSelectorWrap" style="position:absolute;top:12px;right:16px"></div>
     <div id="auth-badge" style="display:none;position:absolute;top:12px;left:16px;align-items:center;gap:8px;background:rgba(0,0,0,0.15);padding:4px 12px;border-radius:20px;color:white;font-size:13px"></div>
+    <!-- Badge état de sauvegarde (affiché par renderSaveStatusBadge / app.js) -->
+    <div id="saveStatusBadge" class="saveStatusBadge" style="position:absolute;bottom:8px;right:16px"></div>
   </header>
 
   <!-- SECTION STEPPER : Titre étape + Stepper + Boutons -->

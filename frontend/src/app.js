@@ -348,8 +348,8 @@ function getComelitLogoCandidates() {
   ];
 }
 
-  const uid = (prefix = "ID") =>
-    `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+  // ✅ Phase 2 — extrait dans src/state/actions.js
+  const uid = window._uid;
 
   const sum = (arr, fn) => {
     let t = 0;
@@ -1207,51 +1207,10 @@ const LIM = CONFIG.limits;
   };
   window._CATALOG = CATALOG;
   // ==========================================================
-  // 2) MODEL (state)
+  // 2) MODEL (state) — factory extraite dans src/state/model.js (Phase 2)
   // ==========================================================
-  const MODEL = {
-  cameraBlocks: [],
-  cameraLines: [],
-  accessoryLines: [],
-
-  recording: {
-    daysRetention: LIM.defaultRetentionDays,
-    hoursPerDay: LIM.maxHoursPerDay,
-    fps: LIM.defaultFps,
-    codec: "h265",
-    mode: "continuous",
-    overheadPct: LIM.defaultOverheadPct,
-    reservePortsPct: LIM.defaultReservePortsPct,
-  },
-
-  complements: {
-    screen: { enabled: false, sizeInch: 18, qty: 1 },
-    enclosure: { enabled: false, qty: 1 },
-    signage: { enabled: false, scope: "Public", qty: 1 },
-  },
-
-  ui: {
-    activeBlockId: null,
-    resultsShown: false,
-
-    // UI prefs (persistées)
-    mode: "simple",        // "simple" | "expert"
-    demo: false,           // true => UI orientée vente (moins "technique")
-    onlyFavs: false,       // filtre favoris dans propositions
-    favorites: [],         // [cameraId]
-    compare: [],           // [cameraId, cameraId] max 2
-    previewByBlock: {},    // { [blockId]: cameraId } => carte "pré-sélectionnée"
-  },
-
-  projectName: "",
-  
-  projectUseCase: "",  // Use case global du projet
-
-  stepIndex: 0,
-};
-
-// ✅ Expose MODEL pour le récap flottant
-window._MODEL = MODEL;
+  const MODEL = window._createInitialModel(LIM);
+  window._MODEL = MODEL;
 
 const KPI = (() => {
   const SESSION_KEY = "cfg_session_id";
@@ -2064,25 +2023,10 @@ window._getCameraById = getCameraById;
   // ==========================================================
   // 7) ENGINE - BLOCS + ACCESSOIRES
   // ==========================================================
+  // ✅ Phase 2 — extrait dans src/state/actions.js
   function createEmptyCameraBlock() {
-  return {
-    id: uid("B"),
-    label: "",
-    qty: 1,
-    quality: "standard",
-    answers: {
-      use_case: MODEL.projectUseCase || "",  // ✅ Hérite du type de site du projet
-      emplacement: "exterieur",
-      objective: "",
-      distance_m: "",
-      mounting: "wall",
-    },
-    selectedCameraId: null,
-    validated: false,
-    validatedLineId: null,
-    accessories: [],
-  };
-}
+    return window._createEmptyCameraBlockPure(MODEL.projectUseCase || '');
+  }
 
 // ==========================================================
 // UI PREFS (localStorage) + mode démo
@@ -6140,599 +6084,133 @@ rightHtml += toolbarHtml + compareHtml + cardsHtml;
   }
 
   function renderStepProject() {
-  const val = MODEL.projectName || "";
-  const useCase = MODEL.projectUseCase || "";
-  const useCases = getAllUseCases();
-
-  // Vérifie si les champs sont remplis
-  const isComplete = val.trim().length > 0 && useCase.trim().length > 0;
-
-  // Sauvegarde locale
-  const savedCfg = typeof loadConfigFromLocalStorage === "function" ? loadConfigFromLocalStorage() : null;
-  let saveCardHtml = "";
-  if (savedCfg) {
-    const svN = safeHtml(savedCfg.projectName || "Sans nom");
-    const svD = savedCfg.savedAt ? new Date(savedCfg.savedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
-    const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
-    const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
-    saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
-      + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
-      + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
-      + (svD ? svD + '<br>' : '')
-      + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
-      + `<div style="display:flex;gap:8px;margin-top:10px">`
-      + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📂 ${T("proj_save_load")}</button>`
-      + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
-      + '</div></div>';
+    // ✅ Phase 2 — composition HTML extraite dans src/render/projet.js
+    const savedCfg = typeof loadConfigFromLocalStorage === "function" ? loadConfigFromLocalStorage() : null;
+    let saveCardHtml = "";
+    if (savedCfg) {
+      const svN = safeHtml(savedCfg.projectName || "Sans nom");
+      const svD = savedCfg.savedAt ? new Date(savedCfg.savedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
+      const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
+      const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
+      saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
+        + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
+        + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
+        + (svD ? svD + '<br>' : '')
+        + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
+        + `<div style="display:flex;gap:8px;margin-top:10px">`
+        + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📂 ${T("proj_save_load")}</button>`
+        + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
+        + '</div></div>';
+    }
+    let cloudCardHtml = "";
+    if (_SSO_USER && _SSO_USER.oid) {
+      const isAzure = !!_SSO_USER.sso;
+      const userLabel = isAzure
+        ? safeHtml(_SSO_USER.email || _SSO_USER.name || "utilisateur")
+        : "mode local (sans Azure)";
+      const desc = isAzure
+        ? `Connecté en tant que <strong>${userLabel}</strong>. Vos projets sont liés à votre compte Azure et accessibles depuis n'importe quel appareil.`
+        : `Vous êtes en <strong>${userLabel}</strong>. Les projets sont stockés sur le serveur et partagés entre tous les utilisateurs locaux. Configurez Azure AD pour avoir un espace par utilisateur.`;
+      cloudCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(28,31,42,.15);background:linear-gradient(180deg,#FAFEFC 0%,#fff 100%);margin-bottom:10px">`
+        + `<div class="recoName">${isAzure ? "☁️" : "🗄️"} Mes projets ${isAzure ? "cloud" : "serveur"}</div>`
+        + `<div class="muted" style="margin-top:4px">${desc}</div>`
+        + `<div style="margin-top:10px">`
+        + `<button class="btn primary" data-action="openCloudProjects" type="button" style="width:100%">📂 Voir mes projets ${isAzure ? "cloud" : "serveur"}</button>`
+        + `</div></div>`;
+    }
+    return window._renderStepProjectPure({
+      model: MODEL,
+      T, safeHtml,
+      csvUseCases: getAllUseCases(),
+      limits: LIM,
+      projectTipHtml,
+      useCaseDescriptionHtml,
+      translateUseCase,
+      saveCardHtml: cloudCardHtml + saveCardHtml,
+    });
   }
 
-  return `
-    <div class="stepSplit">
-      <div class="blocksCol">
-        <div class="recoCard" style="padding:14px">
-          <div class="recoHeader">
-            <div>
-              <div class="recoName">${T("proj_title")}</div>
-              <div class="muted">${T("proj_desc_old")}</div>
-            </div>
-            <div class="score">🏠</div>
-          </div>
-
-          <!-- Nom du projet -->
-          <div style="margin-top:14px">
-            <strong>${T("proj_name")} <span style="color:#DC2626">*</span></strong>
-            <input
-              data-action="projName"
-              type="text"
-              maxlength="${LIM.maxProjectNameLength}"
-              value="${safeHtml(val)}"
-              placeholder="Ex : Copro Victor Hugo — Parking"
-              style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1px solid ${val.trim() ? 'var(--line)' : 'rgba(220,38,38,.5)'};background:var(--panel2);color:var(--text)"
-            />
-            <div class="muted" style="margin-top:6px">
-              Conseil : site + zone (court et clair). Exemple : "École Jules Ferry — Entrée".
-            </div>
-          </div>
-
-          <!-- Use Case global -->
-          <div style="margin-top:14px">
-            <strong>${T("proj_type")} <span style="color:#DC2626">*</span></strong>
-            <select
-              data-action="projUseCase"
-              style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1px solid ${useCase.trim() ? 'var(--line)' : 'rgba(220,38,38,.5)'};background:var(--panel2);color:var(--text)"
-            >
-              <option value="">${T("proj_type_select")}</option>
-              ${useCases.map(u => `<option value="${safeHtml(u)}" ${useCase === u ? "selected" : ""}>${safeHtml(translateUseCase(u))}</option>`).join("")}
-            </select>
-            <div class="muted" style="margin-top:6px">
-              ${T("proj_type_hint")}
-            </div>
-          </div>
-
-          ${!isComplete ? `
-            <div class="alert warn" style="margin-top:14px">
-              ⚠️ ${T("proj_incomplete")}
-            </div>
-          ` : `
-            <div class="alert ok" style="margin-top:14px">
-              ✅ ${T("proj_complete")}
-            </div>
-          `}
-        </div>
-      </div>
-
-      <div class="proposalsCol">
-        ${saveCardHtml}
-        <div class="recoCard" style="padding:14px">
-          <div class="recoName">${T("proj_preview")}</div>
-          <div class="muted" style="margin-top:6px">
-            ${T("proj_pdf_intro").replace("{0}", T("proj_title"))}<br>
-            • ${T("proj_site_name")}<br>
-            • ${T("proj_site_type_label")}<br>
-            • ${T("proj_gen_date")}<br>
-            • ${T("proj_score_label")}
-          </div>
-        </div>
-
-        <div class="recoCard" style="padding:14px;margin-top:10px">
-          <div class="recoName">${T("proj_why_type")}</div>
-          <div class="muted" style="margin-top:6px">
-            ${T("proj_why_type_desc")}<br>
-            • ${T("proj_filter_cameras")}<br>
-            • ${T("proj_preconfig")}<br>
-            • ${T("proj_optimize")}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
   function renderStepAccessories() {
+    // ✅ Phase 2 — composition HTML extraite dans src/render/accessories.js
+    //    Le caller enrichit chaque bloc validé avec sa caméra résolue.
     const validatedBlocks = (MODEL.cameraBlocks || []).filter((b) => b.validated);
-
-    if (!validatedBlocks.length) {
-      return `
-        <div class="uiEmptyState">
-          <div class="uiEmptyIcon">🔌</div>
-          <div class="uiEmptyTitle">${T("err_no_block")}</div>
-          <div class="uiEmptyMsg">${T("err_no_block")}</div>
-        </div>
-      `;
-    }
-
-    const blocksHtml = validatedBlocks
-      .map((blk) => {
-        const camLine = MODEL.cameraLines.find((cl) => cl.fromBlockId === blk.id);
-        const cam = camLine ? getCameraById(camLine.cameraId) : null;
-        const lines = blk.accessories || [];
-        const emplLabel = normalizeEmplacement(blk.answers.emplacement) === "exterieur" ? T("cam_exterior") : T("cam_interior");
-
-        const linesHtml = lines.length
-          ? lines
-              .map(
-                (acc, li) => `
-            <div class="uiProductCard">
-              <div class="uiProductMain">
-                <div class="uiProductInfo">
-                  <div class="uiProductTitle">${safeHtml(acc.name || acc.accessoryId)}</div>
-                  <div class="uiProductMeta">${safeHtml(accessoryTypeLabel(acc.type))}${acc.accessoryId ? ` • <strong>${safeHtml(acc.accessoryId)}</strong>` : ""}</div>
-                  ${acc.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(acc.datasheet_url)}" target="_blank" rel="noreferrer">${T("btn_datasheet")}</a>` : ""}
-                </div>
-                ${acc.image_url ? `<img class="uiProductImg" src="${acc.image_url}" alt="" loading="lazy">` : `<div class="uiProductImgPh">📷</div>`}
-              </div>
-              <div class="uiProductActions">
-                <div class="uiInputGroup">
-                  <label class="uiInputLabel">${T('opt_qty')}</label>
-                  <input data-action="accQty" data-bid="${safeHtml(blk.id)}" data-li="${li}"
-                    type="number" min="1" max="999" value="${acc.qty}" class="uiInput uiInputSm" />
-                </div>
-                <button data-action="accDelete" data-bid="${safeHtml(blk.id)}" data-li="${li}"
-                  class="uiBtnGhost uiBtnDanger" type="button">${T("btn_remove")}</button>
-              </div>
-            </div>
-          `
-              )
-              .join("")
-          : `<div class="uiMuted">Aucun accessoire trouvé pour ce bloc.</div>`;
-
-        return `
-        <div class="uiSection">
-          <div class="uiSectionHeader">
-            <div class="uiSectionIcon">🎥</div>
-            <div>
-              <div class="uiSectionTitle">${safeHtml(blk.label || cam?.name || "Bloc caméra")}</div>
-              <div class="uiSectionMeta">${blk.qty || 1}× • ${safeHtml(emplLabel)} • ${safeHtml(blk.answers.use_case || "—")}</div>
-            </div>
-            <div class="uiBadge">ACC</div>
-          </div>
-          <div class="uiSectionBody">
-            ${linesHtml}
-          </div>
-        </div>
-      `;
-      })
-      .join("");
-
-    return `
-      <div class="uiStepIntro">
-        <div class="uiStepIntroIcon">🔧</div>
-        <div>
-          <div class="uiStepIntroTitle">${T("mount_title")}</div>
-          <div class="uiStepIntroMsg">${T("mount_desc")}</div>
-        </div>
-        <button data-action="recalcAccessories" type="button" class="uiBtn uiBtnSm">${"♻️ " + T("mount_recalculate")}</button>
-      </div>
-
-      <div class="uiSectionsGrid">
-        ${blocksHtml}
-      </div>
-    `;
+    const blocks = validatedBlocks.map((blk) => {
+      const camLine = (MODEL.cameraLines || []).find((cl) => cl.fromBlockId === blk.id);
+      const camera = camLine ? getCameraById(camLine.cameraId) : null;
+      return { ...blk, camera };
+    });
+    return window._renderStepAccessoriesPure({
+      blocks,
+      T,
+      safeHtml,
+      normalizeEmplacement,
+      accessoryTypeLabel,
+      localizedDatasheetUrl,
+    });
   }
 
   function renderStepNvrNetwork() {
-    const proj = getProjectCached();
-    if (!proj) return `<div class="uiEmptyState"><div class="uiEmptyIcon">⚠️</div><div class="uiEmptyTitle">${T("err_compute")}</div><div class="uiEmptyMsg">${T("err_no_camera")}</div></div>`;
-    const nvr = proj.nvrPick?.nvr;
-    const isAdvance = nvr && (nvr.brand_range || "").toUpperCase() === "ADVANCE";
-    const isManual = !!MODEL.overrideNvrId;
-
-    const nvrHtml = nvr
-      ? `
-    <div class="uiSection">
-      <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🖥️</div>
-        <div>
-          <div class="uiSectionTitle">${safeHtml(nvr.id)}</div>
-          <div class="uiSectionMeta">${safeHtml(nvr.name)}${isManual ? ' <em style="color:#3B82F6">(manuel)</em>' : ''}</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${isAdvance ? '<span class="techBadge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca;font-weight:900">🤖 IA</span>' : ''}
-          <div class="uiBadge uiBadgeGreen">NVR</div>
-        </div>
-      </div>
-      <div class="uiSectionBody">
-        <div class="uiKpiRow">
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${proj.totalCameras} / ${nvr.channels}</div>
-            <div class="uiKpiLabel">${T("nvr_channels")}</div>
-          </div>
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${proj.totalInMbps.toFixed(0)} / ${nvr.max_in_mbps || "—"}</div>
-            <div class="uiKpiLabel">${T("stor_bitrate")}</div>
-          </div>
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${proj.disks ? proj.disks.count + ' × ' + proj.disks.sizeTB + ' To' : '—'}</div>
-            <div class="uiKpiLabel">${T("nvr_disks").replace("{0}", nvr.hdd_bays)}</div>
-          </div>
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${(proj.rawRequiredTB || proj.requiredTB).toFixed(1)} To</div>
-            <div class="uiKpiLabel">${proj.storageCapped ? T("nvr_storage_limited") + " ⚠️" : T("pdf_storage")}</div>
-          </div>
-        </div>
-        ${proj.storageCapped ? `
-        <div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);font-size:12px;color:#991b1b">
-          ⚠️ ${T("nvr_storage_capped").replace("{0}", proj.disks ? proj.disks.maxTotalTB : "—").replace("{1}", nvr.hdd_bays)}
-        </div>` : ""}
-        <div class="techValidation" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
-          ${proj.totalCameras <= nvr.channels ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_channels")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_channels")}</span>`}
-          ${proj.totalInMbps <= (nvr.max_in_mbps || 256) ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_bitrate")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_bitrate")}</span>`}
-          ${!proj.storageCapped ? `<span class="techBadge techBadgeOk">✅ ${T("nvr_badge_storage")}</span>` : `<span class="techBadge techBadgeWarn">⚠️ ${T("nvr_badge_storage")}</span>`}
-        </div>
-        ${nvr.image_url ? `<div style="text-align:center;margin:10px 0"><img style="max-height:100px;border-radius:8px" src="${nvr.image_url}" alt="" loading="lazy"></div>` : ""}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-          ${nvr.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(nvr.datasheet_url)}" target="_blank" rel="noreferrer">${T("nvr_datasheet_label")}</a>` : ""}
-          ${proj.disks?.hddRef?.datasheet_url ? `<a class="uiLink" href="${localizedDatasheetUrl(proj.disks.hddRef.datasheet_url)}" target="_blank" rel="noreferrer">💿 HDD ${safeHtml(proj.disks.hddRef.id || "")}</a>` : ""}
-          ${isManual ? '<button data-action="resetNvr" class="uiLink" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:12px;font-weight:700">✕ Auto</button>' : ""}
-        </div>
-      </div>
-    </div>
-
-    ${(proj.nvrPick.alternatives || []).length ? `
-    <div class="uiSection" style="margin-top:8px">
-      <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🔄</div>
-        <div>
-          <div class="uiSectionTitle">${T("nvr_alternatives")}</div>
-        </div>
-      </div>
-      <div class="uiSectionBody" style="padding:0">
-        ${(proj.nvrPick.alternatives || []).map(alt => {
-          const altIsAdvance = (alt.brand_range || "").toUpperCase() === "ADVANCE";
-          const hasMoreCh = alt.channels > nvr.channels;
-          const hasMoreBays = alt.hdd_bays > nvr.hdd_bays;
-          const why = altIsAdvance && !isAdvance ? "🤖 Gamme ADVANCE — analytics IA embarquée"
-            : hasMoreCh ? T("nvr_capacity_higher").replace("{0}", alt.channels)
-            : hasMoreBays ? T("nvr_more_storage").replace("{0}", alt.hdd_bays)
-            : T("nvr_alt_compatible");
-          return '<div class="nvrAltCard" data-action="selectNvr" data-nvrid="' + safeHtml(alt.id) + '">'
-            + '<div style="flex:1">'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<strong style="font-size:14px">' + safeHtml(alt.id) + '</strong>'
-            + (altIsAdvance ? '<span class="techBadge" style="padding:2px 6px;font-size:10px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca">🤖 IA</span>' : '')
-            + '</div>'
-            + '<div class="uiMuted" style="font-size:12px;margin-top:2px">' + alt.channels + ' ' + T("nvr_channels_label") + ' • ' + alt.max_in_mbps + ' Mbps • ' + alt.hdd_bays + ' ' + T("nvr_bays") + '</div>'
-            + '<div style="font-size:11px;color:#3B82F6;margin-top:4px">' + why + '</div>'
-            + '</div>'
-            + '<span style="font-size:20px;color:var(--muted);padding:0 8px">›</span>'
-            + '</div>';
-        }).join("")}
-      </div>
-    </div>
-    ` : ""}
-  `
-      : `
-    <div class="uiSection uiSectionWarn">
-      <div class="uiSectionHeader">
-        <div class="uiSectionIcon">🖥️</div>
-        <div>
-          <div class="uiSectionTitle">${T("nvr_title")}</div>
-          <div class="uiSectionMeta">${T("nvr_none")}</div>
-        </div>
-        <div class="uiBadge">NVR</div>
-      </div>
-      <div class="uiSectionBody">
-        <div class="uiMuted">Ajoute des NVR dans <code>nvrs.csv</code> (channels, max_in_mbps).</div>
-      </div>
-    </div>
-  `;
-
-    const sw = proj.switches;
-
-    // Section Câblage réseau (PoE)
-    const swHtml = (() => {
-      if (!sw || !sw.required) {
-        const nvrPoe = sw?.nvrPoePorts || 0;
-        return nvrPoe > 0 ? '<div class="uiSection" style="margin-top:12px"><div class="uiSectionHeader"><div class="uiSectionIcon">🔌</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div><div class="uiSectionMeta">Caméras sur les ' + nvrPoe + ' ports PoE du NVR</div></div></div></div>' : '';
-      }
-      const dist = sw.cameraDistribution || [];
-      return '<div class="uiSection" style="margin-top:12px">'
-        + '<div class="uiSectionHeader"><div class="uiSectionIcon">🔌</div><div><div class="uiSectionTitle">' + T('nvr_poe') + '</div>'
-        + '<div class="uiSectionMeta">' + (sw.camerasOnSwitches || proj.totalCameras) + ' ' + T('nvr_poe_cameras') + ' • ' + sw.totalPorts + ' ' + T('nvr_poe_ports') + '</div></div></div>'
-        + '<div class="uiSectionBody">'
-        + dist.map((d, i) => {
-            const item = d.switch;
-            return '<div class="uiProductCard" style="margin-top:' + (i ? '6' : '0') + 'px"><div class="uiProductMain"><div class="uiProductInfo">'
-              + '<div class="uiProductTitle">' + safeHtml(item.id || item.name || 'Switch') + '</div>'
-              + '<div class="uiProductMeta">' + d.camerasConnected + ' cam / ' + d.totalPorts + ' ports PoE'
-              + (item.poe_budget_w ? ' • ' + item.poe_budget_w + 'W' : '') + '</div>'
-              + '</div>'
-              + (item.image_url ? '<img class="uiProductImg" src="' + item.image_url + '" alt="" loading="lazy">' : '<div class="uiProductImgPh">📷</div>')
-              + '</div></div>';
-          }).join('')
-        + '</div></div>';
-    })();
-
-    return `${nvrHtml}${swHtml}`;
+    // ✅ Phase 2 — composition HTML extraite dans src/render/nvr.js
+    return window._renderStepNvrNetworkPure({
+      proj: getProjectCached(),
+      isManual: !!MODEL.overrideNvrId,
+      T, safeHtml,
+      localizedDatasheetUrl,
+    });
   }
 
   function renderStepStorage() {
-    const proj = getProjectCached();
-    if (!proj) return `<div class="uiEmptyState"><div class="uiEmptyIcon">⚠️</div><div class="uiEmptyTitle">${T("err_compute")}</div><div class="uiEmptyMsg">${T("err_no_camera")}</div></div>`;
-    const rec = MODEL.recording;
-    
-    return `
-    <div class="uiStepIntro">
-      <div class="uiStepIntroIcon">💾</div>
-      <div>
-        <div class="uiStepIntroTitle">${T("stor_title")}</div>
-        <div class="uiStepIntroMsg">${T("stor_desc")}</div>
-      </div>
-    </div>
-
-    <div class="uiSection">
-      <div class="uiSectionHeader">
-        <div class="uiSectionIcon">⚙️</div>
-        <div>
-          <div class="uiSectionTitle">${T("pdf_rec_params")}</div>
-          <div class="uiSectionMeta">${T("stor_settings_desc")}</div>
-        </div>
-      </div>
-      <div class="uiSectionBody">
-        <div class="uiFormGrid">
-          <div class="uiFormField">
-            <label class="uiInputLabel">📅 ${T("stor_days")} <span class="infoTip" data-tip="${T("stor_days_tip")}">i</span></label>
-            <input data-action="recDays" type="number" min="1" max="30" value="${rec.daysRetention}" class="uiInput" />
-            <div class="uiHint">⚖️ ${T("stor_hint_max_legal")}</div>
-          </div>
-          <div class="uiFormField">
-            <label class="uiInputLabel">⏰ ${T("stor_hours")} <span class="infoTip" data-tip="${T("stor_hours_tip")}">i</span></label>
-            <input data-action="recHours" type="number" min="1" max="24" value="${rec.hoursPerDay}" class="uiInput" />
-            <div class="uiHint">${T("stor_hint_24h")}</div>
-          </div>
-          <div class="uiFormField">
-            <label class="uiInputLabel">🎞️ ${T("stor_fps")} <span class="infoTip" data-tip="${T("stor_fps_tip")}">i</span></label>
-            <select data-action="recFps" class="uiInput">
-              ${CONFIG.fpsOptions.map((v) => `<option value="${v}" ${rec.fps === v ? "selected" : ""}>${v} FPS${v === 15 ? " ★" : ""}</option>`).join("")}
-            </select>
-            <div class="uiHint">${T("stor_hint_fps")}</div>
-          </div>
-          <div class="uiFormField">
-            <label class="uiInputLabel">🎬 ${T("stor_codec")} <span class="infoTip" data-tip="${T("stor_codec_tip")}">i</span></label>
-            <select data-action="recCodec" class="uiInput">
-              <option value="h265" ${rec.codec === "h265" ? "selected" : ""}>${T("stor_codec_h265")}</option>
-              <option value="h264" ${rec.codec === "h264" ? "selected" : ""}>H.264</option>
-            </select>
-          </div>
-          <div class="uiFormField">
-            <label class="uiInputLabel">⏺️ Mode <span class="infoTip" data-tip="${T("stor_mode_tip_full")}">i</span></label>
-            <select data-action="recMode" class="uiInput">
-              <option value="continuous" ${rec.mode === "continuous" ? "selected" : ""}>${T("stor_mode_continuous")}</option>
-              <option value="motion" ${rec.mode === "motion" ? "selected" : ""}>${T("stor_mode_motion")}</option>
-            </select>
-          </div>
-          <div class="uiFormField">
-            <label class="uiInputLabel">📊 ${T("nvr_margin_label")} <span class="infoTip" data-tip="Marge de sécurité sur le calcul de stockage. Compense les pics de débit et l'overhead filesystem. 20% est la valeur standard.">i</span></label>
-            <input data-action="recOver" type="number" min="0" max="50" value="${rec.overheadPct}" class="uiInput" />
-            <div class="uiHint">${T("stor_hint_margin")}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="uiSection" style="margin-top:12px">
-      <div class="uiSectionHeader">
-        <div class="uiSectionIcon">📊</div>
-        <div>
-          <div class="uiSectionTitle">${T("stor_result")}</div>
-          <div class="uiSectionMeta">${T("stor_result_desc")} — l'enregistreur sera dimensionné à l'étape suivante</div>
-        </div>
-      </div>
-      <div class="uiSectionBody">
-        <div class="uiKpiRow">
-          <div class="uiKpiCard uiKpiCardAccent">
-            <div class="uiKpiValue">${(proj.rawRequiredTB || proj.requiredTB).toFixed(1)} To</div>
-            <div class="uiKpiLabel">${T("stor_required")}</div>
-          </div>
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${proj.totalInMbps.toFixed(1)} Mbps</div>
-            <div class="uiKpiLabel">${T("stor_bitrate")}</div>
-          </div>
-          <div class="uiKpiCard">
-            <div class="uiKpiValue">${proj.totalCameras}</div>
-            <div class="uiKpiLabel">${T("stor_cameras")}</div>
-          </div>
-        </div>
-        <div class="uiMuted" style="margin-top:8px">
-          ➡️ ${T("stor_next_step")}
-        </div>
-      </div>
-    </div>
-    `;
+    // ✅ Phase 2 — composition HTML extraite dans src/render/storage.js
+    return window._renderStepStoragePure({
+      model: MODEL,
+      proj: getProjectCached(),
+      T, safeHtml,
+      fpsOptions: CONFIG.fpsOptions,
+      storageTipHtml,
+      renderStorageBarSvg,
+    });
   }
+
   function renderStepComplements() {
+    // ✅ Phase 2 — composition HTML extraite dans src/render/options.js
     const proj = getProjectCached();
-    if (!proj) return `<div class="uiEmptyState"><div class="uiEmptyIcon">⚠️</div><div class="uiEmptyTitle">${T("err_compute")}</div></div>`;
-
-    // Écran
     const scrEnabled = !!MODEL.complements.screen.enabled;
-    const scrSel = scrEnabled && typeof getSelectedOrRecommendedScreen === "function" ? getSelectedOrRecommendedScreen(proj)?.selected : null;
-
-    // Boîtier + compatibilité écran
+    const scrSel = scrEnabled && typeof getSelectedOrRecommendedScreen === "function"
+      ? getSelectedOrRecommendedScreen(proj)?.selected : null;
     const encEnabled = !!MODEL.complements.enclosure.enabled;
-    const screenForEnc = scrEnabled ? (typeof pickScreenBySize === "function" ? pickScreenBySize(MODEL.complements.screen.sizeInch) : scrSel) : null;
-    const encResult = encEnabled && typeof pickBestEnclosure === "function" ? pickBestEnclosure(proj, screenForEnc) : null;
-    const encSel = encResult?.enclosure || (encEnabled && typeof getSelectedOrRecommendedEnclosure === "function" ? getSelectedOrRecommendedEnclosure(proj)?.selected : null);
+    const screenForEnc = scrEnabled
+      ? (typeof pickScreenBySize === "function" ? pickScreenBySize(MODEL.complements.screen.sizeInch) : scrSel)
+      : null;
+    const encResult = encEnabled && typeof pickBestEnclosure === "function"
+      ? pickBestEnclosure(proj, screenForEnc) : null;
+    const encSel = encResult?.enclosure
+      || (encEnabled && typeof getSelectedOrRecommendedEnclosure === "function"
+        ? getSelectedOrRecommendedEnclosure(proj)?.selected : null);
     const screenInsideOk = encResult?.screenInsideOk || false;
-
-    // Signalisation
     const signEnabled = !!MODEL.complements.signage?.enabled;
-    const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function" ? getSelectedOrRecommendedSign()?.sign : null;
-
-    // Helper : option card
-    const optionCard = (icon, title, desc, enabled, toggleAction, toggleValue, body) => `
-      <div class="optCard ${enabled ? 'optCardActive' : ''}">
-        <div class="optHeader">
-          <div class="optHeaderLeft">
-            <div class="optIcon">${icon}</div>
-            <div class="optHeaderTxt">
-              <div class="optTitle">${title}</div>
-              <div class="optDesc">${desc}</div>
-            </div>
-          </div>
-          <button data-action="${toggleAction}" data-value="${toggleValue}" class="optToggle ${enabled ? 'optToggleOn' : ''}">
-            <span class="optToggleDot"></span>
-          </button>
-        </div>
-        ${enabled ? '<div class="optBody">' + body + '</div>' : ''}
-      </div>`;
-
-    // Helper : product row
-    const productRow = (ref, name, imgUrl, imgFallback, badges) => {
-      const badgesHtml = (badges || []).map(b => 
-        '<span class="optBadge' + (b.type === 'ok' ? ' optBadgeOk' : b.type === 'warn' ? ' optBadgeWarn' : '') + '">' + b.text + '</span>'
-      ).join('');
-      return `<div class="optProduct">
-        <div class="optProductInfo">
-          <div class="optProductRef">${safeHtml(ref)}</div>
-          <div class="optProductName">${safeHtml(name)}</div>
-          ${badgesHtml ? '<div class="optBadges">' + badgesHtml + '</div>' : ''}
-        </div>
-        ${imgUrl ? '<img class="optProductImg" src="' + imgUrl + '" alt="" loading="lazy">' : '<div class="optProductImgPh">' + imgFallback + '</div>'}
-      </div>`;
-    };
-
-    // Écran body
-    const screenBody = '<div class="optForm">'
-      + '<div class="optFormRow">'
-      + '<div class="optFormField"><label class="optLabel">' + T('opt_screen_size') + '</label><select data-action="screenSize" class="optInput">'
-      + CONFIG.screenSizes.map(s => '<option value="' + s + '"' + (MODEL.complements.screen.sizeInch === s ? ' selected' : '') + '>' + s + '"</option>').join('')
-      + '</select></div>'
-      + '<div class="optFormField"><label class="optLabel">' + T('opt_qty') + '</label><input data-action="screenQty" type="number" min="1" max="10" value="' + (MODEL.complements.screen.qty || 1) + '" class="optInput optInputNarrow" /></div>'
-      + '</div></div>'
-      + (scrSel ? productRow(scrSel.id, scrSel.name || '', scrSel.image_url, '🖥️', []) : '');
-
-    // Boîtier body — avec compatibilité écran
-    const encBadges = [];
-    if (encEnabled && scrEnabled) {
-      encBadges.push(screenInsideOk
-        ? { type: 'ok', text: T('opt_enclosure_screen_ok') }
-        : { type: 'warn', text: T('opt_enclosure_screen_no') }
-      );
-    }
-    const encBody = '<div class="optForm">'
-      + '<div class="optFormRow">'
-      + '<div class="optFormField"><label class="optLabel">' + T('opt_qty') + '</label><input data-action="enclosureQty" type="number" min="1" max="10" value="' + (MODEL.complements.enclosure.qty || 1) + '" class="optInput optInputNarrow" /></div>'
-      + '</div></div>'
-      + (encSel ? productRow(encSel.id, encSel.name || '', encSel.image_url, '📦', encBadges) : (!encEnabled ? '' : '<div class="optNoProduct">' + T('opt_enclosure_none') + '</div>'));
-
-    // Signalisation body
-    const signBody = '<div class="optForm">'
-      + '<div class="optFormRow">'
-      + '<div class="optFormField"><label class="optLabel">' + T('opt_sign_scope') + '</label><select data-action="signageScope" class="optInput">'
-      + '<option value="Public"' + ((MODEL.complements.signage?.scope || 'Public') === 'Public' ? ' selected' : '') + '>' + T('opt_sign_public') + '</option>'
-      + '<option value="Privé"' + (MODEL.complements.signage?.scope === 'Privé' ? ' selected' : '') + '>' + T('opt_sign_private') + '</option>'
-      + '</select></div>'
-      + '<div class="optFormField"><label class="optLabel">' + T('opt_qty') + '</label><input data-action="signageQty" type="number" min="1" max="20" value="' + (MODEL.complements.signage?.qty || 1) + '" class="optInput optInputNarrow" /></div>'
-      + '</div></div>'
-      + (signSel ? productRow(signSel.id, signSel.name || '', signSel.image_url, '⚠️', []) : '');
-
-    return `
-    <div class="uiStepIntro">
-      <div class="uiStepIntroIcon">⚙️</div>
-      <div>
-        <div class="uiStepIntroTitle">${T("opt_title")}</div>
-        <div class="uiStepIntroMsg">${T("opt_desc")}</div>
-      </div>
-    </div>
-    <div class="optGrid">
-      ${optionCard('🖥️', T('opt_screen'), T('opt_screen_desc'), scrEnabled, 'screenToggle', scrEnabled ? '0' : '1', screenBody)}
-      ${optionCard('📦', T('opt_enclosure'), T('opt_enclosure_desc_full') + (scrEnabled ? ' et de l\'écran' : ''), encEnabled, 'enclosureToggle', encEnabled ? '0' : '1', encBody)}
-      ${optionCard('⚠️', T('opt_sign'), T('opt_sign_desc'), signEnabled, 'signageToggle', signEnabled ? '0' : '1', signBody)}
-    </div>
-    `;
+    const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function"
+      ? getSelectedOrRecommendedSign()?.sign : null;
+    return window._renderStepComplementsPure({
+      proj,
+      selections: {
+        screen: { enabled: scrEnabled, selected: scrSel, sizeInch: MODEL.complements.screen.sizeInch, qty: MODEL.complements.screen.qty },
+        enclosure: { enabled: encEnabled, selected: encSel, qty: MODEL.complements.enclosure.qty, screenInsideOk, screenSizeInch: Number(MODEL.complements.screen.sizeInch) || 0 },
+        signage: { enabled: signEnabled, selected: signSel, scope: MODEL.complements.signage?.scope, qty: MODEL.complements.signage?.qty },
+      },
+      T, safeHtml,
+      screenSizes: CONFIG.screenSizes,
+      optionTipHtml,
+    });
   }
-
 
 function renderStepSummary() {
+  // ✅ Phase 2 — composition HTML extraite dans src/render/summary.js
   const proj = LAST_PROJECT;
-
-  const exportHtml = `
-    <div class="summaryActions">
-      <div class="summaryActionsRow">
-        <button class="exportBtn exportBtnMain" id="btnExportPdf">
-          <span class="exportBtnIcon">📄</span>
-          <span class="exportBtnLabel">${T("sum_export_pdf")}</span>
-        </button>
-        <button class="exportBtn exportBtnSecondary" id="btnExportPdfPack">
-          <span class="exportBtnIcon">📦</span>
-          <span class="exportBtnLabel">${T("sum_export_pack")}</span>
-        </button>
-        <button class="exportBtn exportBtnSecondary" id="btnPreviewPdf">
-          <span class="exportBtnIcon">👁️</span>
-          <span class="exportBtnLabel">${T("proj_preview")}</span>
-        </button>
-      </div>
-      <div class="summaryActionsRow">
-        <button class="exportBtn exportBtnCommercial" id="btnRequestQuote">
-          <span class="exportBtnIcon">✉️</span>
-          <span class="exportBtnLabel">${T("sum_request_quote")}</span>
-        </button>
-        <!-- DÉSACTIVÉ – lancement interne (réactiver pour déploiement distributeurs)
-        <button class="exportBtn exportBtnSecondary" id="btnSendToDistributor">
-          <span class="exportBtnIcon">🔗</span>
-          <span class="exportBtnLabel">${T("sum_send_distributor")}</span>
-        </button>
-        -->
-      </div>
-      <div class="summaryActionsRow summaryActionsUtils">
-        <button class="exportBtn exportBtnSecondary" id="btnSaveConfig">
-          <span class="exportBtnIcon">💾</span>
-          <span class="exportBtnLabel">${T("sum_save")}</span>
-        </button>
-        <button class="exportBtn exportBtnSecondary" id="btnShareConfig">
-          <span class="exportBtnIcon">🔗</span>
-          <span class="exportBtnLabel">${T("sum_share")}</span>
-        </button>
-        <button class="exportBtn exportBtnGhost" id="btnBackToEdit">
-          <span class="exportBtnIcon">✏️</span>
-          <span class="exportBtnLabel">${T("btn_edit_config")}</span>
-        </button>
-      </div>
-    </div>
-  `;
-
-  return `
-    <div class="step stepSummary">
-      <div class="summaryBanner ${proj ? "ok" : "warn"}">
-        <div class="summaryBannerIcon">${proj ? "✅" : "⚠️"}</div>
-        <div class="summaryBannerText">
-          <div class="summaryBannerTitle">${proj ? T("sum_config_done") : T("sum_config_incomplete")}</div>
-          <div class="summaryBannerSub">${proj
-            ? T("sum_config_done_desc")
-            : "Reviens à l'étape Options et clique Finaliser."}</div>
-        </div>
-      </div>
-
-      ${proj ? exportHtml : ""}
-
-      <div class="summaryFullWidth">
-        ${proj
-          ? renderFinalSummary(proj)
-          : `<div class="recoCard" style="padding:12px"><div class="muted">—</div></div>`}
-      </div>
-    </div>
-  `;
+  return window._renderStepSummaryPure({
+    proj,
+    finalSummaryHtml: proj ? renderFinalSummary(proj) : '',
+    T,
+  });
 }
 
   // ✅ Compat: ancien nom utilisé par render()
@@ -9054,29 +8532,9 @@ bind(DOM.btnCompute, "click", () => {
     }
 
 bind(DOM.btnReset, "click", () => {
-  MODEL.cameraBlocks = [createEmptyCameraBlock()];
-  MODEL.cameraLines = [];
-  MODEL.accessoryLines = [];
-
-  MODEL.complements = {
-    screen: { enabled: false, sizeInch: 18, qty: 1, selectedId: null },
-    enclosure: { enabled: false, qty: 1, selectedId: null }
-  };
-
-  MODEL.recording = {
-    daysRetention: LIM.defaultRetentionDays,
-    hoursPerDay: LIM.maxHoursPerDay,
-    fps: LIM.defaultFps,
-    codec: "h265",
-    mode: "continuous",
-    overheadPct: LIM.defaultOverheadPct,
-    reservePortsPct: LIM.defaultReservePortsPct,
-  };
-
-  MODEL.ui.resultsShown = false;
-  MODEL.stepIndex = 0;
+  // ✅ Phase 2 — réinitialisation déléguée à src/state/actions.js
+  window._resetModel(MODEL, LIM);
   LAST_PROJECT = null;
-
   sanity();
   invalidateProjectCache();
   syncResultsUI();

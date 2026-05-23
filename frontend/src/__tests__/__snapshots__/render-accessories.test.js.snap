@@ -1,0 +1,62 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepAccessories > snapshot stable avec 1 bloc / 1 accessoire 1`] = `
+"
+    <div class="uiStepIntro">
+      <div class="uiStepIntroIcon">🔧</div>
+      <div>
+        <div class="uiStepIntroTitle">i18n(mount_title)</div>
+        <div class="uiStepIntroMsg">i18n(mount_desc)</div>
+      </div>
+      <button data-action="recalcAccessories" type="button" class="uiBtn uiBtnSm">♻️ i18n(mount_recalculate)</button>
+    </div>
+
+    <div class="uiSectionsGrid">
+      
+        <div class="uiSection">
+          <div class="uiSectionHeader">
+            <div class="uiSectionIcon">🎥</div>
+            <div>
+              <div class="uiSectionTitle">Bloc parking</div>
+              <div class="uiSectionMeta">4× • i18n(cam_exterior) • Parking</div>
+            </div>
+            <div class="uiBadge">ACC</div>
+          </div>
+          <div class="uiSectionBody">
+            
+    <div class="uiProductCard">
+      <div class="uiProductMain">
+        <div class="uiProductInfo">
+          <div class="uiProductTitle">Junction box</div>
+          <div class="uiProductMeta">type:junction_box • <strong>JB-1</strong></div>
+          <a class="uiLink" href="/data/jb1.pdf?lang=fr" target="_blank" rel="noreferrer">i18n(btn_datasheet)</a>
+        </div>
+        <img class="uiProductImg" src="/img/jb1.png" alt="" loading="lazy">
+      </div>
+      <div class="uiProductActions">
+        <div class="uiInputGroup">
+          <label class="uiInputLabel">i18n(opt_qty)</label>
+          <input data-action="accQty" data-bid="B1" data-li="0"
+            type="number" min="1" max="999" value="2" class="uiInput uiInputSm" />
+        </div>
+        <button data-action="accDelete" data-bid="B1" data-li="0"
+          class="uiBtnGhost uiBtnDanger" type="button">i18n(btn_remove)</button>
+      </div>
+    </div>
+  
+          </div>
+        </div>
+      
+    </div>
+  "
+`;
+
+exports[`renderStepAccessories > snapshot stable empty 1`] = `
+"
+      <div class="uiEmptyState">
+        <div class="uiEmptyIcon">🔌</div>
+        <div class="uiEmptyTitle">i18n(err_no_block)</div>
+        <div class="uiEmptyMsg">i18n(err_no_block)</div>
+      </div>
+    "
+`;

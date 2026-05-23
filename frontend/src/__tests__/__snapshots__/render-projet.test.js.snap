@@ -1,0 +1,251 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepProject > snapshot stable du rendu rempli 1`] = `
+"
+    <div class="stepSplit">
+      <div class="blocksCol">
+        <div class="recoCard" style="padding:14px">
+          <div class="recoHeader">
+            <div>
+              <div class="recoName">i18n(proj_title)</div>
+              <div class="muted">i18n(proj_desc_old)</div>
+            </div>
+            <div class="score">✅</div>
+          </div>
+
+          <div class="tip">tip-stub</div>
+
+          <!-- Ligne 1 : Nom + Type site (2 colonnes) -->
+          <div class="kv">
+            <div>
+              <strong>
+                📌 i18n(proj_name) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="i18n(proj_name_hint_short)">i</span>
+              </strong>
+              <input
+                data-action="projName"
+                type="text"
+                maxlength="80"
+                value="Projet ACME"
+                placeholder="i18n(proj_name_placeholder_short)"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"
+              />
+              <div class="muted" style="margin-top:6px;font-size:11px">
+                i18n(proj_name_hint_inline)
+              </div>
+            </div>
+            <div>
+              <strong>
+                🏷️ i18n(proj_type) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="i18n(proj_type_hint)">i</span>
+              </strong>
+              <select
+                data-action="projUseCase"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"
+              >
+                <option value="">i18n(proj_type_select)</option>
+                <option value="Résidentiel" >tr(Résidentiel)</option><option value="Tertiaire" >tr(Tertiaire)</option><option value="Logement collectif" >tr(Logement collectif)</option><option value="Parking" selected>tr(Parking)</option><option value="Industriel" >tr(Industriel)</option><option value="Bureau" >tr(Bureau)</option>
+              </select>
+              <div class="desc">desc-stub</div>
+              <div class="muted" style="margin-top:6px;font-size:11px">
+                i18n(proj_type_hint_short)
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags + Notes regroupés dans details collapsable (P1.4) -->
+          <details class="projOptDetails" open style="margin-top:14px">
+            <summary class="projOptSummary">
+              <span class="projOptIcon">📋</span>
+              <span class="projOptLabel">i18n(proj_optional_section)</span>
+              <span class="projOptHint">i18n(proj_optional_hint)</span>
+            </summary>
+            <div class="kv" style="margin-top:10px">
+              <div>
+                <strong>
+                  🏷️ i18n(proj_tags_label)
+                  <span class="infoTip" data-tip="i18n(proj_tags_tip)">i</span>
+                </strong>
+                <input
+                  data-action="projTags"
+                  type="text"
+                  maxlength="200"
+                  value="acme"
+                  placeholder="i18n(proj_tags_placeholder)"
+                  style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"
+                />
+                <div class="muted" style="margin-top:6px;font-size:11px">
+                  i18n(proj_tags_hint)
+                </div>
+              </div>
+              <div>
+                <strong>
+                  📝 i18n(proj_notes_label)
+                  <span class="infoTip" data-tip="i18n(proj_notes_tip)">i</span>
+                </strong>
+                <textarea
+                  data-action="projNotes"
+                  maxlength="3000"
+                  rows="3"
+                  placeholder="i18n(proj_notes_placeholder)"
+                  style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:inherit;resize:vertical;min-height:80px;font-size:13px"
+                >Notes test</textarea>
+              </div>
+            </div>
+          </details>
+
+          <div class="alert ok" style="margin-top:14px">✅ i18n(proj_complete)</div>
+        </div>
+      </div>
+
+      <div class="proposalsCol">
+        <div class="saveCard">save-stub</div>
+        <div class="recoCard" style="padding:14px">
+          <div class="recoName">i18n(proj_preview)</div>
+          <div class="muted" style="margin-top:6px">
+            i18n(proj_pdf_intro)<br>
+            • i18n(proj_site_name)<br>
+            • i18n(proj_site_type_label)<br>
+            • i18n(proj_gen_date)<br>
+            • i18n(proj_score_label)
+          </div>
+        </div>
+
+        <div class="recoCard" style="padding:14px;margin-top:10px">
+          <div class="recoName">i18n(proj_why_type)</div>
+          <div class="muted" style="margin-top:6px">
+            i18n(proj_why_type_desc)<br>
+            • i18n(proj_filter_cameras)<br>
+            • i18n(proj_preconfig)<br>
+            • i18n(proj_optimize)
+          </div>
+        </div>
+      </div>
+    </div>
+  "
+`;
+
+exports[`renderStepProject > snapshot stable du rendu vierge 1`] = `
+"
+    <div class="stepSplit">
+      <div class="blocksCol">
+        <div class="recoCard" style="padding:14px">
+          <div class="recoHeader">
+            <div>
+              <div class="recoName">i18n(proj_title)</div>
+              <div class="muted">i18n(proj_desc_old)</div>
+            </div>
+            <div class="score">🏠</div>
+          </div>
+
+          <div class="tip">tip-stub</div>
+
+          <!-- Ligne 1 : Nom + Type site (2 colonnes) -->
+          <div class="kv">
+            <div>
+              <strong>
+                📌 i18n(proj_name) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="i18n(proj_name_hint_short)">i</span>
+              </strong>
+              <input
+                data-action="projName"
+                type="text"
+                maxlength="80"
+                value=""
+                placeholder="i18n(proj_name_placeholder_short)"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid rgba(220,38,38,.4);background:var(--panel2);color:var(--text)"
+              />
+              <div class="muted" style="margin-top:6px;font-size:11px">
+                i18n(proj_name_hint_inline)
+              </div>
+            </div>
+            <div>
+              <strong>
+                🏷️ i18n(proj_type) <span class="fieldRequired">*</span>
+                <span class="infoTip" data-tip="i18n(proj_type_hint)">i</span>
+              </strong>
+              <select
+                data-action="projUseCase"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid rgba(220,38,38,.4);background:var(--panel2);color:var(--text)"
+              >
+                <option value="">i18n(proj_type_select)</option>
+                <option value="Résidentiel" >tr(Résidentiel)</option><option value="Tertiaire" >tr(Tertiaire)</option><option value="Logement collectif" >tr(Logement collectif)</option><option value="Parking" >tr(Parking)</option><option value="Industriel" >tr(Industriel)</option><option value="Bureau" >tr(Bureau)</option>
+              </select>
+              <div class="desc">desc-stub</div>
+              <div class="muted" style="margin-top:6px;font-size:11px">
+                i18n(proj_type_hint_short)
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags + Notes regroupés dans details collapsable (P1.4) -->
+          <details class="projOptDetails"  style="margin-top:14px">
+            <summary class="projOptSummary">
+              <span class="projOptIcon">📋</span>
+              <span class="projOptLabel">i18n(proj_optional_section)</span>
+              <span class="projOptHint">i18n(proj_optional_hint)</span>
+            </summary>
+            <div class="kv" style="margin-top:10px">
+              <div>
+                <strong>
+                  🏷️ i18n(proj_tags_label)
+                  <span class="infoTip" data-tip="i18n(proj_tags_tip)">i</span>
+                </strong>
+                <input
+                  data-action="projTags"
+                  type="text"
+                  maxlength="200"
+                  value=""
+                  placeholder="i18n(proj_tags_placeholder)"
+                  style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"
+                />
+                <div class="muted" style="margin-top:6px;font-size:11px">
+                  i18n(proj_tags_hint)
+                </div>
+              </div>
+              <div>
+                <strong>
+                  📝 i18n(proj_notes_label)
+                  <span class="infoTip" data-tip="i18n(proj_notes_tip)">i</span>
+                </strong>
+                <textarea
+                  data-action="projNotes"
+                  maxlength="3000"
+                  rows="3"
+                  placeholder="i18n(proj_notes_placeholder)"
+                  style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:inherit;resize:vertical;min-height:80px;font-size:13px"
+                ></textarea>
+              </div>
+            </div>
+          </details>
+
+          <div class="alert warn" style="margin-top:14px">⚠️ i18n(proj_incomplete)</div>
+        </div>
+      </div>
+
+      <div class="proposalsCol">
+        <div class="saveCard">save-stub</div>
+        <div class="recoCard" style="padding:14px">
+          <div class="recoName">i18n(proj_preview)</div>
+          <div class="muted" style="margin-top:6px">
+            i18n(proj_pdf_intro)<br>
+            • i18n(proj_site_name)<br>
+            • i18n(proj_site_type_label)<br>
+            • i18n(proj_gen_date)<br>
+            • i18n(proj_score_label)
+          </div>
+        </div>
+
+        <div class="recoCard" style="padding:14px;margin-top:10px">
+          <div class="recoName">i18n(proj_why_type)</div>
+          <div class="muted" style="margin-top:6px">
+            i18n(proj_why_type_desc)<br>
+            • i18n(proj_filter_cameras)<br>
+            • i18n(proj_preconfig)<br>
+            • i18n(proj_optimize)
+          </div>
+        </div>
+      </div>
+    </div>
+  "
+`;

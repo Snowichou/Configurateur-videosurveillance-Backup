@@ -1,0 +1,123 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Snapshot — renderMountRecapPanel > récap avec 13 caméras et 21 accessoires 1`] = `
+"
+    <div class="recapPanel" role="region" aria-label="Récap fixations">
+      <div class="recapHeader">
+        <div class="recapStep">🔧 <span>Étape Fixations</span></div>
+        <div class="recapTitle">Synthèse des accessoires</div>
+      </div>
+      <div class="mountRecapKpis">
+        <div class="mountRecapKpi">
+          <div class="mountRecapKpiValue">13</div>
+          <div class="mountRecapKpiLabel">caméras</div>
+        </div>
+        <div class="mountRecapKpi mountRecapKpiAccent">
+          <div class="mountRecapKpiValue">21</div>
+          <div class="mountRecapKpiLabel">accessoires</div>
+        </div>
+      </div>
+      <div class="mountRecapChips"><span class="mountRecapChip"><span class="mountRecapChipIcon">📦</span><strong>13</strong> <span class="mountRecapChipLabel">Boîtier raccordement</span></span><span class="mountRecapChip"><span class="mountRecapChipIcon">🧱</span><strong>8</strong> <span class="mountRecapChipLabel">Support</span></span></div>
+    </div>
+  "
+`;
+
+exports[`Snapshot — renderMountRecapPanel > récap empty (0 caméras, 0 accessoires) 1`] = `
+"
+    <div class="recapPanel" role="region" aria-label="Récap fixations">
+      <div class="recapHeader">
+        <div class="recapStep">🔧 <span>Étape Fixations</span></div>
+        <div class="recapTitle">Synthèse des accessoires</div>
+      </div>
+      <div class="mountRecapKpis">
+        <div class="mountRecapKpi">
+          <div class="mountRecapKpiValue">0</div>
+          <div class="mountRecapKpiLabel">caméras</div>
+        </div>
+        <div class="mountRecapKpi mountRecapKpiAccent">
+          <div class="mountRecapKpiValue">0</div>
+          <div class="mountRecapKpiLabel">accessoires</div>
+        </div>
+      </div>
+      
+    </div>
+  "
+`;
+
+exports[`Snapshot — useCaseDescriptionHtml > description Parking 1`] = `
+"
+    <div class="ucDescPanel" role="note" aria-live="polite">
+      <div class="ucDescTitle">🅿️ Parking — souterrain et extérieur</div>
+      <div class="ucDescBody">Pour <strong>parkings souterrains</strong>.</div>
+    </div>
+  "
+`;
+
+exports[`Snapshot — useCaseDescriptionHtml > description Résidentiel 1`] = `
+"
+    <div class="ucDescPanel" role="note" aria-live="polite">
+      <div class="ucDescTitle">🏡 Résidentiel — particuliers et villas</div>
+      <div class="ucDescBody">Idéal pour <strong>maisons individuelles</strong>.</div>
+    </div>
+  "
+`;
+
+exports[`Snapshot — wizardTipHtml > tip ADVANCE rendu standard 1`] = `
+"
+    <div class="wizardTip" role="note" data-tipid="tip:where:advance">
+      <span class="wizardTipIcon">🧠</span>
+      <div class="wizardTipBody">
+        <div class="wizardTipTitle">ADVANCE = analyses avancées</div>
+        <div class="wizardTipText">L'IA ADVANCE active comptage de personnes, métadonnées (couleur, taille), reconnaissance de plaques (LPR).</div>
+      </div>
+      <button type="button" class="wizardTipClose"
+        data-action="dismissWizardTip" data-tipid="tip:where:advance"
+        aria-label="Masquer l'astuce" title="Ne plus afficher">✕</button>
+    </div>
+  "
+`;
+
+exports[`Snapshot — wizardTipHtml > tip Parking avec HTML <strong> dans body 1`] = `
+"
+    <div class="wizardTip" role="note" data-tipid="tip:proj:parking">
+      <span class="wizardTipIcon">🅿️</span>
+      <div class="wizardTipBody">
+        <div class="wizardTipTitle">Parking — LPR et accès véhicules</div>
+        <div class="wizardTipText">Surveillance des entrées/sorties véhicules avec <strong>lecture de plaques (LPR)</strong>.</div>
+      </div>
+      <button type="button" class="wizardTipClose"
+        data-action="dismissWizardTip" data-tipid="tip:proj:parking"
+        aria-label="Masquer l'astuce" title="Ne plus afficher">✕</button>
+    </div>
+  "
+`;
+
+exports[`Snapshot — wizardTipHtml > tip avec caractères spéciaux échappés correctement 1`] = `
+"
+    <div class="wizardTip" role="note" data-tipid="tip:test:special">
+      <span class="wizardTipIcon">⚠️</span>
+      <div class="wizardTipBody">
+        <div class="wizardTipTitle">Test &quot;spécial&quot; &lt;html&gt;</div>
+        <div class="wizardTipText">Caractères : & < > " '</div>
+      </div>
+      <button type="button" class="wizardTipClose"
+        data-action="dismissWizardTip" data-tipid="tip:test:special"
+        aria-label="Masquer l'astuce" title="Ne plus afficher">✕</button>
+    </div>
+  "
+`;
+
+exports[`Snapshot — wizardTipHtml > tip dismissed AUTRE → rendu normal 1`] = `
+"
+    <div class="wizardTip" role="note" data-tipid="tip:where:advance">
+      <span class="wizardTipIcon">🧠</span>
+      <div class="wizardTipBody">
+        <div class="wizardTipTitle">ADVANCE = analyses avancées</div>
+        <div class="wizardTipText">L'IA ADVANCE active comptage de personnes, métadonnées (couleur, taille), reconnaissance de plaques (LPR).</div>
+      </div>
+      <button type="button" class="wizardTipClose"
+        data-action="dismissWizardTip" data-tipid="tip:where:advance"
+        aria-label="Masquer l'astuce" title="Ne plus afficher">✕</button>
+    </div>
+  "
+`;

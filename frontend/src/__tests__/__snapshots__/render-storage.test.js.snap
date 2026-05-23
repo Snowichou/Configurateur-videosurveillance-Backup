@@ -1,0 +1,311 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepStorage > snapshot stable du rendu motion + h264 + dualStream OFF 1`] = `
+"
+    <div class="uiStepIntro">
+      <div class="uiStepIntroIcon">💾</div>
+      <div>
+        <div class="uiStepIntroTitle">i18n(stor_title)</div>
+        <div class="uiStepIntroMsg">i18n(stor_desc)</div>
+      </div>
+    </div>
+
+    <div class="tip">tip-stub</div>
+
+    <!-- Section 1 : Paramètres d'enregistrement -->
+    <div class="storageCard">
+      <div class="storageCardHeader">
+        <div class="storageCardIcon">⚙️</div>
+        <div class="storageCardHeaderText">
+          <div class="storageCardTitle">i18n(stor_settings_title)</div>
+          <div class="storageCardSubtitle">i18n(stor_settings_desc)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 1 : Jours + Heures/jour -->
+      <div class="kv">
+        <div>
+          <strong>
+            📅 i18n(stor_days) <span class="fieldRequired">*</span>
+            <span class="infoTip" data-tip="i18n(stor_days_tip)">i</span>
+          </strong>
+          <input data-action="recDays" type="number" min="1" max="365"
+            value="14"
+            class="storageInput" />
+          <div class="storageHint">⚖️ i18n(stor_hint_max_legal)</div>
+        </div>
+        <div>
+          <strong>
+            ⏰ i18n(stor_hours)
+            <span class="infoTip" data-tip="i18n(stor_hours_tip)">i</span>
+          </strong>
+          <input data-action="recHours" type="number" min="1" max="24"
+            value="24"
+            class="storageInput" />
+          <div class="storageHint">i18n(stor_hint_24h)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 2 : FPS + Mode -->
+      <div class="kv" style="margin-top:12px">
+        <div>
+          <strong>
+            🎞️ i18n(stor_fps)
+            <span class="infoTip" data-tip="i18n(stor_fps_tip)">i</span>
+          </strong>
+          <select data-action="recFps" class="storageInput">
+            <option value="10" selected>10 FPS</option><option value="15" >15 FPS ★</option><option value="20" >20 FPS</option><option value="25" >25 FPS</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_fps)</div>
+        </div>
+        <div>
+          <strong>
+            ⏺️ i18n(stor_mode_label)
+            <span class="infoTip" data-tip="i18n(stor_mode_tip_full)">i</span>
+          </strong>
+          <select data-action="recMode" class="storageInput">
+            <option value="continuous" >i18n(stor_mode_continuous)</option>
+            <option value="motion" selected>i18n(stor_mode_motion)</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_motion)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 3 : Codec + Marge -->
+      <div class="kv" style="margin-top:12px">
+        <div>
+          <strong>
+            🎬 i18n(stor_codec)
+            <span class="infoTip" data-tip="i18n(stor_codec_tip)">i</span>
+          </strong>
+          <select data-action="recCodec" class="storageInput">
+            <option value="h265" >i18n(stor_codec_h265)</option>
+            <option value="h264" selected>H.264</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_h264)</div>
+        </div>
+        <div>
+          <strong>
+            📊 i18n(nvr_margin_label)
+            <span class="infoTip" data-tip="i18n(stor_overhead_tip_full)">i</span>
+          </strong>
+          <input data-action="recOver" type="number" min="0" max="50"
+            value="20"
+            class="storageInput" />
+          <div class="storageHint">i18n(stor_hint_margin_breakdown)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 4 : Dual stream avec switch -->
+      <div class="storageDualRow">
+        <div class="storageDualLabel">
+          <div class="storageDualIcon">🎞️</div>
+          <div>
+            <div class="storageDualTitle">
+              i18n(stor_dual_stream_label)
+              <span class="infoTip" data-tip="i18n(stor_dual_stream_tip)">i</span>
+            </div>
+            <div class="storageDualSub">
+              i18n(stor_dual_stream_hint_off)
+            </div>
+          </div>
+        </div>
+        <label class="storageSwitch ">
+          <input type="checkbox" data-action="recDualStream"  />
+          <span class="storageSwitchTrack"><span class="storageSwitchThumb"></span></span>
+          <span class="storageSwitchLabel">i18n(opt_state_off)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Section 2 : Résultat du calcul -->
+    <div class="storageCard storageCardResult">
+      <div class="storageCardHeader">
+        <div class="storageCardIcon">📊</div>
+        <div class="storageCardHeaderText">
+          <div class="storageCardTitle">i18n(stor_result)</div>
+          <div class="storageCardSubtitle">i18n(stor_bar_subtitle)</div>
+        </div>
+      </div>
+
+      <div class="storageBarWrap">
+        <svg class="bar">bar-stub</svg>
+      </div>
+
+      <div class="storageKpiRow">
+        <div class="storageKpi storageKpiAccent">
+          <div class="storageKpiValue">12.5 <span class="storageKpiUnit">To</span></div>
+          <div class="storageKpiLabel">i18n(stor_required)</div>
+        </div>
+        <div class="storageKpi">
+          <div class="storageKpiValue">87.4 <span class="storageKpiUnit">Mbps</span></div>
+          <div class="storageKpiLabel">i18n(stor_bitrate)</div>
+        </div>
+        <div class="storageKpi">
+          <div class="storageKpiValue">8</div>
+          <div class="storageKpiLabel">i18n(stor_cameras)</div>
+        </div>
+      </div>
+
+      <div class="storageNextStep">
+        <span class="storageNextStepIcon">➡️</span>
+        <span class="storageNextStepText">i18n(stor_next_step)</span>
+      </div>
+    </div>
+  "
+`;
+
+exports[`renderStepStorage > snapshot stable du rendu par défaut 1`] = `
+"
+    <div class="uiStepIntro">
+      <div class="uiStepIntroIcon">💾</div>
+      <div>
+        <div class="uiStepIntroTitle">i18n(stor_title)</div>
+        <div class="uiStepIntroMsg">i18n(stor_desc)</div>
+      </div>
+    </div>
+
+    <div class="tip">tip-stub</div>
+
+    <!-- Section 1 : Paramètres d'enregistrement -->
+    <div class="storageCard">
+      <div class="storageCardHeader">
+        <div class="storageCardIcon">⚙️</div>
+        <div class="storageCardHeaderText">
+          <div class="storageCardTitle">i18n(stor_settings_title)</div>
+          <div class="storageCardSubtitle">i18n(stor_settings_desc)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 1 : Jours + Heures/jour -->
+      <div class="kv">
+        <div>
+          <strong>
+            📅 i18n(stor_days) <span class="fieldRequired">*</span>
+            <span class="infoTip" data-tip="i18n(stor_days_tip)">i</span>
+          </strong>
+          <input data-action="recDays" type="number" min="1" max="365"
+            value="14"
+            class="storageInput" />
+          <div class="storageHint">⚖️ i18n(stor_hint_max_legal)</div>
+        </div>
+        <div>
+          <strong>
+            ⏰ i18n(stor_hours)
+            <span class="infoTip" data-tip="i18n(stor_hours_tip)">i</span>
+          </strong>
+          <input data-action="recHours" type="number" min="1" max="24"
+            value="24"
+            class="storageInput" />
+          <div class="storageHint">i18n(stor_hint_24h)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 2 : FPS + Mode -->
+      <div class="kv" style="margin-top:12px">
+        <div>
+          <strong>
+            🎞️ i18n(stor_fps)
+            <span class="infoTip" data-tip="i18n(stor_fps_tip)">i</span>
+          </strong>
+          <select data-action="recFps" class="storageInput">
+            <option value="10" >10 FPS</option><option value="15" >15 FPS ★</option><option value="20" >20 FPS</option><option value="25" selected>25 FPS</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_fps)</div>
+        </div>
+        <div>
+          <strong>
+            ⏺️ i18n(stor_mode_label)
+            <span class="infoTip" data-tip="i18n(stor_mode_tip_full)">i</span>
+          </strong>
+          <select data-action="recMode" class="storageInput">
+            <option value="continuous" selected>i18n(stor_mode_continuous)</option>
+            <option value="motion" >i18n(stor_mode_motion)</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_continuous)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 3 : Codec + Marge -->
+      <div class="kv" style="margin-top:12px">
+        <div>
+          <strong>
+            🎬 i18n(stor_codec)
+            <span class="infoTip" data-tip="i18n(stor_codec_tip)">i</span>
+          </strong>
+          <select data-action="recCodec" class="storageInput">
+            <option value="h265" selected>i18n(stor_codec_h265)</option>
+            <option value="h264" >H.264</option>
+          </select>
+          <div class="storageHint">i18n(stor_hint_h265)</div>
+        </div>
+        <div>
+          <strong>
+            📊 i18n(nvr_margin_label)
+            <span class="infoTip" data-tip="i18n(stor_overhead_tip_full)">i</span>
+          </strong>
+          <input data-action="recOver" type="number" min="0" max="50"
+            value="20"
+            class="storageInput" />
+          <div class="storageHint">i18n(stor_hint_margin_breakdown)</div>
+        </div>
+      </div>
+
+      <!-- Ligne 4 : Dual stream avec switch -->
+      <div class="storageDualRow">
+        <div class="storageDualLabel">
+          <div class="storageDualIcon">🎞️</div>
+          <div>
+            <div class="storageDualTitle">
+              i18n(stor_dual_stream_label)
+              <span class="infoTip" data-tip="i18n(stor_dual_stream_tip)">i</span>
+            </div>
+            <div class="storageDualSub">
+              i18n(stor_dual_stream_hint_on)
+            </div>
+          </div>
+        </div>
+        <label class="storageSwitch on">
+          <input type="checkbox" data-action="recDualStream" checked />
+          <span class="storageSwitchTrack"><span class="storageSwitchThumb"></span></span>
+          <span class="storageSwitchLabel">i18n(opt_state_on)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Section 2 : Résultat du calcul -->
+    <div class="storageCard storageCardResult">
+      <div class="storageCardHeader">
+        <div class="storageCardIcon">📊</div>
+        <div class="storageCardHeaderText">
+          <div class="storageCardTitle">i18n(stor_result)</div>
+          <div class="storageCardSubtitle">i18n(stor_bar_subtitle)</div>
+        </div>
+      </div>
+
+      <div class="storageBarWrap">
+        <svg class="bar">bar-stub</svg>
+      </div>
+
+      <div class="storageKpiRow">
+        <div class="storageKpi storageKpiAccent">
+          <div class="storageKpiValue">12.5 <span class="storageKpiUnit">To</span></div>
+          <div class="storageKpiLabel">i18n(stor_required)</div>
+        </div>
+        <div class="storageKpi">
+          <div class="storageKpiValue">87.4 <span class="storageKpiUnit">Mbps</span></div>
+          <div class="storageKpiLabel">i18n(stor_bitrate)</div>
+        </div>
+        <div class="storageKpi">
+          <div class="storageKpiValue">8</div>
+          <div class="storageKpiLabel">i18n(stor_cameras)</div>
+        </div>
+      </div>
+
+      <div class="storageNextStep">
+        <span class="storageNextStepIcon">➡️</span>
+        <span class="storageNextStepText">i18n(stor_next_step)</span>
+      </div>
+    </div>
+  "
+`;

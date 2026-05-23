@@ -1,0 +1,78 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepSummary > snapshot stable nominal 1`] = `
+"
+    <div class="step stepSummary">
+      <div class="summaryBanner ok">
+        <div class="summaryBannerIcon">✅</div>
+        <div class="summaryBannerText">
+          <div class="summaryBannerTitle">i18n(sum_config_done)</div>
+          <div class="summaryBannerSub">i18n(sum_config_done_desc)</div>
+        </div>
+      </div>
+
+      
+    <div class="summaryActions">
+      <div class="summaryActionsRow">
+        <button class="exportBtn exportBtnMain" id="btnExportPdf">
+          <span class="exportBtnIcon">📄</span>
+          <span class="exportBtnLabel">i18n(sum_export_pdf)</span>
+        </button>
+        <button class="exportBtn exportBtnSecondary" id="btnExportPdfPack">
+          <span class="exportBtnIcon">📦</span>
+          <span class="exportBtnLabel">i18n(sum_export_pack)</span>
+        </button>
+        <button class="exportBtn exportBtnSecondary" id="btnPreviewPdf">
+          <span class="exportBtnIcon">👁️</span>
+          <span class="exportBtnLabel">i18n(proj_preview)</span>
+        </button>
+      </div>
+      <div class="summaryActionsRow">
+        <button class="exportBtn exportBtnCommercial" id="btnRequestQuote">
+          <span class="exportBtnIcon">✉️</span>
+          <span class="exportBtnLabel">i18n(sum_request_quote)</span>
+        </button>
+      </div>
+      <div class="summaryActionsRow summaryActionsUtils">
+        <button class="exportBtn exportBtnSecondary" id="btnSaveConfig">
+          <span class="exportBtnIcon">💾</span>
+          <span class="exportBtnLabel">i18n(sum_save)</span>
+        </button>
+        <button class="exportBtn exportBtnSecondary" id="btnShareConfig">
+          <span class="exportBtnIcon">🔗</span>
+          <span class="exportBtnLabel">i18n(sum_share)</span>
+        </button>
+        <button class="exportBtn exportBtnGhost" id="btnBackToEdit">
+          <span class="exportBtnIcon">✏️</span>
+          <span class="exportBtnLabel">i18n(btn_edit_config)</span>
+        </button>
+      </div>
+    </div>
+  
+
+      <div class="summaryFullWidth">
+        <div>RECAP</div>
+      </div>
+    </div>
+  "
+`;
+
+exports[`renderStepSummary > snapshot stable proj null 1`] = `
+"
+    <div class="step stepSummary">
+      <div class="summaryBanner warn">
+        <div class="summaryBannerIcon">⚠️</div>
+        <div class="summaryBannerText">
+          <div class="summaryBannerTitle">i18n(sum_config_incomplete)</div>
+          <div class="summaryBannerSub">Reviens à l'étape Options et clique Finaliser.</div>
+        </div>
+      </div>
+
+      
+
+      <div class="summaryFullWidth">
+        <div class="recoCard" style="padding:12px"><div class="muted">—</div></div>
+      </div>
+    </div>
+  "
+`;

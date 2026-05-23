@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderStepNvrNetwork > snapshot stable nominal 1`] = `
+"
+    <div class="uiSection">
+      <div class="uiSectionHeader">
+        <div class="uiSectionIcon">🖥️</div>
+        <div>
+          <div class="uiSectionTitle">NVR-16</div>
+          <div class="uiSectionMeta">NVR ADVANCE 16ch</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="techBadge" style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#4338ca;font-weight:900">🤖 IA</span>
+          <div class="uiBadge uiBadgeGreen">NVR</div>
+        </div>
+      </div>
+      <div class="uiSectionBody">
+        <div class="uiKpiRow">
+          <div class="uiKpiCard">
+            <div class="uiKpiValue">8 / 16</div>
+            <div class="uiKpiLabel">i18n(nvr_channels)</div>
+          </div>
+          <div class="uiKpiCard">
+            <div class="uiKpiValue">87 / 160</div>
+            <div class="uiKpiLabel">i18n(stor_bitrate)</div>
+          </div>
+          <div class="uiKpiCard">
+            <div class="uiKpiValue">2 × 8 To</div>
+            <div class="uiKpiLabel">i18n(nvr_disks)</div>
+          </div>
+          <div class="uiKpiCard">
+            <div class="uiKpiValue">12.5 To</div>
+            <div class="uiKpiLabel">i18n(pdf_storage)</div>
+          </div>
+        </div>
+        
+        <div class="techValidation" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+          <span class="techBadge techBadgeOk">✅ i18n(nvr_badge_channels)</span>
+          <span class="techBadge techBadgeOk">✅ i18n(nvr_badge_bitrate)</span>
+          <span class="techBadge techBadgeOk">✅ i18n(nvr_badge_storage)</span>
+        </div>
+        <div style="text-align:center;margin:10px 0"><img style="max-height:100px;border-radius:8px" src="/img/nvr.png" alt="" loading="lazy"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <a class="uiLink" href="/data/nvr.pdf?lang=fr" target="_blank" rel="noreferrer">i18n(nvr_datasheet_label)</a>
+          <a class="uiLink" href="/data/hdd.pdf?lang=fr" target="_blank" rel="noreferrer">💿 HDD HDD-8</a>
+          
+        </div>
+      </div>
+    </div>
+    
+  "
+`;
+
+exports[`renderStepNvrNetwork > snapshot stable proj null 1`] = `"<div class="uiEmptyState"><div class="uiEmptyIcon">⚠️</div><div class="uiEmptyTitle">i18n(err_compute)</div><div class="uiEmptyMsg">i18n(err_no_camera)</div></div>"`;
