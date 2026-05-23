@@ -12,6 +12,7 @@ import './engine/storage.js';
 import './engine/poe.js';
 import './engine/pick-nvr.js';
 import './engine/scoring.js';
+import './engine/camera-score.js';
 import './catalog/normalize.js';
 import './state/model.js';
 import './state/lookups.js';
