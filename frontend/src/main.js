@@ -46,6 +46,7 @@ import './handlers/summary.js';
 import './handlers/init.js';
 import './catalog/media.js';
 import './ui/toast.js';
+import './handlers/quote.js';
 import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";
