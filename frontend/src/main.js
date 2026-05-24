@@ -15,6 +15,7 @@ import './engine/scoring.js';
 import './engine/camera-score.js';
 import './engine/camera-reco.js';
 import './engine/totals.js';
+import './engine/accessories.js';
 import './catalog/normalize.js';
 import './state/model.js';
 import './state/lookups.js';

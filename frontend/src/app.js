@@ -1331,29 +1331,8 @@ function sanity() {
 
 
   function rebuildAccessoryLinesFromBlocks() {
-    const out = [];
-
-    for (const blk of (MODEL.cameraBlocks || [])) {
-      if (!blk.validated) continue;
-      const camLine = MODEL.cameraLines.find((l) => l.fromBlockId === blk.id);
-      const camId = camLine?.cameraId || null;
-
-      for (const accLine of (blk.accessories || [])) {
-        out.push({
-          type: accLine.type,
-          accessoryId: accLine.accessoryId,
-          name: accLine.name,
-          qty: accLine.qty,
-          linkedCameraId: accLine.linkedCameraId || camId || null,
-          fromBlockId: blk.id,
-          image_url: accLine.image_url || false,
-          datasheet_url: accLine.datasheet_url || false,
-          stand_alone: !!accLine.stand_alone,
-        });
-      }
-    }
-
-    MODEL.accessoryLines = out;
+    // ✅ Phase 2 — logique extraite dans src/engine/accessories.js
+    MODEL.accessoryLines = window._buildAccessoryLinesPure(MODEL.cameraBlocks, MODEL.cameraLines);
   }
 
   function unvalidateBlock(block) {
@@ -1398,65 +1377,19 @@ function invalidateIfNeeded(block, reason = "Modification") {
 }
 
   function suggestAccessoriesForBlock(block) {
+    // ✅ Phase 2 — logique extraite dans src/engine/accessories.js
     const line = MODEL.cameraLines.find((l) => l.fromBlockId === block.id);
-    if (!line) {
-      block.accessories = [];
-      return;
-    }
-
-    const cam = getCameraById(line.cameraId);
-    if (!cam) {
-      block.accessories = [];
-      return;
-    }
-
-    const mapRow = CATALOG.ACCESSORIES_MAP.get(cam.id);
-    if (!mapRow) {
-      block.accessories = [];
-      return;
-    }
-
-    const camQty = clampInt(line.qty || 1, 1, 999);
-    const mounting = block.answers.mounting || "wall";
-
-    const picked = [];
-
-    // ✅ Junction box SYSTÉMATIQUEMENT (si présente)
-    if (mapRow.junction?.id) picked.push(mapRow.junction);
-
-    // Support selon pose
-    let mountAcc = null;
-    if (mounting === "ceiling") mountAcc = mapRow.ceiling?.id ? mapRow.ceiling : null;
-    else mountAcc = mapRow.wall?.id ? mapRow.wall : null;
-
-    // fallback si le support attendu n'existe pas
-    if (!mountAcc) {
-      mountAcc = (mapRow.wall?.id ? mapRow.wall : null) || (mapRow.ceiling?.id ? mapRow.ceiling : null);
-    }
-    if (mountAcc?.id) picked.push(mountAcc);
-
-    const mult = clampInt(mapRow.qty, 1, 999);
-    const lines = picked.map((acc) => ({
-      type: acc.type,
-      accessoryId: acc.id,
-      name: acc.name || acc.id,
-      qty: camQty * mult,
-      image_url: acc.image_url || false,
-      datasheet_url: acc.datasheet_url || false,
-      stand_alone: !!acc.stand_alone,
-      linkedCameraId: cam.id,
-    }));
-
-    // dedupe
-    const agg = new Map();
-    for (const l of lines) {
-      const key = `${l.type}__${l.accessoryId}`;
-      const prev = agg.get(key);
-      if (!prev) agg.set(key, { ...l });
-      else prev.qty += l.qty;
-    }
-
-    block.accessories = [...agg.values()].filter((x) => x.accessoryId && x.qty > 0);
+    const cam = line ? getCameraById(line.cameraId) : null;
+    const mapRow = cam ? CATALOG.ACCESSORIES_MAP.get(cam.id) : null;
+    block.accessories = window._computeBlockAccessoriesPure(
+      {
+        cam,
+        mapRow,
+        mounting: block.answers.mounting || "wall",
+        camQty: clampInt(line?.qty || 1, 1, 999),
+      },
+      { clampInt }
+    );
   }
 
   function suggestAccessories() {
