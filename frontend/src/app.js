@@ -1907,79 +1907,14 @@ if (typeof renderStepMounts !== "function" && typeof renderStepAccessories === "
   window.renderStepMounts = renderStepAccessories;
 }
 function bindSummaryButtons() {
-  const stepId = STEPS[MODEL.stepIndex]?.id;
-  if (stepId !== "summary") return;
-
-  const btnBack = document.getElementById("btnBackToEdit");
-  if (btnBack && !btnBack.dataset.bound) {
-    btnBack.dataset.bound = "1";
-    btnBack.addEventListener("click", () => {
-      const compIdx = STEPS.findIndex(s => s.id === "complements");
-      if (compIdx >= 0) {
-        MODEL.stepIndex = compIdx;
-        MODEL.ui.resultsShown = false;
-        syncResultsUI();
-        render();
-      }
-    });
-  }
-
-  const btnPdf = document.getElementById("btnExportPdf");
-  if (btnPdf && !btnPdf.dataset.bound) {
-    btnPdf.dataset.bound = "1";
-    btnPdf.addEventListener("click", () => {
-      if (typeof exportProjectPdfPro === "function") exportProjectPdfPro();
-      else alert("Export PDF indisponible.");
-    });
-  }
-
-  // Aperçu PDF
-  const btnPreview = document.getElementById("btnPreviewPdf");
-  if (btnPreview && !btnPreview.dataset.bound) {
-    btnPreview.dataset.bound = "1";
-    btnPreview.addEventListener("click", () => {
-      if (typeof showPdfPreview === "function") showPdfPreview();
-      else alert(T("sum_preview") + " — N/A");
-    });
-  }
-
-  const btnPack = document.getElementById("btnExportPdfPack");
-  if (btnPack && !btnPack.dataset.bound) {
-    btnPack.dataset.bound = "1";
-    btnPack.addEventListener("click", () => {
-      if (typeof exportProjectPdfPackPro === "function") exportProjectPdfPackPro();
-      else alert("Export pack indisponible.");
-    });
-  }
-
-  // Sauvegarder
-  const btnSave = document.getElementById("btnSaveConfig");
-  if (btnSave && !btnSave.dataset.bound) {
-    btnSave.dataset.bound = "1";
-    btnSave.addEventListener("click", () => saveConfigToLocalStorage());
-  }
-
-  // Partager
-  const btnShare = document.getElementById("btnShareConfig");
-  if (btnShare && !btnShare.dataset.bound) {
-    btnShare.dataset.bound = "1";
-    btnShare.addEventListener("click", () => shareConfigUrl());
-  }
-
-  // Demander un devis
-  const btnQuote = document.getElementById("btnRequestQuote");
-  if (btnQuote && !btnQuote.dataset.bound) {
-    btnQuote.dataset.bound = "1";
-    btnQuote.addEventListener("click", () => requestQuote());
-  }
-
-  // Transmettre à un distributeur
-  const btnDistrib = document.getElementById("btnSendToDistributor");
-  if (btnDistrib && !btnDistrib.dataset.bound) {
-    btnDistrib.dataset.bound = "1";
-    btnDistrib.addEventListener("click", () => sendToDistributor());
-  }
+  return window._bindSummaryButtonsPure({
+    MODEL, STEPS, T,
+    syncResultsUI, render,
+    exportProjectPdfPro, showPdfPreview, exportProjectPdfPackPro,
+    saveConfigToLocalStorage, shareConfigUrl, requestQuote, sendToDistributor,
+  });
 }
+
 
 // ==========================================================
 // SAUVEGARDE, PARTAGE & TRANSITION COMMERCIALE
