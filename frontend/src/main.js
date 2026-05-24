@@ -32,6 +32,7 @@ import './render/summary-final.js';
 import './render/pdf-blob.js';
 import './render/pdf-export.js';
 import './render/pdf-preview.js';
+import './render/datasheet-urls.js';
 import './render/pdf.js';
 import './engine/project.js';
 import './handlers/steps.js';
