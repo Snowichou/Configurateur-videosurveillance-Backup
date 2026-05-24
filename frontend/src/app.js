@@ -893,119 +893,24 @@ function sanity() {
 }
 
 
-  function rebuildAccessoryLinesFromBlocks() {
-    // ✅ Phase 2 — logique extraite dans src/engine/accessories.js
-    MODEL.accessoryLines = window._buildAccessoryLinesPure(MODEL.cameraBlocks, MODEL.cameraLines);
-  }
-
-  function unvalidateBlock(block) {
-    block.validated = false;
-
-    if (block.validatedLineId) {
-      const idx = MODEL.cameraLines.findIndex((l) => l.lineId === block.validatedLineId);
-      if (idx >= 0) MODEL.cameraLines.splice(idx, 1);
-    }
-    block.validatedLineId = null;
-
-    block.accessories = [];
-    rebuildAccessoryLinesFromBlocks();
-  }
-
-  // ✅ Invalidation légère : si un bloc déjà "validé" est modifié,
-// on le repasse en non-validé + on reset le cache projet pour forcer recompute.
-function invalidateIfNeeded(block, reason = "Modification") {
-  try {
-    // Toujours invalider le cache de rendu/calcul projet
-    // (sinon computeProject() peut rester sur un résultat ancien)
-    if (typeof _renderProjectCache !== "undefined") invalidateProjectCache();
-
-    if (!block) return;
-
-    // Si le bloc était validé, on le "dévalide" proprement
-    if (block.validated) {
-      if (typeof unvalidateBlock === "function") {
-        unvalidateBlock(block, reason);
-      } else {
-        // fallback ultra-safe
-        block.validated = false;
-        block.selectedCameraId = "";
-      }
-    }
-  } catch (e) {
-    console.warn("[invalidateIfNeeded] fallback", e);
-    try {
-      if (typeof _renderProjectCache !== "undefined") invalidateProjectCache();
-    } catch {}
-  }
-}
-
-  function suggestAccessoriesForBlock(block) {
-    // ✅ Phase 2 — logique extraite dans src/engine/accessories.js
-    const line = MODEL.cameraLines.find((l) => l.fromBlockId === block.id);
-    const cam = line ? getCameraById(line.cameraId) : null;
-    const mapRow = cam ? CATALOG.ACCESSORIES_MAP.get(cam.id) : null;
-    block.accessories = window._computeBlockAccessoriesPure(
-      {
-        cam,
-        mapRow,
-        mounting: block.answers.mounting || "wall",
-        camQty: clampInt(line?.qty || 1, 1, 999),
-      },
-      { clampInt }
-    );
-  }
-
-  function suggestAccessories() {
-    for (const blk of (MODEL.cameraBlocks || [])) {
-      if (!blk.validated) continue;
-      suggestAccessoriesForBlock(blk);
-    }
-    rebuildAccessoryLinesFromBlocks();
-  }
-
-  function validateBlock(block, reco, forcedCameraId = null) {
-    const chosenId = forcedCameraId || block.selectedCameraId || reco?.primary?.camera?.id || null;
-    const cam = chosenId ? getCameraById(chosenId) : null;
-    if (!cam) {
-      alert("Impossible de valider : aucune caméra sélectionnable pour ce bloc.");
-      return;
-    }
-
-    const qty = clampInt(Number(block.qty || 1), 1, 999);
-    block.qty = qty; // ✅ on fixe le type définitivement après validation
-
-    const quality = block.quality || "standard";
-
-    if (block.validatedLineId) {
-      const line = MODEL.cameraLines.find((l) => l.lineId === block.validatedLineId);
-      if (line) {
-        line.cameraId = cam.id;
-        line.qty = qty;
-        line.quality = quality;
-        line.fromBlockId = block.id;
-      } else {
-        block.validatedLineId = null;
-      }
-    }
-
-    if (!block.validatedLineId) {
-      const lineId = uid("LINE");
-      MODEL.cameraLines.push({ lineId, cameraId: cam.id, qty, quality, fromBlockId: block.id });
-      KPI.sendNowait("validate_camera", KPI.snapshot());
-      block.validatedLineId = lineId;
-    }
-
-    block.validated = true;
-    block.selectedCameraId = cam.id;
-
-    // ✅ Score /100 stocké dans le bloc (sert pour Résumé + PDF)
-    const sc = scoreCameraForBlock(block, cam);
-    block.selectedCameraScore = sc.score;
-    block.selectedCameraScoreParts = sc.parts; // optionnel
-
-    suggestAccessoriesForBlock(block);
-    rebuildAccessoryLinesFromBlocks();
-  }
+  // ==========================================================
+// 8) ENGINE - BLOCKS LIFECYCLE — engine/block-lifecycle.js
+// ==========================================================
+/* eslint-disable no-unused-vars */
+const {
+  rebuildAccessoryLinesFromBlocks, unvalidateBlock, invalidateIfNeeded,
+  suggestAccessoriesForBlock, suggestAccessories, validateBlock,
+} = window._createBlockLifecycleHandlers({
+  get MODEL() { return MODEL; },
+  get CATALOG() { return CATALOG; },
+  uid,
+  clampInt,
+  getCameraById,
+  scoreCameraForBlock,
+  KPI,
+  invalidateProjectCache,
+});
+/* eslint-enable no-unused-vars */
 
   // ==========================================================
   // 8) ENGINE - PROJET (NVR / SWITCH / HDD)
