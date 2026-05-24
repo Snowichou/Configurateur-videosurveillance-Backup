@@ -1221,86 +1221,12 @@ function getSelectedOrRecommendedEnclosure(proj) {
 
 
 // ==========================================================
-// THUMBS / IMAGES (LOCAL DATA ONLY)
+// THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
 // ==========================================================
-const LOCAL_IMG_ROOT = "/data/Images";
-const __thumbCache = new Map();
-
-function getThumbSrc(family, id) {
-  try {
-    const fam = String(family || "").trim();
-    const ref = String(id || "").trim();
-    if (!fam || !ref) return "";
-
-    const key = `${fam}::${ref}`;
-    if (__thumbCache.has(key)) return __thumbCache.get(key);
-
-    // 📸 Convention projet : 1 image = <ID>.png dans /data/Images/<family>/
-    const url = `${LOCAL_IMG_ROOT}/${fam}/${encodeURIComponent(ref)}.png`;
-
-    __thumbCache.set(key, url);
-    return url;
-  } catch {
-    return "";
-  }
-}
-
-const LOCAL_PDF_ROOT = "/data/fiche_tech";
-
-// ✅ Datasheets 100% locaux (même logique que getThumbSrc)
-function getDatasheetSrc(family, ref) {
-  const id = String(ref || "").trim();
-  if (!id) return "";
-  const fam = String(family || "").toLowerCase().trim();
-
-  let folder = fam;
-  if (fam === "cameras") folder = "cameras";
-  else if (fam === "nvrs") folder = "nvrs";
-  else if (fam === "hdds") folder = "hdds";
-  else if (fam === "switches") folder = "switches";
-  else if (fam === "accessories") folder = "accessories";
-  else if (fam === "screens") folder = "screens";
-  else if (fam === "enclosures") folder = "enclosures";
-  else if (fam === "signage") folder = "signage";
-
-  // on suppose: /data/Datasheets/<folder>/<ID>.pdf
-  return `${LOCAL_PDF_ROOT}/${folder}/${encodeURIComponent(id)}.pdf`;
-}
-
-// ✅ Force le catalogue à utiliser les médias locaux (images + fiches)
-// NOTE: Ne PAS écraser datasheet_url si elle existe déjà (URL Comelit multilingue du CSV)
+const getThumbSrc = window._getThumbSrc;
 function applyLocalMediaToCatalog() {
-  const apply = (familyKey, list) => {
-    if (!Array.isArray(list)) return;
-    const fam = String(familyKey || "").toLowerCase();
-    for (const it of list) {
-      const id = String(it?.id || "").trim();
-      if (!id) continue;
-      // Préserver l'URL image du CSV (Comelit CDN) si elle existe déjà
-      if (!it.image_url || it.image_url === "false") {
-        // Préserver l'URL image du CSV (Comelit CDN) si elle existe déjà
-        if (!it.image_url || it.image_url === "false") {
-      it.image_url = getThumbSrc(fam, id);
-        }
-      }
-      // Garder l'URL datasheet du CSV (Comelit multilingue) si elle existe
-      if (!it.datasheet_url || it.datasheet_url === "false") {
-        it.datasheet_url = getDatasheetSrc(fam, id);
-      }
-    }
-  };
-
-  apply("cameras", CATALOG?.CAMERAS);
-  apply("nvrs", CATALOG?.NVRS);
-  apply("hdds", CATALOG?.HDDS);
-  apply("switches", CATALOG?.SWITCHES);
-  apply("accessories", CATALOG?.ACCESSORIES);
-  apply("screens", CATALOG?.SCREENS);
-  apply("enclosures", CATALOG?.ENCLOSURES);
-  apply("signage", CATALOG?.SIGNAGE);
+  return window._applyLocalMediaToCatalogPure(CATALOG);
 }
-
-
 
   function buildPdfHtml(proj) {
     // ✅ Phase 2 — génération HTML PDF extraite dans src/render/pdf.js
