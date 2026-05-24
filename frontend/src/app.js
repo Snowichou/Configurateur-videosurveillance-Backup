@@ -299,50 +299,19 @@ function kpiConfigSnapshot(proj) {
     return t;
   };
 
-  const normalizeEmplacement = (v) => {
-    const s = String(v ?? "").trim().toLowerCase();
-    if (s.startsWith("ext")) return "exterieur";
-    if (s.startsWith("int")) return "interieur";
-    return s || "";
-  };
+  const normalizeEmplacement = window.normalizeEmplacement;
 
-  const objectiveToDoriKey = (obj) => {
-    if (obj === "detection") return "dori_detection_m";
-    if (obj === "observation") return "dori_observation_m";
-    if (obj === "reconnaissance") return "dori_recognition_m";
-    return "dori_identification_m";
-  };
+  const objectiveToDoriKey = window.objectiveToDoriKey;
   
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
-  function getMpFromCam(cam){
-  const num = Number(String(cam?.resolution_mp ?? "").replace(",", "."));
-  return Number.isFinite(num) ? num : null;
-}
+  const getMpFromCam = window.getMpFromCam;
 
 
-  function getIrFromCam(cam){
-  const num = Number(String(cam?.ir_range_m ?? "").replace(",", "."));
-  return Number.isFinite(num) ? num : null;
-}
+  const getIrFromCam = window.getIrFromCam;
 
 
-  function getDoriForObjective(cam, objective){
-  // objective: "detection" | "observation" | "reconnaissance" | "identification"
-  if (!cam) return null;
-
-  let v = null;
-  if (objective === "detection") v = cam.dori_detection_m;
-  else if (objective === "observation") v = cam.dori_observation_m;
-  else if (objective === "reconnaissance") v = cam.dori_recognition_m;
-  else if (objective === "identification") v = cam.dori_identification_m;
-  // Rétrocompat ancien "dissuasion"
-  else if (objective === "dissuasion") v = cam.dori_observation_m;
-  else v = null;
-
-  const num = Number(String(v ?? "").replace(",", "."));
-  return Number.isFinite(num) && num > 0 ? num : null;
-}
+  const getDoriForObjective = window.getDoriForObjective;
 
 
 function pickScreenBySize(sizeInch) {
