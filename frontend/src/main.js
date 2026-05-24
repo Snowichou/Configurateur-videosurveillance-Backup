@@ -39,6 +39,7 @@ import './utils/share.js';
 import './render/pdf.js';
 import './engine/project.js';
 import './handlers/steps.js';
+import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
