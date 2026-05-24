@@ -2,150 +2,97 @@
 // engine/pick-nvr.js — Moteur de sélection NVR
 // ============================================================
 //
-// Fonction PURE extraite de app.js (Phase 1 refactor).
+// Fonction PURE extraite de app.js (Phase 2 refactor).
 //
-// Règle métier centrale :
-//   - Si AU MOINS UN bloc caméra demande IA ADVANCE → le NVR DOIT être ADVANCE
-//     (préservation IA : comptage, métadonnées, LPR…)
-//   - Sinon → NEXT prioritaire (moins cher), auto-upgrade ADVANCE si NEXT
-//     n'a pas assez de canaux (NEXT max = 16 ch).
+// Algorithme « gamme dominante » (canonique, décision Seb) :
+//   1. On déduit la gamme dominante = celle (NEXT / ADVANCE) la plus
+//      représentée parmi les caméras configurées.
+//   2. On filtre les NVRs couvrant le nombre de canaux requis.
+//   3. Scoring souple : baies HDD OK (×1000) > même gamme que la
+//      dominante (×100) > débit OK (×10).
+//   4. À score égal : nombre de canaux minimal (anti-surdimensionnement).
 //
-// Exports :
-//   - pickNvr(totalCameras, totalInMbps, requiredTB, cameraBlocks,
-//             catalogNvrs, catalogHdds, [tFn])
-//     → { nvr, reason, alternatives, otherRangeAlternatives,
-//         requiredRange, usedRange, upgradedFromNext, hasAdvanceBlock }
-//
-// Exposé sur window pour rétro-compat avec l'IIFE app.js.
+// 100% pur : lignes caméra, lookup catalogue, catalogues NVR/HDD et
+// i18n passés via `deps`. Le wrapper app.js injecte ses dépendances
+// → comportement strictement identique au legacy.
 // ============================================================
 
-/**
- * Identité (i18n) par défaut quand aucune fonction de traduction n'est fournie.
- * @param {string} key
- * @returns {string}
- */
-const identityT = (key) => key;
+const identityT = (key) => String(key ?? '');
 
 /**
  * Sélectionne le meilleur NVR pour un projet donné.
  *
- * Critère de scoring (par ordre) :
- *   1. Couvre le nombre de canaux requis (filtre dur)
- *   2. Score = baysOk (×1000) + mbpsOk (×10)
- *   3. À score égal : nombre de canaux minimal (éviter l'overspending)
- *
- * @param {number} totalCameras       - Nombre total de caméras
- * @param {number} totalInMbps        - Débit total entrant (Mbps)
- * @param {number} requiredTB         - Stockage requis (To)
- * @param {Array<Object>} cameraBlocks - Blocs caméra (lecture ai_type)
- * @param {Array<Object>} catalogNvrs - Catalogue NVRs (brand_range, channels, max_in_mbps, hdd_bays)
- * @param {Array<Object>} catalogHdds - Catalogue HDDs (pour calculer minBays)
- * @param {Function} [tFn=identityT]  - Fonction de traduction i18n (optionnelle)
- * @returns {Object}
+ * @param {number} totalCameras - Nombre total de caméras
+ * @param {number} totalInMbps  - Débit total entrant (Mbps)
+ * @param {number} requiredTB   - Stockage requis (To)
+ * @param {Object} [deps]
+ * @param {Array}    [deps.cameraLines]   - lignes caméra ({ cameraId, qty })
+ * @param {Function} [deps.getCameraById] - (id) => caméra | null
+ * @param {Array}    [deps.catalogNvrs]   - catalogue NVRs
+ * @param {Array}    [deps.catalogHdds]   - catalogue HDDs (pour minBays)
+ * @param {Function} [deps.T]             - i18n
+ * @returns {{nvr:Object|null, reason:string, alternatives:Object[]}}
  */
-export function pickNvr(
-  totalCameras,
-  totalInMbps,
-  requiredTB,
-  cameraBlocks,
-  catalogNvrs,
-  catalogHdds,
-  tFn = identityT
-) {
-  const T = typeof tFn === 'function' ? tFn : identityT;
+export function pickNvr(totalCameras, totalInMbps, requiredTB, deps = {}) {
+  const cameraLines = Array.isArray(deps.cameraLines) ? deps.cameraLines : [];
+  const getCameraById =
+    typeof deps.getCameraById === 'function' ? deps.getCameraById : () => null;
+  const catalogNvrs = Array.isArray(deps.catalogNvrs) ? deps.catalogNvrs : [];
+  const catalogHdds = Array.isArray(deps.catalogHdds) ? deps.catalogHdds : [];
+  const T = typeof deps.T === 'function' ? deps.T : identityT;
 
-  // ── 1. Déterminer la gamme requise ──────────────────────────
-  const blocks = Array.isArray(cameraBlocks) ? cameraBlocks : [];
-  const hasAdvanceBlock = blocks.some(
-    (b) => String(b?.answers?.ai_type || '').toLowerCase() === 'advance'
-  );
-  const requiredRange = hasAdvanceBlock ? 'ADVANCE' : 'NEXT';
+  // Déterminer la gamme dominante des caméras configurées
+  const rangeCounts = {};
+  for (const l of cameraLines) {
+    const cam = getCameraById(l?.cameraId);
+    const r = cam?.brand_range || 'NEXT';
+    rangeCounts[r] = (rangeCounts[r] || 0) + (Number(l?.qty || 0) || 0);
+  }
+  const dominantRange =
+    Object.entries(rangeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'NEXT';
 
-  // ── 2. Calculer le minimum de baies HDD nécessaires ─────────
-  const hdds = Array.isArray(catalogHdds) ? catalogHdds : [];
-  const hddSizes = [...new Set(hdds.map((h) => h.capacity_tb).filter((x) => Number.isFinite(x)))].sort(
-    (a, b) => b - a
-  );
+  // Calculer le nombre minimum de baies nécessaires
+  const hddSizes = [
+    ...new Set(catalogHdds.map((h) => h.capacity_tb).filter((x) => Number.isFinite(x))),
+  ].sort((a, b) => b - a);
   const biggestHdd = hddSizes[0] || 8;
   const minBays = requiredTB > 0 ? Math.ceil(requiredTB / biggestHdd) : 1;
 
-  // ── 3. Helper scoring ───────────────────────────────────────
-  const scoreCandidates = (list) =>
-    list
-      .filter((n) => (n.channels ?? 0) >= totalCameras)
-      .sort((a, b) => a.channels - b.channels || (a.max_in_mbps ?? 0) - (b.max_in_mbps ?? 0))
-      .map((nvr) => {
-        const baysOk = (nvr.hdd_bays ?? 0) >= minBays;
-        const mbpsOk = (nvr.max_in_mbps ?? 0) >= totalInMbps;
-        const score = (baysOk ? 1000 : 0) + (mbpsOk ? 10 : 0);
-        return { nvr, score, baysOk, mbpsOk };
-      })
-      .sort((a, b) => b.score - a.score || a.nvr.channels - b.nvr.channels);
+  const candidates = catalogNvrs
+    .filter((n) => (n.channels ?? 0) >= totalCameras)
+    .sort((a, b) => a.channels - b.channels || (a.max_in_mbps ?? 0) - (b.max_in_mbps ?? 0));
 
-  // ── 4. Pool prioritaire : NVRs de la gamme requise ──────────
-  const nvrs = Array.isArray(catalogNvrs) ? catalogNvrs : [];
-  const sameRangeOnly = nvrs.filter((n) => (n.brand_range || '').toUpperCase() === requiredRange);
-  let scored = scoreCandidates(sameRangeOnly);
-  let usedRange = requiredRange;
-  let upgradedFromNext = false;
+  // Score chaque candidat
+  const scored = candidates
+    .map((nvr) => {
+      const baysOk = (nvr.hdd_bays ?? 0) >= minBays;
+      const mbpsOk = (nvr.max_in_mbps ?? 0) >= totalInMbps;
+      const sameRange = (nvr.brand_range || '').toUpperCase() === dominantRange.toUpperCase();
+      // Priorité : baies OK > même gamme > débit OK
+      const score = (baysOk ? 1000 : 0) + (sameRange ? 100 : 0) + (mbpsOk ? 10 : 0);
+      return { nvr, score, baysOk, mbpsOk, sameRange };
+    })
+    .sort((a, b) => b.score - a.score || a.nvr.channels - b.nvr.channels);
 
-  // ── 5. Fallback NEXT → ADVANCE si NEXT est insuffisant ─────
-  if (!scored.length && requiredRange === 'NEXT') {
-    const advanceFallback = nvrs.filter((n) => (n.brand_range || '').toUpperCase() === 'ADVANCE');
-    scored = scoreCandidates(advanceFallback);
-    if (scored.length) {
-      usedRange = 'ADVANCE';
-      upgradedFromNext = true;
-    }
-  }
+  if (!scored.length) return { nvr: null, reason: T('err_no_nvr_channels'), alternatives: [] };
 
-  // ── 6. Aucun NVR ne couvre les canaux ───────────────────────
-  if (!scored.length) {
-    return {
-      nvr: null,
-      reason: `${T('err_no_nvr_channels')} (besoin ≥ ${totalCameras} canaux)`,
-      alternatives: [],
-      requiredRange,
-      hasAdvanceBlock,
-    };
-  }
-
-  // ── 7. Construire la justification (reason) ─────────────────
   const best = scored[0];
-  const reasons = [`Gamme ${best.nvr.brand_range || usedRange}`];
-  if (hasAdvanceBlock) reasons.push('imposée par bloc IA ADVANCE');
-  else if (upgradedFromNext) reasons.push('upgrade auto NEXT→ADVANCE (capacité NEXT max 16 ch)');
+  const reasons = [];
+  if (best.sameRange) reasons.push('Gamme ' + (best.nvr.brand_range || ''));
   if (best.baysOk) reasons.push('stockage couvert');
   else reasons.push('⚠️ baies HDD insuffisantes');
   if (best.mbpsOk) reasons.push('débit OK');
   else reasons.push('débit à vérifier');
 
-  // ── 8. Alternatives (même gamme d'abord, puis autre gamme) ──
-  const sameRangeAlts = scored
+  const alternatives = scored
     .filter((s) => s.nvr.id !== best.nvr.id)
     .slice(0, 3)
     .map((s) => s.nvr);
-  const otherRangeAlts = nvrs
-    .filter(
-      (n) =>
-        (n.brand_range || '').toUpperCase() !== usedRange && (n.channels ?? 0) >= totalCameras
-    )
-    .slice(0, 2);
 
-  return {
-    nvr: best.nvr,
-    reason: reasons.join(' — '),
-    alternatives: sameRangeAlts,
-    otherRangeAlternatives: otherRangeAlts,
-    requiredRange,
-    usedRange,
-    upgradedFromNext,
-    hasAdvanceBlock,
-  };
+  return { nvr: best.nvr, reason: reasons.join(' — '), alternatives };
 }
 
-// ─── Compat global (legacy app.js) ──────────────────────────
-// Le wrapper dans app.js injecte CATALOG.NVRS / CATALOG.HDDS / MODEL.cameraBlocks / T.
+// ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
   window._pickNvrPure = pickNvr;
 }

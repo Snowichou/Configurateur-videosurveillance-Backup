@@ -1535,129 +1535,19 @@ function invalidateIfNeeded(block, reason = "Modification") {
   }
 
   function pickNvr(totalCameras, totalInMbps, requiredTB) {
-    // Déterminer la gamme dominante des caméras configurées
-    const rangeCounts = {};
-    for (const l of (MODEL?.cameraLines || [])) {
-      const cam = (typeof getCameraById === "function") ? getCameraById(l?.cameraId) : null;
-      const r = cam?.brand_range || "NEXT";
-      rangeCounts[r] = (rangeCounts[r] || 0) + (Number(l?.qty || 0) || 0);
-    }
-    const dominantRange = Object.entries(rangeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "NEXT";
-
-    // Calculer le nombre minimum de baies nécessaires
-    const hddSizes = [...new Set(CATALOG.HDDS.map(h => h.capacity_tb).filter(x => Number.isFinite(x)))].sort((a, b) => b - a);
-    const biggestHdd = hddSizes[0] || 8;
-    const minBays = requiredTB > 0 ? Math.ceil(requiredTB / biggestHdd) : 1;
-
-    const candidates = CATALOG.NVRS
-      .filter((n) => (n.channels ?? 0) >= totalCameras)
-      .sort((a, b) => (a.channels - b.channels) || ((a.max_in_mbps ?? 0) - (b.max_in_mbps ?? 0)));
-
-    // Score chaque candidat
-    const scored = candidates.map(nvr => {
-      const baysOk = (nvr.hdd_bays ?? 0) >= minBays;
-      const mbpsOk = (nvr.max_in_mbps ?? 0) >= totalInMbps;
-      const sameRange = (nvr.brand_range || "").toUpperCase() === dominantRange.toUpperCase();
-      // Priorité : baies OK > même gamme > débit OK
-      const score = (baysOk ? 1000 : 0) + (sameRange ? 100 : 0) + (mbpsOk ? 10 : 0);
-      return { nvr, score, baysOk, mbpsOk, sameRange };
-    }).sort((a, b) => b.score - a.score || (a.nvr.channels - b.nvr.channels));
-
-    if (!scored.length) return { nvr: null, reason: T("err_no_nvr_channels"), alternatives: [] };
-
-    const best = scored[0];
-    const reasons = [];
-    if (best.sameRange) reasons.push("Gamme " + (best.nvr.brand_range || ""));
-    if (best.baysOk) reasons.push("stockage couvert");
-    else reasons.push("⚠️ baies HDD insuffisantes");
-    if (best.mbpsOk) reasons.push("débit OK");
-    else reasons.push("débit à vérifier");
-
-    const alternatives = scored
-      .filter(s => s.nvr.id !== best.nvr.id)
-      .slice(0, 3)
-      .map(s => s.nvr);
-
-    return { nvr: best.nvr, reason: reasons.join(" — "), alternatives };
+    // ✅ Phase 2 — logique extraite dans src/engine/pick-nvr.js
+    return window._pickNvrPure(totalCameras, totalInMbps, requiredTB, {
+      cameraLines: MODEL.cameraLines,
+      getCameraById,
+      catalogNvrs: CATALOG.NVRS,
+      catalogHdds: CATALOG.HDDS,
+      T,
+    });
   }
 
   function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
-    // Le NVR a des ports PoE intégrés — on n'a besoin de switches que pour les caméras au-delà
-    const nvrPoePorts = nvr?.poe_ports ?? 0;
-    const camerasNeedingSwitch = Math.max(0, totalCameras - nvrPoePorts);
-    
-    // Switch obligatoire si le NVR ne couvre pas toutes les caméras
-    const required = camerasNeedingSwitch > 0;
-    if (!required) {
-      return { required: false, portsNeeded: 0, totalPorts: 0, plan: [], surplusPorts: 0, nvrPoePorts, camerasOnNvr: totalCameras, camerasOnSwitches: 0 };
-    }
-
-    // Toutes les caméras passent par les switches (le NVR 32/64/128 n'a pas de ports PoE)
-    // On dimensionne pour TOUTES les caméras si le NVR n'a pas de ports PoE
-    const camerasViaSwitch = nvrPoePorts > 0 ? camerasNeedingSwitch : totalCameras;
-    const portsNeeded = Math.ceil(camerasViaSwitch * (1 + reservePct / 100));
-
-    const catalog = (CATALOG.SWITCHES && CATALOG.SWITCHES.length)
-      ? CATALOG.SWITCHES
-          .filter((s) => (s.poe_ports ?? 0) > 0)
-          .sort((a, b) => b.poe_ports - a.poe_ports)
-      : [
-          { id: "SW-POE-24", name: "Switch PoE 24 ports", poe_ports: 24 },
-          { id: "SW-POE-16", name: "Switch PoE 16 ports", poe_ports: 16 },
-          { id: "SW-POE-08", name: "Switch PoE 8 ports", poe_ports: 8 },
-          { id: "SW-POE-04", name: "Switch PoE 4 ports", poe_ports: 4 },
-        ];
-
-    const plan = [];
-    let remaining = portsNeeded;
-
-    // greedy: gros ports d'abord
-    for (const sw of catalog) {
-      if (remaining <= 0) break;
-      const count = Math.floor(remaining / sw.poe_ports);
-      if (count > 0) {
-        plan.push({ item: sw, qty: count });
-        remaining -= count * sw.poe_ports;
-      }
-    }
-
-    // compléter avec le meilleur switch qui couvre le reste
-    if (remaining > 0) {
-      let best = null;
-      for (const sw of catalog) {
-        const surplus = sw.poe_ports - remaining;
-        if (surplus >= 0) {
-          if (!best || surplus < best.surplus || (surplus === best.surplus && sw.poe_ports < best.item.poe_ports)) {
-            best = { item: sw, surplus };
-          }
-        }
-      }
-      if (best) plan.push({ item: best.item, qty: 1 });
-    }
-
-    // Calculer la répartition des caméras par switch (pour le synoptique)
-    const cameraDistribution = [];
-    let camerasLeft = camerasViaSwitch;
-    for (const p of plan) {
-      for (let i = 0; i < p.qty; i++) {
-        const onThisSwitch = Math.min(camerasLeft, p.item.poe_ports);
-        cameraDistribution.push({ switch: p.item, camerasConnected: onThisSwitch, totalPorts: p.item.poe_ports });
-        camerasLeft -= onThisSwitch;
-      }
-    }
-
-    const totalPorts = plan.reduce((s, p) => s + p.item.poe_ports * p.qty, 0);
-    return {
-      required: true,
-      portsNeeded,
-      totalPorts,
-      plan,
-      surplusPorts: totalPorts - portsNeeded,
-      nvrPoePorts,
-      camerasOnNvr: nvrPoePorts > 0 ? Math.min(totalCameras, nvrPoePorts) : 0,
-      camerasOnSwitches: camerasViaSwitch,
-      cameraDistribution,
-    };
+    // ✅ Phase 2 — logique extraite dans src/engine/poe.js
+    return window._planPoESwitchesPure(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
   }
 
   function mbpsToTB(mbps, hoursPerDay, days, overheadPct) {

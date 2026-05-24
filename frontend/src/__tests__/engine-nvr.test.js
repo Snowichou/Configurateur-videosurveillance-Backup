@@ -1,19 +1,15 @@
 // ============================================================
-// Tests engine — NVR + Switches PoE (Phase 0)
+// Tests engine — NVR + Switches PoE
 // ============================================================
 //
-// Stratégie identique à engine-storage.test.js : on RÉIMPLÉMENTE
-// localement les fonctions critiques (versions PURES qui prennent
-// les catalogues en paramètres au lieu de globals) pour pouvoir
-// les tester. À l'extraction modulaire, on remplacera par des
-// imports.
+// pickNvr : algo « gamme dominante » (décision Seb) — la gamme
+// retenue est celle la plus représentée parmi les caméras
+// configurées (lignes caméra), pondérée à +100 dans le score.
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
 import { planPoESwitches } from '../engine/poe.js';
 import { pickNvr } from '../engine/pick-nvr.js';
-
-// Note : pickNvr et planPoESwitches sont importés depuis les modules ESM (Phase 1).
 
 // ─── Fixtures ────────────────────────────────────────────────
 const CATALOG_NVRS = [
@@ -42,69 +38,74 @@ const CATALOG_SWITCHES = [
   { id: 'SW-24', poe_ports: 24, poe_budget_w: 360 },
 ];
 
-const blockNext = { answers: { ai_type: 'next', emplacement: 'interieur' }, validated: true };
-const blockAdvance = { answers: { ai_type: 'advance', emplacement: 'exterieur' }, validated: true };
+const CAM_DB = {
+  CN: { id: 'CN', brand_range: 'NEXT' },
+  CA: { id: 'CA', brand_range: 'ADVANCE' },
+};
+const deps = (cameraLines, over = {}) => ({
+  cameraLines,
+  getCameraById: (id) => CAM_DB[id] || null,
+  catalogNvrs: CATALOG_NVRS,
+  catalogHdds: CATALOG_HDDS,
+  T: (k) => k,
+  ...over,
+});
 
 // ─── Tests pickNvr ──────────────────────────────────────────
-describe('pickNvr — sélection NVR avec règle métier NEXT/ADVANCE', () => {
-  it('4 cams NEXT → NVR NEXT 4ch', () => {
-    const r = pickNvr(4, 30, 1, [blockNext], CATALOG_NVRS, CATALOG_HDDS);
+describe('pickNvr — sélection NVR (algo gamme dominante)', () => {
+  it('caméras NEXT → NVR NEXT le plus petit couvrant les canaux', () => {
+    const r = pickNvr(4, 30, 1, deps([{ cameraId: 'CN', qty: 4 }]));
     expect(r.nvr.id).toBe('NEXT-4');
-    expect(r.hasAdvanceBlock).toBe(false);
-    expect(r.usedRange).toBe('NEXT');
-    expect(r.upgradedFromNext).toBe(false);
+    expect(r.reason).toContain('Gamme NEXT');
   });
 
-  it('4 cams ADVANCE → NVR ADVANCE 4ch (même si NEXT existe)', () => {
-    const r = pickNvr(4, 30, 1, [blockAdvance], CATALOG_NVRS, CATALOG_HDDS);
+  it('caméras ADVANCE → NVR ADVANCE', () => {
+    const r = pickNvr(4, 30, 1, deps([{ cameraId: 'CA', qty: 4 }]));
     expect(r.nvr.id).toBe('ADV-4');
-    expect(r.hasAdvanceBlock).toBe(true);
-    expect(r.requiredRange).toBe('ADVANCE');
+    expect(r.reason).toContain('Gamme ADVANCE');
   });
 
-  it('1 bloc NEXT + 1 bloc ADVANCE → forcement ADVANCE', () => {
-    const r = pickNvr(8, 60, 1, [blockNext, blockAdvance], CATALOG_NVRS, CATALOG_HDDS);
+  it('gamme dominante = la plus représentée (5 ADVANCE vs 3 NEXT)', () => {
+    const r = pickNvr(8, 60, 1, deps([
+      { cameraId: 'CN', qty: 3 },
+      { cameraId: 'CA', qty: 5 },
+    ]));
     expect(r.nvr.brand_range).toBe('ADVANCE');
-    expect(r.hasAdvanceBlock).toBe(true);
   });
 
-  it('20 cams tout-NEXT → auto-upgrade vers ADVANCE (NEXT max = 16ch)', () => {
-    const r = pickNvr(20, 100, 1, [blockNext], CATALOG_NVRS, CATALOG_HDDS);
-    expect(r.nvr.brand_range).toBe('ADVANCE');
-    expect(r.nvr.channels).toBeGreaterThanOrEqual(20);
-    expect(r.upgradedFromNext).toBe(true);
-    expect(r.requiredRange).toBe('NEXT'); // ce qui était demandé
-    expect(r.usedRange).toBe('ADVANCE'); // ce qui est utilisé
+  it('stockage important → privilégie un NVR avec assez de baies', () => {
+    // 30 To / 8 To = 4 baies minimum
+    const r = pickNvr(16, 200, 30, deps([{ cameraId: 'CA', qty: 16 }]));
+    expect(r.nvr.hdd_bays).toBeGreaterThanOrEqual(4);
   });
 
-  it('16 cams tout-NEXT → reste en NEXT (16ch dispo)', () => {
-    const r = pickNvr(16, 100, 1, [blockNext], CATALOG_NVRS, CATALOG_HDDS);
-    expect(r.nvr.id).toBe('NEXT-16');
-    expect(r.upgradedFromNext).toBe(false);
-  });
-
-  it('500 cams → aucun NVR ne couvre → renvoie null', () => {
-    const r = pickNvr(500, 100, 1, [blockAdvance], CATALOG_NVRS, CATALOG_HDDS);
+  it('500 caméras → aucun NVR ne couvre → null', () => {
+    const r = pickNvr(500, 100, 1, deps([{ cameraId: 'CA', qty: 500 }]));
     expect(r.nvr).toBeNull();
     expect(r.alternatives).toEqual([]);
   });
 
-  it('alternatives retournées dans même gamme', () => {
-    const r = pickNvr(4, 30, 1, [blockAdvance], CATALOG_NVRS, CATALOG_HDDS);
+  it('alternatives : jusqu’à 3, sans le NVR retenu', () => {
+    const r = pickNvr(4, 30, 1, deps([{ cameraId: 'CA', qty: 4 }]));
     expect(r.alternatives.length).toBeGreaterThan(0);
-    expect(r.alternatives.every((alt) => alt.brand_range === 'ADVANCE')).toBe(true);
+    expect(r.alternatives.length).toBeLessThanOrEqual(3);
+    expect(r.alternatives.some((a) => a.id === r.nvr.id)).toBe(false);
   });
 
-  it("stockage important → préfère NVR avec plus de baies", () => {
-    // Besoin 30 To → 30/8 = 4 baies min. Le NVR ADV-16 (2 baies) ne suffit pas.
-    const r = pickNvr(16, 200, 30, [blockAdvance], CATALOG_NVRS, CATALOG_HDDS);
-    expect(r.nvr.hdd_bays).toBeGreaterThanOrEqual(4);
-  });
-
-  it("aucun bloc validé → traité comme NEXT par défaut", () => {
-    const r = pickNvr(4, 30, 1, [], CATALOG_NVRS, CATALOG_HDDS);
+  it('aucune ligne caméra → gamme NEXT par défaut', () => {
+    const r = pickNvr(4, 30, 1, deps([]));
     expect(r.nvr.brand_range).toBe('NEXT');
-    expect(r.hasAdvanceBlock).toBe(false);
+  });
+
+  it('débit insuffisant → raison "débit à vérifier"', () => {
+    // 16 cams NEXT, 9999 Mbps : aucun NVR ne couvre le débit
+    const r = pickNvr(16, 9999, 1, deps([{ cameraId: 'CN', qty: 16 }]));
+    expect(r.reason).toContain('débit à vérifier');
+  });
+
+  it('catalogue NVR vide → null', () => {
+    const r = pickNvr(4, 30, 1, deps([{ cameraId: 'CN', qty: 4 }], { catalogNvrs: [] }));
+    expect(r.nvr).toBeNull();
   });
 });
 
@@ -128,7 +129,7 @@ describe('planPoESwitches — dimensionnement switches PoE', () => {
 
   it('NVR partiellement couvrant → switch pour la différence', () => {
     const nvr = { id: 'ADV-16', poe_ports: 16 };
-    const r = planPoESwitches(24, 0, nvr, CATALOG_SWITCHES); // 24 cams, 16 sur NVR + 8 sur switch
+    const r = planPoESwitches(24, 0, nvr, CATALOG_SWITCHES);
     expect(r.required).toBe(true);
     expect(r.portsNeeded).toBe(8);
     expect(r.totalPorts).toBeGreaterThanOrEqual(8);
@@ -137,7 +138,7 @@ describe('planPoESwitches — dimensionnement switches PoE', () => {
   it("greedy : préfère les grands switches d'abord", () => {
     const nvr = { id: 'ADV-32', poe_ports: 0 };
     const r = planPoESwitches(40, 0, nvr, CATALOG_SWITCHES);
-    expect(r.plan[0].item.poe_ports).toBe(24); // premier switch = le plus gros
+    expect(r.plan[0].item.poe_ports).toBe(24);
   });
 
   it('réserve PoE configurable (10% par défaut)', () => {
