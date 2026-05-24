@@ -35,6 +35,7 @@ import './render/pdf-preview.js';
 import './render/datasheet-urls.js';
 import './render/pdf-pro.js';
 import './engine/validate-step.js';
+import './utils/share.js';
 import './render/pdf.js';
 import './engine/project.js';
 import './handlers/steps.js';
