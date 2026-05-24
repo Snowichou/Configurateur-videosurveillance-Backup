@@ -172,15 +172,13 @@ function kpiConfigSnapshot(proj) {
     return s === "" || s === "false" || s === "0" || s === "no" || s === "n";
   };
 
-  const toBool = (v) => {
-    if (v == null) return false;
-    const s = String(v).trim().toLowerCase();
-    return s === "true" || s === "1" || s === "yes" || s === "y";
-  };
+  ;
 
-  const toStrOrFalse = (v) => (isFalseLike(v) ? false : String(v).trim());
+  ;
 
-  const toNum = (v) => {
+  ;
+
+    const toNum = (v) => {
     if (v == null) return null;
     const s = String(v).trim();
     if (!s) return null;
@@ -194,12 +192,7 @@ function kpiConfigSnapshot(proj) {
     return Math.max(min, Math.min(max, n));
   };
 
-  const splitList = (v, sep = "|") => {
-    if (v == null) return [];
-    const s = String(v).trim();
-    if (!s) return [];
-    return s.split(sep).map((x) => x.trim()).filter(Boolean);
-  };
+  ;
 
   // ==========================================================
 // BRANDING COMELIT (PDF)
@@ -386,104 +379,9 @@ function accessoryTypeLabel(t){
     return `<span class="badgePill">${t}</span>`;
   };
 
-  function extractUseCasesFromRow(raw) {
-    const cols = ["use_cases_01", "use_cases_02", "use_cases_03"];
-    const out = [];
-
-    for (const k of cols) {
-      const v = raw[k];
-      if (!isFalseLike(v)) out.push(String(v).trim());
-    }
-
-    // fallback legacy
-    if (!out.length) {
-      const legacy = raw.use_cases ?? raw.use_case ?? raw.useCases ?? "";
-      const fromPipe = splitList(legacy, "|");
-      if (fromPipe.length) return fromPipe;
-      if (!isFalseLike(legacy)) return [String(legacy).trim()];
-    }
-
-    return [...new Set(out)].filter(Boolean);
-  }
-
-
-  // ==========================================================
+    // ==========================================================
   // 0B) CSV PARSER (no deps)
   // ==========================================================
-  function parseCsv(text) {
-    const rows = [];
-    let row = [];
-    let cur = "";
-    let inQuotes = false;
-
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      const next = text[i + 1];
-
-      if (inQuotes) {
-        if (ch === '"' && next === '"') {
-          cur += '"';
-          i++;
-        } else if (ch === '"') {
-          inQuotes = false;
-        } else {
-          cur += ch;
-        }
-      } else {
-        if (ch === '"') inQuotes = true;
-        else if (ch === ",") {
-          row.push(cur);
-          cur = "";
-        } else if (ch === "\n") {
-          row.push(cur);
-          rows.push(row);
-          row = [];
-          cur = "";
-        } else if (ch === "\r") {
-          // ignore
-        } else {
-          cur += ch;
-        }
-      }
-    }
-
-    if (cur.length > 0 || row.length > 0) {
-      row.push(cur);
-      rows.push(row);
-    }
-
-    if (!rows.length) return [];
-
-    // 1) Raw headers + trim + remove BOM
-    const rawHeaders = rows[0].map((h) => String(h ?? "").trim().replace(/^\uFEFF/, ""));
-
-    // 2) ✅ FIX: gérer les headers dupliqués
-    // ex: name,name,name -> name, name_2, name_3
-    const headers = (() => {
-      const counts = new Map();
-      return rawHeaders.map((h, idx) => {
-        const base = h || `col_${idx + 1}`; // si header vide -> fallback
-        const n = (counts.get(base) ?? 0) + 1;
-        counts.set(base, n);
-        return n === 1 ? base : `${base}_${n}`;
-      });
-    })();
-
-    const objs = [];
-    for (let r = 1; r < rows.length; r++) {
-      const cells = rows[r];
-      if (!cells || cells.every((c) => String(c ?? "").trim() === "")) continue;
-
-      const obj = {};
-      for (let c = 0; c < headers.length; c++) {
-        obj[headers[c]] = String(cells[c] ?? "").trim();
-      }
-      objs.push(obj);
-    }
-
-    return objs;
-  }
-
 
 // ==========================================================
 // 0) CONSTANTES CENTRALISÉES
@@ -558,13 +456,7 @@ const CONFIG = Object.freeze({
 const CLR = CONFIG.colors;
 const LIM = CONFIG.limits;
 
-  async function loadCsv(url) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Impossible de charger ${url} (${res.status})`);
-    return parseCsv(await res.text());
-  }
-
-  // ==========================================================
+// ==========================================================
   // 1) DATA (catalog)
   // ==========================================================
   const CATALOG = {
@@ -781,132 +673,9 @@ const DOM = {
   // ==========================================================
   // 4) NORMALIZATION
   // ==========================================================
-  function normalizeCamera(raw) {
-  const useCases = extractUseCasesFromRow(raw);
 
-  const emplInt = toBool(raw.Emplacement_Interieur ?? raw.emplacement_interieur ?? raw.interieur);
-  const emplExt = toBool(raw.Emplacement_Exterieur ?? raw.emplacement_exterieur ?? raw.exterieur);
-
-  // helper: numbers robustes (virgules, "IP66", "IK10", espaces)
-  const num = (v, fallback = null) => {
-    if (v == null) return fallback;
-    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
-    const s = String(v).trim();
-    if (!s) return fallback;
-
-    // IP66 / IK10
-    const ipik = s.match(/^(IP|IK)\s*([0-9]{2})$/i);
-    if (ipik) return Number(ipik[2]);
-
-    // virgule FR -> point
-    const cleaned = s.replace(",", ".").replace(/\s+/g, "");
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : fallback;
-  };
-
-  return {
-    id: String(raw.id ?? "").trim(),
-    name: localizedName(raw) || "",
-    brand_range: raw.brand_range || "",
-    family: raw.family || "standard",
-    type: raw.form_factor || raw.type || "",
-
-    emplacement_interieur: !!emplInt,
-    emplacement_exterieur: !!emplExt,
-
-    resolution_mp: num(raw.resolution_mp, 0),
-    sensor_count: num(raw.sensor_count, 0),
-    lens_type: raw.lens_type || "",
-
-    focal_min_mm: num(raw.focal_min_mm, null),
-    focal_max_mm: num(raw.focal_max_mm, null),
-
-    dori_detection_m: num(raw.dori_detection_m, 0),
-    dori_observation_m: num(raw.dori_observation_m, 0),
-    dori_recognition_m: num(raw.dori_recognition_m, 0),
-    dori_identification_m: num(raw.dori_identification_m, 0),
-
-    ir_range_m: num(raw.ir_range_m, 0),
-    white_led_range_m: num(raw.white_led_range_m, 0),
-
-    low_light_raw: raw.low_light_mode || raw.low_light || "",
-    low_light: !!String(raw.low_light_mode ?? raw.low_light ?? "").trim(),
-
-    ip: num(raw.ip, null),
-    ik: num(raw.ik, null),
-
-    microphone: toBool(raw.Microphone ?? raw.microphone),
-
-    poe_w: num(raw.poe_w, 0),
-
-    // ✅ champ clé pour le débit
-    bitrate_mbps_typical: num(raw.bitrate_mbps_typical, null),
-
-    streams_max: num(raw.streams_max, null),
-    analytics_level: raw.analytics_level || "",
-
-    use_cases: useCases,
-
-    image_url: raw.image_url || "",
-    datasheet_url: raw.datasheet_url || "",
-  };
-}
-
-
-  function normalizeNvr(raw) {
-  return {
-    id: raw.id,
-    name: localizedName(raw),
-    channels: toNum(raw.channels) ?? 0,
-    max_in_mbps: toNum(raw.max_in_mbps) ?? 0,
-    nvr_output: clampInt(raw.nvr_output ?? 1, 1, 8), // ✅ raw
-    hdd_bays: toNum(raw.hdd_bays) ?? 0,
-    max_hdd_tb_per_bay: toNum(raw.max_hdd_tb_per_bay) ?? 0,
-    poe_ports: toNum(raw.poe_ports) ?? 0,
-    poe_budget_w: toNum(raw.poe_budget_w) ?? 0,
-    image_url: raw.image_url || "",
-    datasheet_url: raw.datasheet_url || "",
-  };
-}
-
-
-  function normalizeHdd(raw) {
-    return {
-      id: raw.id,
-      name: localizedName(raw),
-      capacity_tb: toNum(raw.capacity_tb),
-      image_url: raw.image_url || "",
-      datasheet_url: raw.datasheet_url || "",
-    };
-  }
-
-  function normalizeSwitch(raw) {
-    return {
-      id: raw.id,
-      name: localizedName(raw),
-      poe_ports: toNum(raw.poe_ports) ?? 0,
-      poe_budget_w: toNum(raw.poe_budget_w) ?? null,
-      uplink_gbps: toNum(raw.uplink_gbps) ?? null,
-      managed: toBool(raw.managed),
-      image_url: raw.image_url || "",
-      datasheet_url: raw.datasheet_url || "",
-      notes: raw.notes || "",
-    };
-  }
-
-  function safeStr(v) {
+function safeStr(v) {
   return (v ?? "").toString().trim();
-}
-
-// i18n: Get localized product name from CSV row
-function localizedName(raw, field) {
-  field = field || "name";
-  const lang = (typeof _currentLang !== "undefined") ? _currentLang : "fr";
-  if (lang !== "fr") {
-    const localized = raw[field + "_" + lang];
-    if (localized && localized !== "false" && localized.trim()) return localized.trim();
-  }
-  return (raw[field] ?? "").toString().trim();
 }
 
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
@@ -923,81 +692,13 @@ function localizedDatasheetUrl(url) {
 }
 
 
-/** "A|B|C|" => ["A","B","C"] */
-function parsePipeList(v) {
-  return safeStr(v)
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-  function normalizeScreen(row) {
-    const id = safeStr(row.id);
-
-    // parse robuste (accepte "55", "55.0", "55,0", rejette vide)
-    const raw = safeStr(row.size_inch);
-    const n = Number(String(raw || "").trim().replace(",", "."));
-    const size = Number.isFinite(n) && n > 0 ? n : null;
-
-    return {
-      id,
-      name: localizedName(row) || id || "—",
-
-      // important : null si invalide (pas 0)
-      size_inch: size,
-
-      format: safeStr(row.format) || "—",
-      vesa: safeStr(row.vesa) || "—",
-
-      // ton CSV a "Resolution" (R majuscule)
-      resolution: safeStr(row.Resolution || row.resolution) || "—",
-
-      image_url: safeStr(row.image_url) || "",
-      datasheet_url: safeStr(row.datasheet_url) || "",
-    };
-  }
-
-  function normalizeEnclosure(row) {
-  const id = safeStr(row.id);
-  return {
-    id,
-    name: localizedName(row) || id || "—",
-
-    // peut être vide, ou une ref unique, ou plusieurs refs séparées par |
-    screen_compatible_with: parsePipeList(row.screen_compatible_with),
-
-    // liste NVR / XVR compatibles
-    compatible_with: parsePipeList(row.compatible_with),
-
-    image_url: safeStr(row.image_url) || "",
-    datasheet_url: safeStr(row.datasheet_url) || "",
-  };
-}
-
-  // ==========================================================
+// ==========================================================
   // 4A) SIGNAGE (panneaux de signalisation)
   // ==========================================================
   // CSV attendu (tes colonnes):
   // id,name,material,fixing,Dimension,Prive_Public,image_url,datasheet_url
-  function normalizeSignageRow(raw) {
-    if (!raw) return null;
-    const id = safeStr(raw.id);
-    if (!id) return null;
 
-    const name = safeStr(raw.name) || id;
-    const material = safeStr(raw.material);
-    const fixing = safeStr(raw.fixing);
-    const dimension = safeStr(raw.Dimension ?? raw.dimension);
-
-    // "Public" ou "Privé" (ton CSV = Prive_Public)
-    const scope = safeStr(raw.Prive_Public ?? raw.prive_public ?? raw.scope ?? raw.type) || "Public";
-
-    const image_url = safeStr(raw.image_url);
-    const datasheet_url = safeStr(raw.datasheet_url);
-
-    return { id, name, material, fixing, dimension, scope, image_url, datasheet_url };
-  }
-
-  function getSignages() {
+function getSignages() {
     return Array.isArray(CATALOG.SIGNAGE) ? CATALOG.SIGNAGE : [];
   }
 
@@ -1035,70 +736,15 @@ function parsePipeList(v) {
   // ==========================================================
   // 4B) ACCESSORIES MAPPING (✅ aligné sur TON CSV)
   // ==========================================================
-  function normalizeMappedAccessory({ id, name, type, image_url, datasheet_url, stand_alone }) {
-    if (isFalseLike(id)) return null;
-
-    return {
-      id: String(id).trim(),
-      name: toStrOrFalse(name) || String(id).trim(),
-      type, // junction_box | wall_mount | ceiling_mount
-      image_url: toStrOrFalse(image_url) || false,
-      datasheet_url: toStrOrFalse(datasheet_url) || false,
-      stand_alone: !!stand_alone,
-    };
-  }
-
-  /**
+    /**
    * ✅ Mapping accessoires par caméra (TON FORMAT)
    * camera_id,junction_box_id,junction_box_name,wall_mount_id,wall_mount_name,wall_mount_stand_alone,
    * ceiling_mount_id,ceiling_mount_name,ceiling_mount_stand_alone,qty,
    * image_url_junction_box,datasheet_url_junction_box,image_url_wall_mount,datasheet_url_wall_mount,
    * image_url_ceiling_mount,datasheet_url_ceiling_mount
    */
-  function normalizeAccessoryMapping(raw) {
-    // parseCsv enlève le BOM, mais on garde un fallback au cas où
-    const cameraId = toStrOrFalse(raw.camera_id ?? raw["\uFEFFcamera_id"]);
-    if (!cameraId) return null;
 
-    const qty = clampInt(raw.qty, 1, 999);
-
-    const junction = normalizeMappedAccessory({
-      id: raw.junction_box_id,
-      name: localizedName(raw, "junction_box_name"),
-      type: "junction_box",
-      image_url: raw.image_url_junction_box,
-      datasheet_url: raw.datasheet_url_junction_box,
-      stand_alone: false,
-    });
-
-    const wall = normalizeMappedAccessory({
-      id: raw.wall_mount_id,
-      name: localizedName(raw, "wall_mount_name"),
-      type: "wall_mount",
-      image_url: raw.image_url_wall_mount,
-      datasheet_url: raw.datasheet_url_wall_mount,
-      stand_alone: toBool(raw.wall_mount_stand_alone),
-    });
-
-    const ceiling = normalizeMappedAccessory({
-      id: raw.ceiling_mount_id,
-      name: localizedName(raw, "ceiling_mount_name"),
-      type: "ceiling_mount",
-      image_url: raw.image_url_ceiling_mount,
-      datasheet_url: raw.datasheet_url_ceiling_mount,
-      stand_alone: toBool(raw.ceiling_mount_stand_alone),
-    });
-
-    return {
-      cameraId: String(cameraId).trim(),
-      qty,
-      junction,
-      wall,
-      ceiling,
-    };
-  }
-
-  // ==========================================================
+// ==========================================================
   // 5) LOOKUPS
   // ==========================================================
   const getCameraById = (id) => CATALOG.CAMERAS.find((c) => c.id === id) || null;
@@ -2512,18 +2158,18 @@ bind(DOM.stepsEl, "input", onStepsInput);
   return window._initPure({
     DOM,
     KPI,
-    loadCsv,
+    loadCsv: window._loadCsvPure,
     CATALOG,
     MODEL,
     setLastProject: (v) => { LAST_PROJECT = v; },
-    normalizeCamera,
-    normalizeNvr,
-    normalizeHdd,
-    normalizeSwitch,
-    normalizeScreen,
-    normalizeEnclosure,
-    normalizeSignageRow,
-    normalizeAccessoryMapping,
+    normalizeCamera: window._normalizeCameraPure,
+    normalizeNvr: window._normalizeNvrPure,
+    normalizeHdd: window._normalizeHddPure,
+    normalizeSwitch: window._normalizeSwitchPure,
+    normalizeScreen: window._normalizeScreenPure,
+    normalizeEnclosure: window._normalizeEnclosurePure,
+    normalizeSignageRow: window._normalizeSignageRowPure,
+    normalizeAccessoryMapping: window._normalizeAccessoryMappingPure,
     applyLocalMediaToCatalog,
     sanity,
     syncResultsUI,

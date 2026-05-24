@@ -117,4 +117,6 @@ export async function loadCsv(url) {
 if (typeof window !== 'undefined') {
   window.parseCsv = parseCsv;
   window.loadCsv = loadCsv;
+  window._parseCsvPure = parseCsv;
+  window._loadCsvPure = loadCsv;
 }
