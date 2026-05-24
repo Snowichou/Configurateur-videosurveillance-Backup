@@ -38,6 +38,7 @@ import './engine/validate-step.js';
 import './utils/share.js';
 import './render/pdf.js';
 import './engine/project.js';
+import './engine/kpi.js';
 import './handlers/steps.js';
 import './handlers/admin.js';
 
