@@ -33,6 +33,7 @@ import './render/pdf-blob.js';
 import './render/pdf-export.js';
 import './render/pdf-preview.js';
 import './render/pdf-test.js';
+import './render/pipeline.js';
 import './render/datasheet-urls.js';
 import './render/pdf-pro.js';
 import './engine/validate-step.js';
