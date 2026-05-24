@@ -30,6 +30,7 @@ import './render/cameras.js';
 import './render/camera-card.js';
 import './render/summary-final.js';
 import './render/pdf-blob.js';
+import './render/pdf-export.js';
 import './render/pdf.js';
 import './engine/project.js';
 import './handlers/steps.js';
