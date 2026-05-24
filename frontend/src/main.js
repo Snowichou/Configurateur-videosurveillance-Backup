@@ -43,6 +43,7 @@ import './engine/project.js';
 import './engine/kpi.js';
 import './handlers/steps.js';
 import './handlers/summary.js';
+import './handlers/init.js';
 import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";

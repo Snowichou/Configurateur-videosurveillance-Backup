@@ -2509,91 +2509,29 @@ bind(DOM.stepsEl, "input", onStepsInput);
   // 14) INIT (load CSV)
   // ==========================================================
   async function init() {
-    try {
-      if (DOM.dataStatusEl) DOM.dataStatusEl.textContent = "Chargement des données…";
-      KPI.sendNowait('page_view', { app: 'configurateur', v: (window.APP_VERSION || null) });
+  return window._initPure({
+    DOM,
+    KPI,
+    loadCsv,
+    CATALOG,
+    MODEL,
+    setLastProject: (v) => { LAST_PROJECT = v; },
+    normalizeCamera,
+    normalizeNvr,
+    normalizeHdd,
+    normalizeSwitch,
+    normalizeScreen,
+    normalizeEnclosure,
+    normalizeSignageRow,
+    normalizeAccessoryMapping,
+    applyLocalMediaToCatalog,
+    sanity,
+    syncResultsUI,
+    render,
+    updateNavButtons,
+  });
+}
 
-      
-      // ✅ Chargement CSV direct (plus de tentative JSON)
-      const loadCsvSafe = async (name, required = false) => {
-        try {
-          return await loadCsv(`/data/${name}.csv`);
-        } catch (e) {
-          if (required) throw e;
-          return [];
-        }
-      };
-
-      const [
-        camsRaw,
-        nvrsRaw,
-        hddsRaw,
-        swRaw,
-        accRaw,
-        screensRaw,
-        enclosuresRaw,
-        signageRaw
-      ] = await Promise.all([
-        loadCsvSafe("cameras", true),
-        loadCsvSafe("nvrs", true),
-        loadCsvSafe("hdds", true),
-        loadCsvSafe("switches", true),
-        loadCsvSafe("accessories", true),
-        loadCsvSafe("screens"),
-        loadCsvSafe("enclosures"),
-        loadCsvSafe("signage"),
-      ]);
-
-
-      CATALOG.CAMERAS = camsRaw.map(normalizeCamera).filter((c) => c.id);
-      CATALOG.NVRS = nvrsRaw.map(normalizeNvr).filter((n) => n.id);
-      CATALOG.HDDS = hddsRaw.map(normalizeHdd).filter((h) => h.id);
-      CATALOG.SWITCHES = swRaw.map(normalizeSwitch).filter((s) => s.id);
-      CATALOG.SCREENS = screensRaw.map(normalizeScreen).filter(s => s.id);
-      CATALOG.ENCLOSURES = enclosuresRaw.map(normalizeEnclosure).filter(e => e.id);
-
-      // ✅ panneaux de signalisation
-      CATALOG.SIGNAGE = (signageRaw || []).map(normalizeSignageRow).filter(Boolean);
-
-  // ✅ Médias locaux uniquement (images + fiches)
-  applyLocalMediaToCatalog();
-
-
-      // ✅ accessories.csv = MAPPING (camera_id => junction/wall/ceiling)
-      const mappings = accRaw.map(normalizeAccessoryMapping).filter(Boolean);
-      CATALOG.ACCESSORIES_MAP = new Map(mappings.map((m) => [m.cameraId, m]));
-
-      if (DOM.dataStatusEl) {
-        const parts = [
-          `Données chargées ✅`,
-          `Caméras: ${CATALOG.CAMERAS.length}`,
-          `NVR: ${CATALOG.NVRS.length}`,
-          `HDD: ${CATALOG.HDDS.length}`,
-          `Switch: ${CATALOG.SWITCHES.length}`,
-          `Écrans: ${CATALOG.SCREENS.length}`,
-          `Boîtiers: ${CATALOG.ENCLOSURES.length}`,
-          `Panneaux: ${CATALOG.SIGNAGE.length}`,
-          `Mappings accessoires: ${CATALOG.ACCESSORIES_MAP.size}`,
-        ];
-        DOM.dataStatusEl.textContent = parts.join(" • ");
-      }
-
-      sanity();
-
-      LAST_PROJECT = null;
-      MODEL.ui.resultsShown = false;
-
-      syncResultsUI();
-      render();
-      updateNavButtons();
-    } catch (e) {
-      console.error(e);
-      if (DOM.dataStatusEl) DOM.dataStatusEl.textContent = "Erreur chargement données ❌";
-      alert(
-        `Erreur chargement data: ${e.message}\n\nVérifie:\n- dossier /data\n- fichiers cameras.csv / nvrs.csv / hdds.csv / switches.csv / accessories.csv\n- serveur local (http://localhost:8000)`
-      );
-    }
-  }
 // ==========================================================
 // ADMIN PANEL (UI) - utilise /api/login + /api/csv/{name}
 // ==========================================================
