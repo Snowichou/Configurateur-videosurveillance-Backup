@@ -32,8 +32,6 @@
 
 
 
-(() => {
-  "use strict";
 
 
   // ==========================================================
@@ -1428,4 +1426,3 @@ if (typeof document !== "undefined") {
 
 console.log("[PDF-FIX v2] Corrections chargées avec récupération automatique du projet.");
 
-})();
