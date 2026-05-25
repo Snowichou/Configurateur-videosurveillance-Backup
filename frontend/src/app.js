@@ -28,66 +28,7 @@
  *   => évite l’écrasement d’objets et corrige les champs qui “disparaissent”
  ************************************/
 
-/* ============================================================
-   KPI (tracking) — envoi côté backend
-   - Stockage local: session_id
-   - Envoi best-effort (pas bloquant)
-   ============================================================ */
-const KPI = (() => {
-  const SESSION_KEY = "cfg_session_id";
 
-  function getSessionId() {
-    let sid = localStorage.getItem(SESSION_KEY);
-    if (!sid) {
-      sid = (crypto?.randomUUID
-        ? crypto.randomUUID()
-        : String(Date.now()) + "_" + Math.random().toString(16).slice(2));
-      localStorage.setItem(SESSION_KEY, sid);
-    }
-    return sid;
-  }
-
-  async function send(event, payload = {}) {
-    try {
-      const body = {
-        session_id: getSessionId(),
-        event: String(event || "").slice(0, 80),
-        payload: payload && typeof payload === "object" ? payload : { value: payload },
-      };
-
-      await fetch("/api/kpi/collect", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-page-path": location.pathname + location.search + location.hash,
-        },
-        body: JSON.stringify(body),
-        keepalive: true,
-      });
-    } catch {
-      // jamais casser l'app pour un KPI
-    }
-  }
-
-  // ✅ compat : si ton code appelle KPI.sendNowait(...)
-  function sendNowait(event, payload = {}) {
-    // "fire & forget" : on ne await pas
-    try { send(event, payload); } catch {}
-  }
-
-  return { send, sendNowait, getSessionId };
-})();
-
-// ✅ IMPORTANT : rend KPI accessible partout (handlers inclus)
-window.KPI = KPI;
-
-// ✅ compat : si tu as des appels kpi("event", {...})
-window.kpi = function kpi(event, payload = {}) {
-  try {
-    if (window.KPI?.sendNowait) window.KPI.sendNowait(event, payload);
-    else if (window.KPI?.send) window.KPI.send(event, payload);
-  } catch {}
-};
 
 
 
