@@ -80,11 +80,6 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
 // ─────────────────────────────────────────────────────────────
 
 
-
-
-
-
-
   // ==========================================================
   // GLOBALS (doivent exister AVANT toute utilisation)
   // ==========================================================
@@ -95,7 +90,6 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
       _renderProjectCache = null;
       LAST_PROJECT = null;
     }
-
 
 
   window.addEventListener("error", (e) => {
@@ -143,7 +137,6 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
       '"': "&quot;",
       "'": "&#039;",
     }[m]));
-
 
 
   ;
@@ -260,7 +253,6 @@ function interpretScoreForBlock(block, cam) {
 }
 
 
-
 const {
   objectiveLabel,
   accessoryTypeLabel,
@@ -272,11 +264,6 @@ const {
   get CATALOG() { return CATALOG; },
 });
 
-  (text) => {
-    const t = safeHtml(text || "");
-    if (!t) return "";
-    return `<span class="badgePill">${t}</span>`;
-  };
 
     // ==========================================================
   // 0B) CSV PARSER (no deps)
@@ -593,8 +580,6 @@ const {
   }
 
 
-
-
  // ✅ Phase 2 -- calcul projet extrait dans src/engine/project.js
   function computeProject() {
     return computeProjectPure({
@@ -657,14 +642,9 @@ function clampNum(v, min, max, fallback) {
 }
 
 
-
-
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
 // ==========================================================
-function applyLocalMediaToCatalog() {
-  return _applyLocalMediaToCatalog(CATALOG);
-}
 
   function buildPdfHtml(proj) {
     // ✅ Phase 2 — génération HTML PDF extraite dans src/render/pdf.js
@@ -708,15 +688,13 @@ const {
 /* eslint-enable no-unused-vars */
 
 
-
-// updateNavButtons() via window._createRenderPipeline
-
+// updateNavButtons() via createRenderPipeline
 
 
   // ==========================================================
   // 10) UI - STEPS RENDER
   // ==========================================================
-  // updateProgress() via window._createRenderPipeline
+  // updateProgress() via createRenderPipeline
 
 
   const { canRecommendBlock, buildRecoForBlock } = createRecoBlockHelpers({
@@ -973,8 +951,7 @@ function showToast(message, type) {
   // ==========================================================
 // Debounce render pour éviter les re-renders multiples rapides
 let _renderRAF = null;
-// render() + _renderImmediate() via window._createRenderPipeline
-
+// render() + _renderImmediate() via createRenderPipeline
 
 
 // ==========================================================
@@ -1022,9 +999,6 @@ async function buildPdfBlobProFromProject(proj) {
 }
 
 
-
-
-
 // ===========================================================
 // ✅ Phase 2 — handlers data-action extraits dans src/handlers/steps.js
 // ===========================================================
@@ -1053,7 +1027,6 @@ const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
 });
 
 
-
 // ==========================================================
 // EXPORT PDF (PRO) — version robuste + logs
 // Remplace intégralement ta fonction exportProjectPdfPro()
@@ -1067,7 +1040,6 @@ async function exportProjectPdfPro(proj) {
     computeProject, buildPdfBlobProFromProject, kpiConfigSnapshot, KPI, MODEL,
   });
 }
-
 
 
 // ==========================================================
@@ -1089,7 +1061,6 @@ window.testPdfGeneration = testPdfGeneration;
 // ==========================================================
 // EXPORT PACK (PDF + FICHES TECHNIQUES) -> ZIP
 // ==========================================================
-
 
 
 // Dédup par URL
@@ -1126,12 +1097,6 @@ async function exportProjectPdfWithLocalDatasheetsZip() {
 async function exportProjectPdfPackPro() {
   return await exportProjectPdfWithLocalDatasheetsZip();
 }
-
-
-
-
-
-
 
 
   // ==========================================================
@@ -1396,7 +1361,7 @@ bind(DOM.stepsEl, "input", onStepsInput);
     normalizeEnclosure: normalizeEnclosure,
     normalizeSignageRow: normalizeSignageRow,
     normalizeAccessoryMapping: normalizeAccessoryMapping,
-    applyLocalMediaToCatalog,
+    applyLocalMediaToCatalog: () => _applyLocalMediaToCatalog(CATALOG),
     sanity,
     syncResultsUI,
     render,
