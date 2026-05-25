@@ -224,71 +224,6 @@ function kpiConfigSnapshot(proj) {
   const getDoriForObjective = window.getDoriForObjective;
 
 
-function pickScreenBySize(sizeInch) {
-  const screens = CATALOG.SCREENS || [];
-  if (!screens.length) return null;
-
-  // 1) match exact
-  let exact = screens.find(s => Number(s.size_inch) === Number(sizeInch));
-  if (exact) return exact;
-
-  // 2) fallback: closest
-  let best = null, bestDelta = Infinity;
-  for (const s of screens) {
-    const v = Number(s.size_inch);
-    if (!Number.isFinite(v)) continue;
-    const d = Math.abs(v - Number(sizeInch));
-    if (d < bestDelta) { bestDelta = d; best = s; }
-  }
-  return best || screens[0] || null;
-}
-const SCREEN_INSIDE_ONLY_ID = "MMON185A";
-
-function isScreenInsideCompatible(enclosure, screen) {
-  if (!enclosure || !screen) return false;
-
-  // 1) Si le CSV boîtier donne une liste explicite
-  if (Array.isArray(enclosure.screen_compatible_with) && enclosure.screen_compatible_with.length) {
-    return enclosure.screen_compatible_with.includes(screen.id);
-  }
-
-  // 2) fallback selon ta règle business
-  return screen.id === SCREEN_INSIDE_ONLY_ID;
-}
-
-function pickBestEnclosure(proj, screen) {
-  const encs = CATALOG.ENCLOSURES || [];
-  const nvrId = proj?.nvrPick?.nvr?.id || null;
-  if (!encs.length || !nvrId) {
-    return { enclosure: null, reason: "no_nvr_or_catalog", screenInsideOk: false };
-  }
-
-  const encNvrCompatible = encs.filter(e =>
-    Array.isArray(e.compatible_with) && e.compatible_with.includes(nvrId)
-  );
-
-  if (!encNvrCompatible.length) {
-    // Aucun boîtier compatible NVR
-    return { enclosure: null, reason: "no_enclosure_for_nvr", screenInsideOk: false };
-  }
-
-  // Si écran choisi, on tente un boîtier qui accepte l’écran à l’intérieur
-  if (screen) {
-    const encBoth = encNvrCompatible.find(e => isScreenInsideCompatible(e, screen));
-    if (encBoth) return { enclosure: encBoth, reason: "nvr_and_screen_ok", screenInsideOk: true };
-
-    // Sinon on prend le meilleur compatible NVR mais on indiquera écran outside
-    return { enclosure: encNvrCompatible[0], reason: "nvr_ok_screen_not_inside", screenInsideOk: false };
-  }
-
-  // Pas d’écran : on prend le meilleur compatible NVR
-  return { enclosure: encNvrCompatible[0], reason: "nvr_ok_no_screen", screenInsideOk: false };
-}
-
-
-
-
-
 // ==========================================================
 // Score global projet (pondéré par quantité)
 
@@ -646,6 +581,22 @@ const KPI = (() => {
 // ✅ Expose STEPS pour le récap flottant
 window._STEPS = STEPS;
 
+// ==========================================================
+// COMPLÉMENTS (écran, boîtier, signalétique) — engine/complements.js
+// ==========================================================
+/* eslint-disable no-unused-vars */
+const {
+  pickScreenBySize, isScreenInsideCompatible, pickBestEnclosure,
+  getSignages, pickSignageByScope, getSelectedOrRecommendedSign,
+  recommendScreenForProject, recommendEnclosureForNvr,
+  getSelectedOrRecommendedScreen, recommendEnclosureForProject,
+  getSelectedOrRecommendedEnclosure,
+} = window._createComplementsHandlers({
+  get MODEL() { return MODEL; },
+  get CATALOG() { return CATALOG; },
+});
+/* eslint-enable no-unused-vars */
+
 
 // ==========================================================
 // 3) DOM CACHE (robuste)
@@ -674,10 +625,6 @@ const DOM = {
   // 4) NORMALIZATION
   // ==========================================================
 
-function safeStr(v) {
-  return (v ?? "").toString().trim();
-}
-
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
 function localizedDatasheetUrl(url) {
   if (!url || url === "false") return url;
@@ -697,41 +644,6 @@ function localizedDatasheetUrl(url) {
   // ==========================================================
   // CSV attendu (tes colonnes):
   // id,name,material,fixing,Dimension,Prive_Public,image_url,datasheet_url
-
-function getSignages() {
-    return Array.isArray(CATALOG.SIGNAGE) ? CATALOG.SIGNAGE : [];
-  }
-
-  function pickSignageByScope(scope) {
-    const wanted = safeStr(scope || "Public").toLowerCase();
-    const signs = getSignages();
-
-    // match exact d’abord
-    let hit = signs.find((s) => safeStr(s.scope).toLowerCase() === wanted);
-    if (hit) return hit;
-
-    // fallback : si "privé" indispo -> public, et inverse
-    if (wanted.includes("priv")) {
-      hit = signs.find((s) => safeStr(s.scope).toLowerCase().includes("public"));
-      if (hit) return hit;
-    } else {
-      hit = signs.find((s) => safeStr(s.scope).toLowerCase().includes("priv"));
-      if (hit) return hit;
-    }
-
-    // fallback final
-    return signs[0] || null;
-  }
-
-  function getSelectedOrRecommendedSign() {
-    const enabled = !!MODEL.complements?.signage?.enabled;
-    if (!enabled) return { sign: null, reason: "disabled" };
-
-    const scope = MODEL.complements.signage.scope || "Public";
-    const sign = pickSignageByScope(scope);
-    if (!sign) return { sign: null, reason: "no_catalog" };
-    return { sign, reason: "scope_match" };
-  }
 
   // ==========================================================
   // 4B) ACCESSORIES MAPPING (✅ aligné sur TON CSV)
@@ -993,74 +905,6 @@ function clampNum(v, min, max, fallback) {
   return Math.max(min, Math.min(max, n));
 }
 
-
-function recommendScreenForProject(totalCameras) {
-  const screens = CATALOG.SCREENS || [];
-  if (!screens.length) return null;
-
-  // Heuristique simple (tu pourras raffiner plus tard)
-  const target =
-    totalCameras <= 8  ? 24 :
-    totalCameras <= 16 ? 32 :
-    totalCameras <= 32 ? 43 : 55;
-
-  // Choisir le plus proche
-  let best = null;
-  let bestDelta = Infinity;
-
-  for (const s of screens) {
-    const size = Number(s.size_inch);
-    if (!Number.isFinite(size)) continue;
-
-    const d = Math.abs(size - target);
-    if (d < bestDelta) { bestDelta = d; best = s; }
-  }
-
-  return best || screens[0] || null;
-}
-
-function recommendEnclosureForNvr(nvrId) {
-  const encs = CATALOG.ENCLOSURES || [];
-  if (!encs.length || !nvrId) return null;
-
-  // compatible_with = liste de refs NVR séparées par |
-  const found = encs.find(e => Array.isArray(e.compatible_with) && e.compatible_with.includes(nvrId));
-  return found || null;
-}
-
-function getSelectedOrRecommendedScreen(proj) {
-  const screens = CATALOG.SCREENS || [];
-  if (!screens.length) return { selected: null, recommended: null };
-
-  const selected = MODEL.complements.screen.enabled
-    ? pickScreenBySize(MODEL.complements.screen.sizeInch)
-    : null;
-
-  const recommended = recommendScreenForProject(proj.totalCameras) || null;
-  return { selected: selected || null, recommended };
-}
-function recommendEnclosureForProject(proj) {
-  const nvrId = proj?.nvrPick?.nvr?.id || null;
-  if (!nvrId) return null;
-  return recommendEnclosureForNvr(nvrId);
-}
-
-function getSelectedOrRecommendedEnclosure(proj) {
-  const encs = CATALOG.ENCLOSURES || [];
-  if (!encs.length) return { selected: null, recommended: null };
-
-  // Ton UX actuelle : boîtier "auto" si enabled
-  if (MODEL.complements.enclosure.enabled) {
-    const screenSel = MODEL.complements.screen.enabled
-      ? pickScreenBySize(MODEL.complements.screen.sizeInch)
-      : null;
-
-    const enclosureAuto = pickBestEnclosure(proj, screenSel);
-    return { selected: enclosureAuto.enclosure || null, recommended: recommendEnclosureForProject(proj) };
-  }
-
-  return { selected: null, recommended: recommendEnclosureForProject(proj) };
-}
 
     // ==========================================================
   // PROJECT CACHE + NAV GUARDS (fixes manquants)

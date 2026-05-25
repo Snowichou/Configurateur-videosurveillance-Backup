@@ -49,6 +49,7 @@ import './ui/toast.js';
 import './handlers/quote.js';
 import './engine/block-lifecycle.js';
 import './engine/sanity.js';
+import './engine/complements.js';
 import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";
