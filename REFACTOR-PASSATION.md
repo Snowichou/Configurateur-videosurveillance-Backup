@@ -11,7 +11,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 412 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 414 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
 | Tests Vitest | **469** (25 fichiers) — tous au vert |
 | Build Vite | OK (317 modules transformés) |
@@ -40,6 +40,7 @@
 ### Commits de la session PH6
 
 ```
+5a6844c  PH8    Smoke test : fix TDZ createLabelsHelpers + 4 vars non définies (LOG, SAVE_KEY, _SSO_USER, projectTipHtml)
 dab87f6  PH7    Nettoyage app.js : dead code, stale comments, blank lines (1447→1412L)
 ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés, 469 tests)
 5b51fee  PH6.4  engine/reco-block.js (canRecommendBlock+buildRecoForBlock ~40L, 9 tests)
@@ -192,7 +193,7 @@ src = src[:low_start]  + replacement + src[low_end:]
 
 ---
 
-## 3. Ce qui reste dans `app.js` (1 412 lignes)
+## 3. Ce qui reste dans `app.js` (1 414 lignes)
 
 `app.js` est désormais un **vrai module ESM** : plus de IIFE, plus de `window._xxx` shims.
 Il reste l'orchestrateur principal : état global, thin wrappers locaux, bootstrap.
@@ -231,7 +232,22 @@ function scoreCameraForBlock(block, cam) {          // wrapper local
 - Net : **1 447 → 1 412 lignes** (35 supprimées)
 - Build ✓ (317 modules) · Tests ✓ (369 tests) · Commit `dab87f6`
 
-### TODO PH8 (prochaine session)
+### ✅ PH8 — Fait (session courante)
+
+Smoke test via Playwright/Firefox contre le build prod — **4 bugs runtime détectés et corrigés** :
+
+| Bug | Cause | Fix |
+|---|---|---|
+| TDZ `re` (= `CATALOG`) | `createLabelsHelpers` appelé ligne 262 mais `const CATALOG` à ligne 348 — vite fusionne en 1 `const` → TDZ | Déplacer l'appel après `window._CATALOG = CATALOG` + passer CATALOG directement (pas de getter) |
+| `LOG is not defined` | Variable utilisée dans `createPersistenceHandlers` et catch block, jamais déclarée | Ajouter `const LOG = console;` |
+| `SAVE_KEY is not defined` | Passé dans `initPure` mais jamais déclaré dans app.js | Ajouter `const SAVE_KEY = 'comelit_cfg_save';` |
+| `_SSO_USER is not defined` | Bare identifier en ESM strict — `window._SSO_USER` n'est pas set sans backend | Remplacer par `window._SSO_USER` partout (property access = safe) |
+| `projectTipHtml is not defined` | Passé dans deps de `_renderStepProject` mais jamais défini | Retirer (optionnel dans render/projet.js avec valeur par défaut `() => ''`) |
+
+Résultat : **smoke test ✅ PASS** — aucune erreur JS réelle à l'initialisation.
+Build ✓ (317 modules) · Tests ✓ (369 tests) · Commits `5a6844c`, `9d3af53`
+
+### TODO PH9 (prochaine session)
 
 1. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur depuis
    le début du refactor. Faire un test manuel du parcours complet (Playwright ou manuel).
