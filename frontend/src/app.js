@@ -612,15 +612,8 @@ const DOM = {
 
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
 function localizedDatasheetUrl(url) {
-  if (!url || url === "false") return url;
   const lang = (typeof _currentLang !== "undefined") ? _currentLang : "fr";
-  const localeMap = { fr: "fr_FR", en: "en_GB", it: "it_IT", es: "es_ES", de: "de_DE" };
-  const localeMapDash = { fr: "fr-fr", en: "en-gb", it: "it-it", es: "es-es", de: "de-de" };
-  const targetLocale = localeMap[lang] || "fr_FR";
-  const targetLocaleDash = localeMapDash[lang] || "fr-fr";
-  let result = url.replace(/\/fr_FR\//g, "/" + targetLocale + "/");
-  result = result.replace(/\/fr-fr\//g, "/" + targetLocaleDash + "/");
-  return result;
+  return window.localizedDatasheetUrl(url, lang);
 }
 
 
