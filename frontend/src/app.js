@@ -253,16 +253,6 @@ function interpretScoreForBlock(block, cam) {
 }
 
 
-const {
-  objectiveLabel,
-  accessoryTypeLabel,
-  translateUseCase,
-  getAllUseCases,
-  getCameraProfile,
-} = createLabelsHelpers({
-  T,
-  get CATALOG() { return CATALOG; },
-});
 
 
     // ==========================================================
@@ -356,6 +346,17 @@ const LIM = CONFIG.limits;
   ACCESSORIES_MAP: new Map(), // key = camera_id, value = mapping row
   };
   window._CATALOG = CATALOG;
+// createLabelsHelpers doit être appelé APRÈS const CATALOG (anti-TDZ)
+const {
+  objectiveLabel,
+  accessoryTypeLabel,
+  translateUseCase,
+  getAllUseCases,
+  getCameraProfile,
+} = createLabelsHelpers({
+  T,
+  CATALOG,
+});
   // ==========================================================
   // 2) MODEL (state) — factory extraite dans src/state/model.js (Phase 2)
   // ==========================================================
@@ -768,10 +769,10 @@ function camPickCardHTML(blk, cam) {
         + '</div></div>';
     }
     let cloudCardHtml = "";
-    if (_SSO_USER && _SSO_USER.oid) {
-      const isAzure = !!_SSO_USER.sso;
+    if (window._SSO_USER && window._SSO_USER.oid) {
+      const isAzure = !!window._SSO_USER.sso;
       const userLabel = isAzure
-        ? safeHtml(_SSO_USER.email || _SSO_USER.name || "utilisateur")
+        ? safeHtml(window._SSO_USER.email || window._SSO_USER.name || "utilisateur")
         : "mode local (sans Azure)";
       const desc = isAzure
         ? `Connecté en tant que <strong>${userLabel}</strong>. Vos projets sont liés à votre compte Azure et accessibles depuis n'importe quel appareil.`
@@ -788,8 +789,7 @@ function camPickCardHTML(blk, cam) {
       T, safeHtml,
       csvUseCases: getAllUseCases(),
       limits: LIM,
-      projectTipHtml,
-      useCaseDescriptionHtml,
+      // projectTipHtml / useCaseDescriptionHtml : optionnels, valeur par défaut dans render/projet.js
       translateUseCase,
       saveCardHtml: cloudCardHtml + saveCardHtml,
     });
@@ -895,6 +895,8 @@ function bindSummaryButtons() {
 // ==========================================================
 // SAUVEGARDE, PARTAGE & TRANSITION COMMERCIALE — engine/persistence.js
 // ==========================================================
+const LOG = console; // logger (warn/error) — console par défaut
+const SAVE_KEY = 'comelit_cfg_save'; // clé localStorage (= persistence.js interne)
 const {
   snapshotForSave, restoreFromSnapshot,
   saveConfigToLocalStorage, loadConfigFromLocalStorage, shareConfigUrl,
