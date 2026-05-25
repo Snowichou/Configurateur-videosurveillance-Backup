@@ -1055,25 +1055,10 @@ window.testPdfGeneration = testPdfGeneration;
 // ==========================================================
 
 
-function sanitizeFilename(name) {
-  return String(name || "file")
-    .replace(/[\/\\?%*:|"<>]/g, "_")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+const sanitizeFilename = window._sanitizeFilenamePure;
 
 // Dédup par URL
-function dedupByUrl(items) {
-  const seen = new Set();
-  const out = [];
-  for (const it of items || []) {
-    const u = String(it?.url || "").trim();
-    if (!u || seen.has(u)) continue;
-    seen.add(u);
-    out.push(it);
-  }
-  return out;
-}
+const dedupByUrl = window._dedupByUrlPure;
 
 // Collecte les datasheet_url depuis le projet (tu peux enrichir ensuite)
 function collectDatasheetUrlsFromProject(proj) {

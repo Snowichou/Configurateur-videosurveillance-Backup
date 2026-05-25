@@ -53,6 +53,7 @@ import './engine/complements.js';
 import './engine/storage-calc.js';
 import './ui/labels.js';
 import './engine/kpi-tracker.js';
+import './utils/helpers.js';
 import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";
