@@ -671,23 +671,11 @@ const {
   // updateProgress() via window._createRenderPipeline
 
 
-  function canRecommendBlock(blk) {
-      const ans = blk?.answers || {};
-      const d = toNum(ans.distance_m);
-      // ✅ CORRIGÉ : ne vérifie plus use_case
-      return !!ans.emplacement && !!ans.objective && Number.isFinite(d) && d > 0;
-    }
-
-  function buildRecoForBlock(blk) {
-    if (!canRecommendBlock(blk)) return null;
-    const ans = blk.answers;
-    return recommendCameraForAnswers({
-      use_case: ans.use_case || MODEL.projectUseCase || "",  // ✅ CORRIGÉ : fallback
-      emplacement: ans.emplacement,
-      objective: ans.objective,
-      distance_m: toNum(ans.distance_m),
-    });
-  }
+  const { canRecommendBlock, buildRecoForBlock } = window._createRecoBlockHelpers({
+  get MODEL() { return MODEL; },
+  toNum,
+  recommendCameraForAnswers,
+});
 
 
 function camPickCardHTML(blk, cam) {
