@@ -51,6 +51,7 @@ import './engine/block-lifecycle.js';
 import './engine/sanity.js';
 import './engine/complements.js';
 import './engine/storage-calc.js';
+import './ui/labels.js';
 import './handlers/admin.js';
 
 import html2pdf from "html2pdf.js";
