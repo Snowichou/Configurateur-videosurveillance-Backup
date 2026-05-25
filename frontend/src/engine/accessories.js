@@ -117,6 +117,4 @@ export function buildAccessoryLines(cameraBlocks, cameraLines) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._computeBlockAccessoriesPure = computeBlockAccessories;
-  window._buildAccessoryLinesPure = buildAccessoryLines;
 }

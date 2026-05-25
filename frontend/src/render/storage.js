@@ -224,5 +224,4 @@ export function renderStepStorage(deps = {}) {
 
 // ─── Compat global (legacy app.js) ──────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepStoragePure = renderStepStorage;
 }

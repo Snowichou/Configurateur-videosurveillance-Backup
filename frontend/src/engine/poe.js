@@ -133,5 +133,4 @@ export function planPoESwitches(totalCameras, reservePct = 10, nvr = null, catal
 // ─── Compat global (legacy app.js) ──────────────────────────
 // Le wrapper dans app.js injecte CATALOG.SWITCHES (global non importable depuis ESM).
 if (typeof window !== 'undefined') {
-  window._planPoESwitchesPure = planPoESwitches;
 }

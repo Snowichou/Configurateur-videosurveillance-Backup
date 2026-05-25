@@ -77,6 +77,3 @@ export function applyLocalMediaToCatalog(CATALOG) {
   apply('signage',    CATALOG?.SIGNAGE);
 }
 
-window._getThumbSrc = getThumbSrc;
-window._getDatasheetSrc = getDatasheetSrc;
-window._applyLocalMediaToCatalogPure = applyLocalMediaToCatalog;

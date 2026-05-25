@@ -28,6 +28,57 @@
  *   => évite l’écrasement d’objets et corrige les champs qui “disparaissent”
  ************************************/
 
+// ── PH6.5: imports ESM directs (remplace shims window._xxx) ──
+import { uid, createEmptyCameraBlock as _createEmptyCameraBlock, resetModel } from './state/actions.js';
+import { createInitialModel } from './state/model.js';
+import { scoreCameraForBlock as _scoreCameraForBlock, interpretScoreForBlock as _interpretScoreForBlock } from './engine/camera-score.js';
+import { recommendCameraForAnswers as _recommendCameraForAnswers } from './engine/camera-reco.js';
+import { createLabelsHelpers } from './ui/labels.js';
+import { createComplementsHandlers } from './engine/complements.js';
+import { kpiConfigSnapshotPure } from './engine/kpi.js';
+import { createKpiSnapshot } from './engine/kpi-tracker.js';
+import { sanityPure } from './engine/sanity.js';
+import { createBlockLifecycleHandlers } from './engine/block-lifecycle.js';
+import { computeTotals as _computeTotals, computeCriticalProjectScore as _computeCriticalProjectScore } from './engine/totals.js';
+import { pickNvr as _pickNvr } from './engine/pick-nvr.js';
+import { planPoESwitches as _planPoESwitches } from './engine/poe.js';
+import { mbpsToTB, pickDisks as _pickDisks } from './engine/storage-calc.js';
+import { computeProjectPure } from './engine/project.js';
+import { createRecoBlockHelpers } from './engine/reco-block.js';
+import { createPersistenceHandlers } from './engine/persistence.js';
+import { getThumbSrc, applyLocalMediaToCatalog as _applyLocalMediaToCatalog } from './catalog/media.js';
+import { normalizeCamera, normalizeNvr, normalizeHdd, normalizeSwitch,
+         normalizeScreen, normalizeEnclosure, normalizeSignageRow,
+         normalizeAccessoryMapping } from './catalog/normalize.js';
+import { loadCsv } from './utils/csv.js';
+import { sanitizeFilename, dedupByUrl } from './utils/helpers.js';
+import { generateQRDataUrlPure, generateShareUrlPure } from './utils/share.js';
+import { showToastPure } from './ui/toast.js';
+import { validateStepPure, showStepValidationErrorsPure } from './engine/validate-step.js';
+import { renderFinalSummaryPure } from './render/summary-final.js';
+import { buildPdfHtmlPure } from './render/pdf.js';
+import { createRenderPipeline } from './render/pipeline.js';
+import { renderCameraPickCard } from './render/camera-card.js';
+import { renderStepCameras as _renderStepCameras } from './render/cameras.js';
+import { renderStepProject as _renderStepProject } from './render/projet.js';
+import { renderStepAccessories as _renderStepAccessories } from './render/accessories.js';
+import { renderStepNvrNetwork as _renderStepNvrNetwork } from './render/nvr.js';
+import { renderStepStorage as _renderStepStorage } from './render/storage.js';
+import { renderStepComplements as _renderStepComplements } from './render/options.js';
+import { renderStepSummary as _renderStepSummary } from './render/summary.js';
+import { bindSummaryButtonsPure } from './handlers/summary.js';
+import { createQuoteHandlers } from './handlers/quote.js';
+import { createStepsHandlers } from './handlers/steps.js';
+import { initPure } from './handlers/init.js';
+import { createAdminHandlers } from './handlers/admin.js';
+import { buildPdfBlobProFromProjectPure } from './render/pdf-blob.js';
+import { collectDatasheetUrlsFromProjectPure } from './render/datasheet-urls.js';
+import { exportProjectPdfWithLocalDatasheetsZipPure } from './render/pdf-export.js';
+import { showPdfPreviewPure } from './render/pdf-preview.js';
+import { exportProjectPdfProPure } from './render/pdf-pro.js';
+import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-test.js';
+// ─────────────────────────────────────────────────────────────
+
 
 
 
@@ -124,7 +175,6 @@
 // Essaie plusieurs noms possibles (tu ajusteras si besoin)
 
   // ✅ Phase 2 — extrait dans src/state/actions.js
-  const uid = window._uid;
 
   const sum = (arr, fn) => {
     let t = 0;
@@ -167,7 +217,7 @@
    */
   function scoreCameraForBlock(block, cam) {
     // ✅ Phase 2 — logique extraite dans src/engine/camera-score.js
-    return window._scoreCameraForBlockPure(block, cam, {
+    return _scoreCameraForBlock(block, cam, {
       getDoriForObjective,
       normalizeEmplacement,
       getMpFromCam,
@@ -197,7 +247,7 @@
  */
 function interpretScoreForBlock(block, cam) {
   // ✅ Phase 2 — logique extraite dans src/engine/camera-score.js
-  return window._interpretScoreForBlockPure(block, cam, {
+  return _interpretScoreForBlock(block, cam, {
     getDoriForObjective,
     normalizeEmplacement,
     getMpFromCam,
@@ -217,7 +267,7 @@ const {
   translateUseCase,
   getAllUseCases,
   getCameraProfile,
-} = window._createLabelsHelpers({
+} = createLabelsHelpers({
   T,
   get CATALOG() { return CATALOG; },
 });
@@ -322,11 +372,11 @@ const LIM = CONFIG.limits;
   // ==========================================================
   // 2) MODEL (state) — factory extraite dans src/state/model.js (Phase 2)
   // ==========================================================
-  const MODEL = window._createInitialModel(LIM);
+  const MODEL = createInitialModel(LIM);
   window._MODEL = MODEL;
 
 const KPI = Object.assign({}, window.KPI, {
-  snapshot: window._createKpiSnapshot({
+  snapshot: createKpiSnapshot({
     get MODEL() { return MODEL; },
     getCameraById: (...a) => getCameraById(...a),
   }),
@@ -355,14 +405,14 @@ const {
   recommendScreenForProject, recommendEnclosureForNvr,
   getSelectedOrRecommendedScreen, recommendEnclosureForProject,
   getSelectedOrRecommendedEnclosure,
-} = window._createComplementsHandlers({
+} = createComplementsHandlers({
   get MODEL() { return MODEL; },
   get CATALOG() { return CATALOG; },
 });
 /* eslint-enable no-unused-vars */
 
 function kpiConfigSnapshot(proj) {
-  return window._kpiConfigSnapshotPure(proj, {
+  return kpiConfigSnapshotPure(proj, {
     MODEL,
     getSelectedOrRecommendedScreen,
     getSelectedOrRecommendedEnclosure,
@@ -442,7 +492,7 @@ window._getCameraById = getCameraById;
 
     function recommendCameraForAnswers(ans) {
     // ✅ Phase 2 — logique extraite dans src/engine/camera-reco.js
-    return window._recommendCameraForAnswersPure(ans, {
+    return _recommendCameraForAnswers(ans, {
       normalizeEmplacement,
       toNum,
       objectiveToDoriKey,
@@ -458,7 +508,7 @@ window._getCameraById = getCameraById;
   // ==========================================================
   // ✅ Phase 2 — extrait dans src/state/actions.js
   function createEmptyCameraBlock() {
-    return window._createEmptyCameraBlockPure(MODEL.projectUseCase || '');
+    return _createEmptyCameraBlock(MODEL.projectUseCase || '');
   }
 
 // ==========================================================
@@ -474,7 +524,7 @@ function applyDemoClass() {
 // 8) ENGINE - BLOCKS SANITY + VALIDATION
 // ==========================================================
 function sanity() {
-  return window._sanityPure({
+  return sanityPure({
     MODEL, createEmptyCameraBlock, applyDemoClass,
   });
 }
@@ -486,7 +536,7 @@ function sanity() {
 const {
   rebuildAccessoryLinesFromBlocks, unvalidateBlock, invalidateIfNeeded,
   suggestAccessoriesForBlock, suggestAccessories, validateBlock,
-} = window._createBlockLifecycleHandlers({
+} = createBlockLifecycleHandlers({
   get MODEL() { return MODEL; },
   get CATALOG() { return CATALOG; },
   uid,
@@ -512,18 +562,18 @@ const {
    */
   function computeCriticalProjectScore() {
     // ✅ Phase 2 — logique extraite dans src/engine/totals.js
-    return window._computeCriticalProjectScorePure(MODEL.cameraBlocks);
+    return _computeCriticalProjectScore(MODEL.cameraBlocks);
   }
 
 
   function computeTotals() {
     // ✅ Phase 2 — logique extraite dans src/engine/totals.js
-    return window._computeTotalsPure(MODEL.cameraLines, MODEL.recording, { getCameraById });
+    return _computeTotals(MODEL.cameraLines, MODEL.recording, { getCameraById });
   }
 
   function pickNvr(totalCameras, totalInMbps, requiredTB) {
     // ✅ Phase 2 — logique extraite dans src/engine/pick-nvr.js
-    return window._pickNvrPure(totalCameras, totalInMbps, requiredTB, {
+    return _pickNvr(totalCameras, totalInMbps, requiredTB, {
       cameraLines: MODEL.cameraLines,
       getCameraById,
       catalogNvrs: CATALOG.NVRS,
@@ -534,13 +584,12 @@ const {
 
   function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
     // ✅ Phase 2 — logique extraite dans src/engine/poe.js
-    return window._planPoESwitchesPure(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
+    return _planPoESwitches(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
   }
 
-  const mbpsToTB = window._mbpsToTBPure;
 
   function pickDisks(requiredTB, nvr) {
-    return window._pickDisksPure(requiredTB, nvr, CATALOG.HDDS);
+    return _pickDisks(requiredTB, nvr, CATALOG.HDDS);
   }
 
 
@@ -548,7 +597,7 @@ const {
 
  // ✅ Phase 2 -- calcul projet extrait dans src/engine/project.js
   function computeProject() {
-    return window._computeProjectPure({
+    return computeProjectPure({
       MODEL,
       CATALOG,
       T,
@@ -594,7 +643,7 @@ function clampNum(v, min, max, fallback) {
 
   function renderFinalSummary(proj) {
   // ✅ Phase 2 — PH2.22 : rendu récapitulatif final extrait dans render/summary-final.js
-  return window._renderFinalSummaryPure(proj, {
+  return renderFinalSummaryPure(proj, {
     T,
     safeHtml,
     getThumbSrc,
@@ -613,14 +662,13 @@ function clampNum(v, min, max, fallback) {
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
 // ==========================================================
-const getThumbSrc = window._getThumbSrc;
 function applyLocalMediaToCatalog() {
-  return window._applyLocalMediaToCatalogPure(CATALOG);
+  return _applyLocalMediaToCatalog(CATALOG);
 }
 
   function buildPdfHtml(proj) {
     // ✅ Phase 2 — génération HTML PDF extraite dans src/render/pdf.js
-    return window._buildPdfHtmlPure(proj, {
+    return buildPdfHtmlPure(proj, {
       T,
       currentLang: _currentLang,
       computeCriticalProjectScore,
@@ -641,7 +689,7 @@ function applyLocalMediaToCatalog() {
 /* eslint-disable no-unused-vars */
 const {
   syncResultsUI, updateNavButtons, updateProgress, render, _renderImmediate,
-} = window._createRenderPipeline({
+} = createRenderPipeline({
   get MODEL() { return MODEL; },
   get STEPS() { return STEPS; },
   get DOM() { return DOM; },
@@ -671,7 +719,7 @@ const {
   // updateProgress() via window._createRenderPipeline
 
 
-  const { canRecommendBlock, buildRecoForBlock } = window._createRecoBlockHelpers({
+  const { canRecommendBlock, buildRecoForBlock } = createRecoBlockHelpers({
   get MODEL() { return MODEL; },
   toNum,
   recommendCameraForAnswers,
@@ -680,7 +728,7 @@ const {
 
 function camPickCardHTML(blk, cam) {
   // ✅ Phase 2 — composition HTML extraite dans src/render/camera-card.js
-  return window._renderCameraPickCardPure(blk, cam, {
+  return renderCameraPickCard(blk, cam, {
     interpretScoreForBlock,
     T,
     CLR,
@@ -699,7 +747,7 @@ function camPickCardHTML(blk, cam) {
     const activeBlock =
       MODEL.cameraBlocks.find((b) => b.id === MODEL.ui.activeBlockId) || MODEL.cameraBlocks[0];
     MODEL.ui.activeBlockId = activeBlock.id;
-    return window._renderStepCamerasPure({
+    return _renderStepCameras({
       cameraBlocks: MODEL.cameraBlocks,
       activeBlockId: MODEL.ui.activeBlockId,
       ui: {
@@ -757,7 +805,7 @@ function camPickCardHTML(blk, cam) {
         + `<button class="btn primary" data-action="openCloudProjects" type="button" style="width:100%">📂 Voir mes projets ${isAzure ? "cloud" : "serveur"}</button>`
         + `</div></div>`;
     }
-    return window._renderStepProjectPure({
+    return _renderStepProject({
       model: MODEL,
       T, safeHtml,
       csvUseCases: getAllUseCases(),
@@ -778,7 +826,7 @@ function camPickCardHTML(blk, cam) {
       const camera = camLine ? getCameraById(camLine.cameraId) : null;
       return { ...blk, camera };
     });
-    return window._renderStepAccessoriesPure({
+    return _renderStepAccessories({
       blocks,
       T,
       safeHtml,
@@ -790,7 +838,7 @@ function camPickCardHTML(blk, cam) {
 
   function renderStepNvrNetwork() {
     // ✅ Phase 2 — composition HTML extraite dans src/render/nvr.js
-    return window._renderStepNvrNetworkPure({
+    return _renderStepNvrNetwork({
       proj: getProjectCached(),
       isManual: !!MODEL.overrideNvrId,
       T, safeHtml,
@@ -800,7 +848,7 @@ function camPickCardHTML(blk, cam) {
 
   function renderStepStorage() {
     // ✅ Phase 2 — composition HTML extraite dans src/render/storage.js
-    return window._renderStepStoragePure({
+    return _renderStepStorage({
       model: MODEL,
       proj: getProjectCached(),
       T, safeHtml,
@@ -829,7 +877,7 @@ function camPickCardHTML(blk, cam) {
     const signEnabled = !!MODEL.complements.signage?.enabled;
     const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function"
       ? getSelectedOrRecommendedSign()?.sign : null;
-    return window._renderStepComplementsPure({
+    return _renderStepComplements({
       proj,
       selections: {
         screen: { enabled: scrEnabled, selected: scrSel, sizeInch: MODEL.complements.screen.sizeInch, qty: MODEL.complements.screen.qty },
@@ -845,7 +893,7 @@ function camPickCardHTML(blk, cam) {
 function renderStepSummary() {
   // ✅ Phase 2 — composition HTML extraite dans src/render/summary.js
   const proj = LAST_PROJECT;
-  return window._renderStepSummaryPure({
+  return _renderStepSummary({
     proj,
     finalSummaryHtml: proj ? renderFinalSummary(proj) : '',
     T,
@@ -857,7 +905,7 @@ if (typeof renderStepMounts !== "function" && typeof renderStepAccessories === "
   window.renderStepMounts = renderStepAccessories;
 }
 function bindSummaryButtons() {
-  return window._bindSummaryButtonsPure({
+  return bindSummaryButtonsPure({
     MODEL, STEPS, T,
     syncResultsUI, render,
     exportProjectPdfPro, showPdfPreview, exportProjectPdfPackPro,
@@ -872,7 +920,7 @@ function bindSummaryButtons() {
 const {
   snapshotForSave, restoreFromSnapshot,
   saveConfigToLocalStorage, loadConfigFromLocalStorage, shareConfigUrl,
-} = window._createPersistenceHandlers({
+} = createPersistenceHandlers({
   get MODEL() { return MODEL; },
   LOG,
   showToast,
@@ -881,7 +929,7 @@ const {
   invalidateProjectCache,
 });
 
-const { requestQuote, sendToDistributor } = window._createQuoteHandlers({
+const { requestQuote, sendToDistributor } = createQuoteHandlers({
   get MODEL() { return MODEL; },
   getLastProject: () => LAST_PROJECT,
   getCameraById,
@@ -891,7 +939,7 @@ const { requestQuote, sendToDistributor } = window._createQuoteHandlers({
 });
 
 function showToast(message, type) {
-  return window._showToastPure(message, type, CLR);
+  return showToastPure(message, type, CLR);
 }
 
 (function autoRestoreFromUrl() {
@@ -936,7 +984,7 @@ let _renderRAF = null;
 // ==========================================================
 function generateQRDataUrl(text, size = 150) {
   // ✅ Phase 3 — PH3.4 : extraite dans utils/share.js
-  return window._generateQRDataUrlPure(text, size);
+  return generateQRDataUrlPure(text, size);
 }
 
 
@@ -945,7 +993,7 @@ function generateQRDataUrl(text, size = 150) {
 // ==========================================================
 function generateShareUrl() {
   // ✅ Phase 3 — PH3.4 : extraite dans utils/share.js
-  return window._generateShareUrlPure({ snapshotForSave, MODEL });
+  return generateShareUrlPure({ snapshotForSave, MODEL });
 }
 
 
@@ -954,7 +1002,7 @@ function generateShareUrl() {
 // ==========================================================
 function showPdfPreview() {
   // ✅ Phase 2 — PH2.25 : extraite dans render/pdf-preview.js
-  return window._showPdfPreviewPure({
+  return showPdfPreviewPure({
     T,
     getLastProject: () => LAST_PROJECT,
     computeProject,
@@ -968,7 +1016,7 @@ function showPdfPreview() {
 // ==========================================================
 async function buildPdfBlobProFromProject(proj) {
   // ✅ Phase 2 — PH2.23 : extraite dans render/pdf-blob.js
-  return window._buildPdfBlobProFromProjectPure(proj, {
+  return buildPdfBlobProFromProjectPure(proj, {
     T, LAST_PROJECT, computeProject, buildPdfHtml, CATALOG,
   });
 }
@@ -980,7 +1028,7 @@ async function buildPdfBlobProFromProject(proj) {
 // ===========================================================
 // ✅ Phase 2 — handlers data-action extraits dans src/handlers/steps.js
 // ===========================================================
-const { onStepsClick, onStepsChange, onStepsInput } = window._createStepsHandlers({
+const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
   MODEL,
   render,
   invalidateProjectCache,
@@ -1012,7 +1060,7 @@ const { onStepsClick, onStepsChange, onStepsInput } = window._createStepsHandler
 // ==========================================================
 async function exportProjectPdfPro(proj) {
   // ✅ Phase 3 — PH3.2 : extraite dans render/pdf-pro.js
-  return window._exportProjectPdfProPure(proj, {
+  return exportProjectPdfProPure(proj, {
     T,
     getLastProject: () => LAST_PROJECT,
     setLastProject: (v) => { LAST_PROJECT = v; },
@@ -1026,7 +1074,7 @@ async function exportProjectPdfPro(proj) {
 // TESTS AUTOMATISÉS PDF
 // ==========================================================
 async function testPdfGeneration(verbose = true) {
-  return window._testPdfGenerationPure(verbose, {
+  return testPdfGenerationPure(verbose, {
     getLastProject: () => LAST_PROJECT,
     computeProject,
     buildPdfHtml,
@@ -1043,15 +1091,13 @@ window.testPdfGeneration = testPdfGeneration;
 // ==========================================================
 
 
-const sanitizeFilename = window._sanitizeFilenamePure;
 
 // Dédup par URL
-const dedupByUrl = window._dedupByUrlPure;
 
 // Collecte les datasheet_url depuis le projet (tu peux enrichir ensuite)
 function collectDatasheetUrlsFromProject(proj) {
   // ✅ Phase 3 — PH3.1 : extraite dans render/datasheet-urls.js
-  return window._collectDatasheetUrlsFromProjectPure(proj, {
+  return collectDatasheetUrlsFromProjectPure(proj, {
     MODEL, getCameraById, sanitizeFilename, localizedDatasheetUrl, dedupByUrl,
     getSelectedOrRecommendedScreen, getSelectedOrRecommendedEnclosure, getSelectedOrRecommendedSign,
   });
@@ -1062,7 +1108,7 @@ function collectDatasheetUrlsFromProject(proj) {
 
 async function exportProjectPdfWithLocalDatasheetsZip() {
   // ✅ Phase 2 — PH2.24 : extraite dans render/pdf-export.js
-  return window._exportProjectPdfWithLocalDatasheetsZipPure({
+  return exportProjectPdfWithLocalDatasheetsZipPure({
     T,
     getLastProject: () => LAST_PROJECT,
     setLastProject: (v) => { LAST_PROJECT = v; },
@@ -1097,13 +1143,13 @@ async function exportProjectPdfPackPro() {
 // ==========================================================
 function validateStep(stepId) {
   // ✅ Phase 3 — PH3.3 : extraite dans engine/validate-step.js
-  return window._validateStepPure(stepId, { MODEL, T, getProjectCached });
+  return validateStepPure(stepId, { MODEL, T, getProjectCached });
 }
 
 
 function showStepValidationErrors(errors) {
   // ✅ Phase 3 — PH3.3 : extraite dans engine/validate-step.js
-  return window._showStepValidationErrorsPure(errors, { T });
+  return showStepValidationErrorsPure(errors, { T });
 }
 
 
@@ -1234,7 +1280,7 @@ bind(DOM.btnCompute, "click", () => {
 
 bind(DOM.btnReset, "click", () => {
   // ✅ Phase 2 — réinitialisation déléguée à src/state/actions.js
-  window._resetModel(MODEL, LIM);
+  resetModel(MODEL, LIM);
   LAST_PROJECT = null;
   sanity();
   invalidateProjectCache();
@@ -1335,21 +1381,21 @@ bind(DOM.stepsEl, "input", onStepsInput);
   // 14) INIT (load CSV)
   // ==========================================================
   async function init() {
-  return window._initPure({
+  return initPure({
     DOM,
     KPI,
-    loadCsv: window._loadCsvPure,
+    loadCsv: loadCsv,
     CATALOG,
     MODEL,
     setLastProject: (v) => { LAST_PROJECT = v; },
-    normalizeCamera: window._normalizeCameraPure,
-    normalizeNvr: window._normalizeNvrPure,
-    normalizeHdd: window._normalizeHddPure,
-    normalizeSwitch: window._normalizeSwitchPure,
-    normalizeScreen: window._normalizeScreenPure,
-    normalizeEnclosure: window._normalizeEnclosurePure,
-    normalizeSignageRow: window._normalizeSignageRowPure,
-    normalizeAccessoryMapping: window._normalizeAccessoryMappingPure,
+    normalizeCamera: normalizeCamera,
+    normalizeNvr: normalizeNvr,
+    normalizeHdd: normalizeHdd,
+    normalizeSwitch: normalizeSwitch,
+    normalizeScreen: normalizeScreen,
+    normalizeEnclosure: normalizeEnclosure,
+    normalizeSignageRow: normalizeSignageRow,
+    normalizeAccessoryMapping: normalizeAccessoryMapping,
     applyLocalMediaToCatalog,
     sanity,
     syncResultsUI,
@@ -1373,14 +1419,14 @@ const {
   adminLoadCsv, adminSaveCsv, bindAdminPanel, escapeAttr, parseCSVGrid,
   toCSVGrid, syncGridMeta, syncExpertTextareaIfOpen, renderAdminGrid,
   adminGridAddRow, adminGridDupRow, adminGridDelRow, initAdminGridUI,
-} = window._createAdminHandlers({ adminTokenRef: _adminRef });
+} = createAdminHandlers({ adminTokenRef: _adminRef });
 /* eslint-enable no-unused-vars */
 bindAdminPanel();
 
 
   init();
   function ensurePdfPackButton() {
-  return window._ensurePdfPackButtonPure({
+  return ensurePdfPackButtonPure({
     T,
     exportProjectPdfWithLocalDatasheetsZip,
   });

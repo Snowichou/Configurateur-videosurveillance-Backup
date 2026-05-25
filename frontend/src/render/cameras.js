@@ -464,5 +464,4 @@ export function renderStepCameras(deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepCamerasPure = renderStepCameras;
 }

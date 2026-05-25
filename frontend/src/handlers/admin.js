@@ -444,5 +444,4 @@ export function createAdminHandlers(deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._createAdminHandlers = createAdminHandlers;
 }

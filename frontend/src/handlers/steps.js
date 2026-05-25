@@ -559,5 +559,4 @@ function onStepsInput(e) {
 
 // -- Compat global --
 if (typeof window !== 'undefined') {
-  window._createStepsHandlers = createStepsHandlers;
 }

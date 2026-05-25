@@ -67,12 +67,4 @@ export function getAllUseCases(cameras) {
 
 // ─── Compat globals (legacy app.js) ─────────────────────────
 if (typeof window !== 'undefined') {
-  window._findById = findById;
-  window._getCameraByIdPure = getCameraById;
-  window._getNvrByIdPure = getNvrById;
-  window._getHddByIdPure = getHddById;
-  window._getSwitchByIdPure = getSwitchById;
-  window._getScreenByIdPure = getScreenById;
-  window._getEnclosureByIdPure = getEnclosureById;
-  window._getAllUseCasesPure = getAllUseCases;
 }

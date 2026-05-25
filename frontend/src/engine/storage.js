@@ -241,5 +241,4 @@ if (typeof window !== 'undefined') {
   window.mbpsToTB = mbpsToTB;
   window.getContextualMotionFactor = getContextualMotionFactor;
   // pickDisks reste dans app.js comme wrapper (utilise CATALOG.HDDS global)
-  window._pickDisksPure = pickDisks;
 }

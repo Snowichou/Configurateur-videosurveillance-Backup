@@ -92,5 +92,4 @@ export function createInitialModel(limits = FALLBACK_LIMITS) {
 
 // ─── Compat global (legacy app.js) ──────────────────────────
 if (typeof window !== 'undefined') {
-  window._createInitialModel = createInitialModel;
 }

@@ -96,5 +96,4 @@ export function bindSummaryButtonsPure(deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._bindSummaryButtonsPure = bindSummaryButtonsPure;
 }

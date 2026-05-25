@@ -269,15 +269,6 @@ if (typeof window !== 'undefined') {
   window.splitList = splitList;
   window.parsePipeList = parsePipeList;
   window.localizedDatasheetUrl = localizedDatasheetUrl;
-  window._normalizeHddPure = normalizeHdd;
-  window._normalizeSwitchPure = normalizeSwitch;
-  window._normalizeScreenPure = normalizeScreen;
-  window._normalizeEnclosurePure = normalizeEnclosure;
-  window._normalizeSignageRowPure = normalizeSignageRow;
-  window._normalizeCameraPure = normalizeCamera;
-  window._normalizeNvrPure = normalizeNvr;
-  window._normalizeAccessoryMappingPure = normalizeAccessoryMapping;
-  window._normalizeMappedAccessoryPure = normalizeMappedAccessory;
   window.parseRobustNum = parseRobustNum;
   window.extractUseCasesFromRow = extractUseCasesFromRow;
 }

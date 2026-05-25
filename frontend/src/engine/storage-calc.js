@@ -46,5 +46,3 @@ export function pickDisks(requiredTB, nvr, hdds) {
   return { ...best, maxTotalTB, hddRef };
 }
 
-window._mbpsToTBPure = mbpsToTB;
-window._pickDisksPure = pickDisks;

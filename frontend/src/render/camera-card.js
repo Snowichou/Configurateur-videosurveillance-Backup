@@ -203,5 +203,4 @@ export function renderCameraPickCard(blk, cam, deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderCameraPickCardPure = renderCameraPickCard;
 }

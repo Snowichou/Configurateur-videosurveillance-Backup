@@ -39,4 +39,3 @@ export function createRecoBlockHelpers(deps = {}) {
   return { canRecommendBlock, buildRecoForBlock };
 }
 
-window._createRecoBlockHelpers = createRecoBlockHelpers;

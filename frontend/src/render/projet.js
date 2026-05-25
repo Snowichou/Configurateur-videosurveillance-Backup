@@ -224,6 +224,4 @@ export function renderStepProject(deps = {}) {
 
 // ─── Compat global (legacy app.js) ──────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepProjectPure = renderStepProject;
-  window._mergeProjectUseCases = mergeProjectUseCases;
 }

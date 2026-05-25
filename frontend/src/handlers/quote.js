@@ -58,4 +58,3 @@ export function createQuoteHandlers(deps = {}) {
   return { requestQuote, sendToDistributor };
 }
 
-window._createQuoteHandlers = createQuoteHandlers;

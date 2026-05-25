@@ -206,5 +206,4 @@ export async function exportProjectPdfWithLocalDatasheetsZipPure(deps = {}) {
 
 // Compat shim pour l'IIFE legacy de app.js
 if (typeof window !== 'undefined') {
-  window._exportProjectPdfWithLocalDatasheetsZipPure = exportProjectPdfWithLocalDatasheetsZipPure;
 }

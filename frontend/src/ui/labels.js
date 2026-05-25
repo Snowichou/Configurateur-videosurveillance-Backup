@@ -114,4 +114,3 @@ export function createLabelsHelpers(deps = {}) {
   return { objectiveLabel, accessoryTypeLabel, translateUseCase, getAllUseCases, getCameraProfile };
 }
 
-window._createLabelsHelpers = createLabelsHelpers;

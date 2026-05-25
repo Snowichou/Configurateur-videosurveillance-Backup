@@ -106,5 +106,4 @@ export async function initPure(deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._initPure = initPure;
 }

@@ -143,8 +143,4 @@ export function setProjectField(model, key, value) {
 
 // ─── Compat globals (legacy app.js) ─────────────────────────
 if (typeof window !== 'undefined') {
-  window._uid = uid;
-  window._createEmptyCameraBlockPure = createEmptyCameraBlock;
-  window._resetModel = resetModel;
-  window._setProjectField = setProjectField;
 }

@@ -127,5 +127,4 @@ export function renderStepAccessories(deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepAccessoriesPure = renderStepAccessories;
 }

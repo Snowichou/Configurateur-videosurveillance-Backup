@@ -93,4 +93,3 @@ export function createPersistenceHandlers(deps = {}) {
   return { snapshotForSave, restoreFromSnapshot, saveConfigToLocalStorage, loadConfigFromLocalStorage, shareConfigUrl };
 }
 
-window._createPersistenceHandlers = createPersistenceHandlers;

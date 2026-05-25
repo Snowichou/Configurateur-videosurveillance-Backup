@@ -95,6 +95,4 @@ export function showStepValidationErrorsPure(errors, deps = {}) {
 
 // Compat shims pour l'IIFE legacy de app.js
 if (typeof window !== 'undefined') {
-  window._validateStepPure = validateStepPure;
-  window._showStepValidationErrorsPure = showStepValidationErrorsPure;
 }

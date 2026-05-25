@@ -180,4 +180,3 @@ export function createComplementsHandlers(deps = {}) {
   };
 }
 
-window._createComplementsHandlers = createComplementsHandlers;

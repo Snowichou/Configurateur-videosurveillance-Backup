@@ -323,6 +323,4 @@ export function recommendCameraForAnswers(ans, deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._scoreCameraPure = scoreCamera;
-  window._recommendCameraForAnswersPure = recommendCameraForAnswers;
 }

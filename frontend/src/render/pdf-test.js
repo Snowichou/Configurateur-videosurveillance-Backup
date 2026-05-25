@@ -133,6 +133,4 @@ export function ensurePdfPackButtonPure(deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._testPdfGenerationPure = testPdfGenerationPure;
-  window._ensurePdfPackButtonPure = ensurePdfPackButtonPure;
 }

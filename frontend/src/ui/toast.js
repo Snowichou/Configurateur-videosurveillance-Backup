@@ -29,4 +29,3 @@ export function showToastPure(message, type, CLR) {
   }, 3000);
 }
 
-window._showToastPure = showToastPure;

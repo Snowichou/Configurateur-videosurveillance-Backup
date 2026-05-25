@@ -279,6 +279,4 @@ export function interpretScoreForBlock(block, cam, deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._scoreCameraForBlockPure = scoreCameraForBlock;
-  window._interpretScoreForBlockPure = interpretScoreForBlock;
 }

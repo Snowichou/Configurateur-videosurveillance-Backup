@@ -290,5 +290,4 @@ export function computeProjectPure(deps = {}) {
 }
 // -- Compat global --
 if (typeof window !== 'undefined') {
-  window._computeProjectPure = computeProjectPure;
 }

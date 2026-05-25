@@ -34,5 +34,3 @@ export function dedupByUrl(items) {
   return out;
 }
 
-window._sanitizeFilenamePure = sanitizeFilename;
-window._dedupByUrlPure = dedupByUrl;

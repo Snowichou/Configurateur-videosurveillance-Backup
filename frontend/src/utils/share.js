@@ -81,6 +81,4 @@ export function generateShareUrlPure(deps = {}) {
 
 // Compat shims pour l'IIFE legacy de app.js
 if (typeof window !== 'undefined') {
-  window._generateQRDataUrlPure = generateQRDataUrlPure;
-  window._generateShareUrlPure = generateShareUrlPure;
 }

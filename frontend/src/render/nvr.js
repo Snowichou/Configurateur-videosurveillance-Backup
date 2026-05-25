@@ -201,5 +201,4 @@ export function renderStepNvrNetwork(deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepNvrNetworkPure = renderStepNvrNetwork;
 }

@@ -175,4 +175,3 @@ export function createKpiSnapshot(deps = {}) {
   return snapshot;
 }
 
-window._createKpiSnapshot = createKpiSnapshot;

@@ -104,5 +104,4 @@ export function kpiConfigSnapshotPure(proj, deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._kpiConfigSnapshotPure = kpiConfigSnapshotPure;
 }

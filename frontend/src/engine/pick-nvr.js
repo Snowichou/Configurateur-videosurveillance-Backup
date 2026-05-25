@@ -94,5 +94,4 @@ export function pickNvr(totalCameras, totalInMbps, requiredTB, deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._pickNvrPure = pickNvr;
 }

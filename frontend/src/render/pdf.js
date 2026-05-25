@@ -1986,5 +1986,4 @@ const buildSynopticHtml = (proj) => {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._buildPdfHtmlPure = buildPdfHtmlPure;
 }

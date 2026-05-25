@@ -39,4 +39,3 @@ export function sanityPure(deps = {}) {
   applyDemoClass();
 }
 
-window._sanityPure = sanityPure;

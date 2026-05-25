@@ -248,5 +248,4 @@ export function renderStepComplements(deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepComplementsPure = renderStepComplements;
 }

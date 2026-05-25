@@ -194,5 +194,4 @@ export function createRenderPipeline(deps = {}) {
 }
 
 if (typeof window !== 'undefined') {
-  window._createRenderPipeline = createRenderPipeline;
 }

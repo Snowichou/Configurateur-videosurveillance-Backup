@@ -94,7 +94,4 @@ export function computeCriticalProjectScore(cameraBlocks) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._estimateCameraBitrateMbpsPure = estimateCameraBitrateMbps;
-  window._computeTotalsPure = computeTotals;
-  window._computeCriticalProjectScorePure = computeCriticalProjectScore;
 }

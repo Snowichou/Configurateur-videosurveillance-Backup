@@ -102,5 +102,4 @@ export function renderStepSummary(deps = {}) {
 
 // ─── Compat global ──────────────────────────────────────────
 if (typeof window !== 'undefined') {
-  window._renderStepSummaryPure = renderStepSummary;
 }

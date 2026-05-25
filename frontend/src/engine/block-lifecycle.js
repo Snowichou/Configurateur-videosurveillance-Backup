@@ -17,6 +17,8 @@
  * }
  */
 
+import { buildAccessoryLines, computeBlockAccessories } from './accessories.js';
+
 export function createBlockLifecycleHandlers(deps = {}) {
   const {
     MODEL,
@@ -31,7 +33,7 @@ export function createBlockLifecycleHandlers(deps = {}) {
 
   function rebuildAccessoryLinesFromBlocks() {
     // Phase 2 — logique extraite dans src/engine/accessories.js
-    MODEL.accessoryLines = window._buildAccessoryLinesPure(MODEL.cameraBlocks, MODEL.cameraLines);
+    MODEL.accessoryLines = buildAccessoryLines(MODEL.cameraBlocks, MODEL.cameraLines);
   }
 
   function unvalidateBlock(block) {
@@ -65,7 +67,7 @@ export function createBlockLifecycleHandlers(deps = {}) {
     const line = MODEL.cameraLines.find((l) => l.fromBlockId === block.id);
     const cam = line ? getCameraById(line.cameraId) : null;
     const mapRow = cam ? CATALOG.ACCESSORIES_MAP.get(cam.id) : null;
-    block.accessories = window._computeBlockAccessoriesPure(
+    block.accessories = computeBlockAccessories(
       {
         cam,
         mapRow,
@@ -137,4 +139,3 @@ export function createBlockLifecycleHandlers(deps = {}) {
   };
 }
 
-window._createBlockLifecycleHandlers = createBlockLifecycleHandlers;
