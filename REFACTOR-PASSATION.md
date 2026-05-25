@@ -11,32 +11,41 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 640 lignes** (était 13 000 à l'origine, 1 761 à la session précédente) |
-| Modules ESM extraits | **50** |
-| Tests Vitest | **435** (23 fichiers) — tous au vert |
-| ESLint | **0 erreur / 0 warning** sur tout `src/` |
-| Build Vite | OK |
+| `app.js` | **1 447 lignes** (était 13 000 à l'origine) |
+| Modules ESM extraits | **55** |
+| Tests Vitest | **469** (25 fichiers) — tous au vert |
+| Build Vite | OK (317 modules transformés) |
+| Shims `window._xxx` | **0** — tous remplacés par imports ESM directs |
 | Branche | `main` — tout est commité |
+
+### Architecture actuelle
+
+`app.js` est désormais un **vrai module ESM** :
+- Pas de IIFE, pas de `window._xxx = fn` dans les modules
+- 55 imports ESM directs en tête de `app.js` (dont 17 aliasés `_fn` pour éviter collision avec thin wrappers locaux)
+- Les thin wrappers locaux closent sur l'état (`MODEL`, `CATALOG`, `T`…) et délèguent aux fonctions pures importées
+- `optimisations.js` continue de lire `window._MODEL`, `window._CATALOG`, `window._STEPS`, `window._getCameraById` — ces 4 assignments sont conservés dans `app.js`
 
 ### Modules extraits (`frontend/src/`)
 
-- **utils/** — `format.js`, `csv.js`, `share.js`
+- **utils/** — `format.js`, `csv.js`, `share.js`, `helpers.js`
 - **core/** — `constants.js`
-- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`, `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`, `validate-step.js`, `kpi.js`, `block-lifecycle.js`, `persistence.js`, `sanity.js`, `complements.js`, `storage-calc.js`
+- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`, `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`, `validate-step.js`, `kpi.js`, `block-lifecycle.js`, `persistence.js`, `sanity.js`, `complements.js`, `storage-calc.js`, `kpi-tracker.js`, `reco-block.js`
 - **catalog/** — `normalize.js`, `media.js`
 - **state/** — `model.js`, `lookups.js`, `actions.js`
 - **render/** — `projet.js`, `storage.js`, `options.js`, `accessories.js`, `nvr.js`, `summary.js`, `cameras.js`, `camera-card.js`, `pdf.js`, `summary-final.js`, `pdf-blob.js`, `pdf-export.js`, `pdf-preview.js`, `datasheet-urls.js`, `pdf-pro.js`, `pdf-test.js`, `pipeline.js`
 - **handlers/** — `steps.js`, `admin.js`, `summary.js`, `init.js`, `quote.js`
 - **ui/** — `toast.js`, `labels.js`
 
-### Commits de cette session (PH5)
+### Commits de la session PH6
 
 ```
-055e476  PH5.2c  localizedDatasheetUrl → wrapper sur window.localizedDatasheetUrl (normalize.js)
-675bc64  PH5.2b  ui/labels.js (objectiveLabel+accessoryTypeLabel+translateUseCase+getAllUseCases+getCameraProfile ~115L, 20 tests)
-8c1a32c  PH5.2a  engine/storage-calc.js (mbpsToTB+pickDisks ~57L)
-ea3c8ea  sync    rattrapage git: render/pdf.js + handlers/steps.js + render-pdf.test.js + engine/complements.js + main.js
-(session précédente : PH4.4a–f, PH3.3–3.8, etc.)
+ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés, 469 tests)
+5b51fee  PH6.4  engine/reco-block.js (canRecommendBlock+buildRecoForBlock ~40L, 9 tests)
+2d9b9ba  PH6.3  utils/helpers.js (sanitizeFilename+dedupByUrl ~30L, 10 tests)
+7aa8647  PH6.2  suppression IIFE principale (module ESM scope)
+a4efec4  PH6.1b KPI interne → kpi-tracker.js (compactCameras+snapshot, 155L)
+(sessions précédentes : PH5, PH4.4a–f, PH3.3–3.8, etc.)
 ```
 
 ---
@@ -123,26 +132,32 @@ node node_modules/vitest/vitest.mjs run src/__tests__/catalog-*.test.js src/__te
 
 `vite build` vers `/tmp` : `--outDir /tmp/vite-phXXX --emptyOutDir`
 
-### 2.6 Patterns de factory (admin, pipeline, block-lifecycle, persistence, quote…)
+### 2.6 Patterns de factory et import ESM (PH6.5 — plus de shims window._xxx)
 
-Pour les groupes de fonctions qui s'appellent mutuellement, utiliser le pattern factory :
+Depuis PH6.5, les modules exportent directement et app.js importe :
 ```js
-export function createXxxHandlers(deps = {}) {
-  const { dep1, dep2 } = deps;
-  function fn1() { ... }
-  function fn2() { ... fn1() ... }
-  return { fn1, fn2 };
+// Dans le module
+export function createXxxHandlers(deps = {}) { ... }
+// Plus de window._createXxxHandlers = ...
+
+// Dans app.js
+import { createXxxHandlers } from './handlers/xxx.js';
+const { fn1, fn2 } = createXxxHandlers({ dep1, dep2 });
+```
+
+Pour les fonctions pures dont app.js a un wrapper local (closure sur deps) :
+```js
+// Import aliasé pour éviter collision avec le wrapper local
+import { scoreCameraForBlock as _scoreCameraForBlock } from './engine/camera-score.js';
+
+// Wrapper local dans app.js (close sur MODEL, CATALOG, T…)
+function scoreCameraForBlock(block, cam) {
+  return _scoreCameraForBlock(block, cam, { get CATALOG() {...}, ... });
 }
-window._createXxxHandlers = createXxxHandlers;
 ```
 
-Dans app.js :
-```js
-const { fn1, fn2 } = window._createXxxHandlers({ dep1, dep2 });
-```
-
-Quand les vars destructurées sont toutes utilisées → pas besoin de `eslint-disable`.
-Si certaines ne sont référencées que depuis le HTML/events → ajouter le commentaire disable.
+Les 4 `window._xxx` maintenus sont réservés à `optimisations.js` :
+`window._MODEL`, `window._CATALOG`, `window._STEPS`, `window._getCameraById`.
 
 ### 2.7 Apostrophes dans les strings JS écrits depuis Python
 
@@ -176,39 +191,58 @@ src = src[:low_start]  + replacement + src[low_end:]
 
 ---
 
-## 3. Ce qui reste dans `app.js` (1 640 lignes)
+## 3. Ce qui reste dans `app.js` (1 447 lignes)
 
-`app.js` est un **orchestrateur** : état global, wrappers vers les modules,
-logique bootstrap, et quelques helpers non encore extraits.
+`app.js` est désormais un **vrai module ESM** : plus de IIFE, plus de `window._xxx` shims.
+Il reste l'orchestrateur principal : état global, thin wrappers locaux, bootstrap.
+
+### Thin wrappers locaux (pattern de clôture sur deps)
+
+Chaque wrapper local close sur l'état (`MODEL`, `CATALOG`, `T`, `CLR`…)
+et délègue à la fonction pure importée (aliasée `_fn`) :
+
+```js
+function scoreCameraForBlock(block, cam) {          // wrapper local
+  return _scoreCameraForBlock(block, cam, { ... }); // fn pure importée
+}
+```
+
+17 paires de ce type subsistent dans app.js. Le résoudre proprement nécessiterait soit :
+- Passer les deps explicitement à chaque call site (refactor invasif), ou
+- Extraire un objet `deps` central (ex: `makeDeps()`) injecté une seule fois.
 
 ### Fonctions résiduelles à logique réelle (non wrappers)
 
 | Fonction | Lignes | Commentaire |
 |---|---|---|
-| KPI IIFE interne | ~150 | `getSessionId`, `send`, `sendNowait`, `compactCameras`, `snapshot` — dans un IIFE imbriqué |
-| `localizedDatasheetUrl` | 4 | Wrapper → `window.localizedDatasheetUrl(url, _currentLang)` — déjà simplifié |
-| `getProjectCached` | ~11 | Cache projet (dépend de state) |
-| `safeStr` | 3 | Micro-helper |
-| Wrappers PH2–PH5 | ~400 | Délèguent vers `window._xxxPure` / factories |
+| `localizedDatasheetUrl` | 4 | Wrapper → `window.localizedDatasheetUrl(url, _currentLang)` |
+| `getProjectCached` | ~11 | Cache projet (dépend de `MODEL`) |
+| `safeStr`, `clamp`, `clampNum` | ~15 | Micro-helpers locaux |
 | État global + DOM | ~400 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
+| `window._MODEL/CATALOG/STEPS/getCameraById` | 4 assignments | Maintenus pour `optimisations.js` |
 
-### TODO PH6 (prochaine session)
+### TODO PH7 (prochaine session)
 
-1. **Supprimer l'IIFE** de `app.js` et convertir en vrai module ESM.
-   C'est le dernier grand chantier architectural. Nécessite de remplacer tous les
-   `window._xxxPure` shims par de vrais `import` ESM.
-   Étapes suggérées :
-   - Extraire le KPI IIFE interne → `engine/kpi-tracker.js`
-   - Remplacer les `window._createXxx` par des imports directs dans app.js
-   - Supprimer la IIFE wrapper et les `window._xxx` shims
+1. **Éliminer les thin wrappers** en faveur d'un objet `deps` central :
+   ```js
+   // Idée : créer un objet deps vivant au niveau module
+   const deps = {
+     get MODEL() { return MODEL; },
+     get CATALOG() { return CATALOG; },
+     T, CLR, toNum, ...
+   };
+   // Puis appeler directement la fn pure à chaque call site :
+   scoreCameraForBlock(block, cam, deps);
+   ```
+   Cela supprimerait les 17 wrappers locaux restants.
 
-2. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur.
-   Faire un test manuel ou Playwright du parcours complet.
+2. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur depuis
+   le début du refactor. Faire un test manuel du parcours complet (Playwright ou manuel).
 
 3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
 
-4. **`getProjectCached` + `safeStr`** : petits helpers extractibles si besoin
-   (faible priorité, ~15 lignes au total).
+4. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
+   (app.js les importe directement). On peut les retirer ou garder comme doc.
 
 ---
 
