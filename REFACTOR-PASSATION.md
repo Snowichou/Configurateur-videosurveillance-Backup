@@ -11,33 +11,32 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **3 735 lignes** (était 7 272 en début de session, ~13 000 à l'origine) |
-| Modules ESM extraits | **30** |
-| Tests Vitest | **375** (19 fichiers) — tous au vert |
+| `app.js` | **1 640 lignes** (était 13 000 à l'origine, 1 761 à la session précédente) |
+| Modules ESM extraits | **50** |
+| Tests Vitest | **435** (23 fichiers) — tous au vert |
 | ESLint | **0 erreur / 0 warning** sur tout `src/` |
 | Build Vite | OK |
 | Branche | `main` — tout est commité |
 
 ### Modules extraits (`frontend/src/`)
 
-- **utils/** — `format.js`, `csv.js`
+- **utils/** — `format.js`, `csv.js`, `share.js`
 - **core/** — `constants.js`
-- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`, `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`
-- **catalog/** — `normalize.js`
+- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`, `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`, `validate-step.js`, `kpi.js`, `block-lifecycle.js`, `persistence.js`, `sanity.js`, `complements.js`, `storage-calc.js`
+- **catalog/** — `normalize.js`, `media.js`
 - **state/** — `model.js`, `lookups.js`, `actions.js`
-- **render/** — `projet.js`, `storage.js`, `options.js`, `accessories.js`, `nvr.js`, `summary.js`, `cameras.js`, `camera-card.js`, `pdf.js`, `summary-final.js`, `pdf-blob.js`, `pdf-export.js`, `pdf-preview.js`
-- **handlers/** — `steps.js`
+- **render/** — `projet.js`, `storage.js`, `options.js`, `accessories.js`, `nvr.js`, `summary.js`, `cameras.js`, `camera-card.js`, `pdf.js`, `summary-final.js`, `pdf-blob.js`, `pdf-export.js`, `pdf-preview.js`, `datasheet-urls.js`, `pdf-pro.js`, `pdf-test.js`, `pipeline.js`
+- **handlers/** — `steps.js`, `admin.js`, `summary.js`, `init.js`, `quote.js`
+- **ui/** — `toast.js`, `labels.js`
 
-### Commits de cette session (7)
+### Commits de cette session (PH5)
 
 ```
-5164043  PH2.25  render/pdf-preview.js (showPdfPreview 179L)
-4c31f16  PH2.24  render/pdf-export.js (exportProjectPdfWithLocalDatasheetsZip 195L)
-ccc50bc  PH2.23  render/pdf-blob.js (buildPdfBlobProFromProject 282L)
-2ed5c8d  PH2.22  render/summary-final.js (renderFinalSummary 271L)
-278ea69  PH2.21  engine/project.js (computeProject) + 16 tests
-cc05bfb  PH2.20  handlers/steps.js (onStepsClick/Change/Input)
-ad20859  PH2.19  render/pdf.js (buildPdfHtml 2026L)
+055e476  PH5.2c  localizedDatasheetUrl → wrapper sur window.localizedDatasheetUrl (normalize.js)
+675bc64  PH5.2b  ui/labels.js (objectiveLabel+accessoryTypeLabel+translateUseCase+getAllUseCases+getCameraProfile ~115L, 20 tests)
+8c1a32c  PH5.2a  engine/storage-calc.js (mbpsToTB+pickDisks ~57L)
+ea3c8ea  sync    rattrapage git: render/pdf.js + handlers/steps.js + render-pdf.test.js + engine/complements.js + main.js
+(session précédente : PH4.4a–f, PH3.3–3.8, etc.)
 ```
 
 ---
@@ -52,7 +51,7 @@ Le montage Windows interdit l'`unlink` côté sandbox Linux. Résultat : `.git/i
 **Contournement utilisé** (à réutiliser tel quel) — n'utilise aucun verrou :
 
 ```bash
-cd <repo>
+cd <repo-root>   # configurateur-videosurveillance/ (PAS frontend/)
 cp .git/index /tmp/gitidx_<phase>
 export GIT_INDEX_FILE=/tmp/gitidx_<phase>
 git add <fichiers...>
@@ -107,6 +106,9 @@ while src[pos] != '}': pos -= 1
 real_end = pos + 1
 ```
 
+**Exception** : les arrow functions/const one-liners (ex: `const toBool = (v) => ...;`) n'ont
+pas de `}` final — utiliser directement `range[1]` (endpoint espree) pour ceux-ci.
+
 ### 2.5 Vérification build/tests
 
 Build + suite complète dépassent le timeout de 45 s du bash → lancer en **deux appels séparés** :
@@ -115,40 +117,98 @@ Build + suite complète dépassent le timeout de 45 s du bash → lancer en **de
 # Pass 1 (engine + render-pdf)
 node node_modules/vitest/vitest.mjs run src/__tests__/engine-*.test.js src/__tests__/render-pdf.test.js
 
-# Pass 2 (render + state + utils + catalog)
-node node_modules/vitest/vitest.mjs run src/__tests__/catalog-*.test.js src/__tests__/render-{accessories,camera-card,cameras,nvr,options,projet,storage,summary}.test.js src/__tests__/state-*.test.js src/__tests__/utils-*.test.js
+# Pass 2 (render + state + utils + catalog + ui)
+node node_modules/vitest/vitest.mjs run src/__tests__/catalog-*.test.js src/__tests__/render-{accessories,camera-card,cameras,nvr,options,projet,storage,summary}.test.js src/__tests__/state-*.test.js src/__tests__/utils-*.test.js src/__tests__/ui-labels.test.js
 ```
 
 `vite build` vers `/tmp` : `--outDir /tmp/vite-phXXX --emptyOutDir`
 
+### 2.6 Patterns de factory (admin, pipeline, block-lifecycle, persistence, quote…)
+
+Pour les groupes de fonctions qui s'appellent mutuellement, utiliser le pattern factory :
+```js
+export function createXxxHandlers(deps = {}) {
+  const { dep1, dep2 } = deps;
+  function fn1() { ... }
+  function fn2() { ... fn1() ... }
+  return { fn1, fn2 };
+}
+window._createXxxHandlers = createXxxHandlers;
+```
+
+Dans app.js :
+```js
+const { fn1, fn2 } = window._createXxxHandlers({ dep1, dep2 });
+```
+
+Quand les vars destructurées sont toutes utilisées → pas besoin de `eslint-disable`.
+Si certaines ne sont référencées que depuis le HTML/events → ajouter le commentaire disable.
+
+### 2.7 Apostrophes dans les strings JS écrits depuis Python
+
+Les chaînes françaises avec apostrophes (`d'abord`, `l'app`...) dans du code JS single-quoted
+cassent le parseur ESLint. **Toujours** utiliser des double-quotes pour ces chaînes :
+```js
+showToast("⚠️ Finalise ta configuration d'abord.", 'warn')
+```
+
+### 2.8 f-strings Python et backslash
+
+Python < 3.12 interdit les backslash dans les expressions f-string :
+```python
+# INTERDIT en Python < 3.12 :
+f"{value.count(b'\x00')}"
+# CORRECT : stocker d'abord
+null_count = value.count(b'\x00')
+f"{null_count}"
+```
+
+### 2.9 Ordre des remplacements dans app.js
+
+Quand on supprime/remplace plusieurs plages dans app.js au sein d'un même script Python,
+**toujours traiter du plus haut offset vers le plus bas** pour éviter le décalage d'index.
+Exemple :
+```python
+# Correct — highest first
+src = src[:high_start] + replacement + src[high_end:]
+src = src[:low_start]  + replacement + src[low_end:]
+```
+
 ---
 
-## 3. Ce qui reste dans `app.js` (3 735 lignes)
+## 3. Ce qui reste dans `app.js` (1 640 lignes)
 
-`app.js` est maintenant un **orchestrateur** : état global, wrappers vers les modules,
-quelques fonctions helper non extraites.
+`app.js` est un **orchestrateur** : état global, wrappers vers les modules,
+logique bootstrap, et quelques helpers non encore extraits.
 
-### Fonctions encore dans `app.js` (non extraites — PH3)
+### Fonctions résiduelles à logique réelle (non wrappers)
 
-| Fonction | Lignes | Raison de rester |
+| Fonction | Lignes | Commentaire |
 |---|---|---|
-| `bindSummaryButtons` | 74 | Orchestrateur pur (12 dépendances app.js) |
-| `init` | 86 | Bootstrap app — charge CSV, initialise CATALOG |
-| `collectDatasheetUrlsFromProject` | ~60 | Helper utilisé par `pdf-export.js` |
-| `kpiConfigSnapshot` | 92 | Snapshot KPI — dépend de tout le state |
-| Helpers divers | ~200 | `safeHtml`, `clampInt`, `clampNum`, `mbpsToTB`, etc. |
-| Wrappers PH2 | ~200 | Délèguent vers `window._xxxPure` |
-| État global + DOM | ~500 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
-| Render pipeline | ~1500 | `render()`, `renderStep()`, `syncResultsUI()`, etc. |
+| KPI IIFE interne | ~150 | `getSessionId`, `send`, `sendNowait`, `compactCameras`, `snapshot` — dans un IIFE imbriqué |
+| `localizedDatasheetUrl` | 4 | Wrapper → `window.localizedDatasheetUrl(url, _currentLang)` — déjà simplifié |
+| `getProjectCached` | ~11 | Cache projet (dépend de state) |
+| `safeStr` | 3 | Micro-helper |
+| Wrappers PH2–PH5 | ~400 | Délèguent vers `window._xxxPure` / factories |
+| État global + DOM | ~400 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
 
-### TODO PH3
+### TODO PH6 (prochaine session)
 
-1. **Remplacer les shims `window._xxxPure`** par de vrais `import` ESM dans chaque module.
-   `app.js` importera directement les fonctions au lieu de les exposer via `window`.
-2. **Extraire `render()` + pipeline de rendu** (~1500L restantes) — le plus gros bloc non extrait.
-3. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur cette session.
+1. **Supprimer l'IIFE** de `app.js` et convertir en vrai module ESM.
+   C'est le dernier grand chantier architectural. Nécessite de remplacer tous les
+   `window._xxxPure` shims par de vrais `import` ESM.
+   Étapes suggérées :
+   - Extraire le KPI IIFE interne → `engine/kpi-tracker.js`
+   - Remplacer les `window._createXxx` par des imports directs dans app.js
+   - Supprimer la IIFE wrapper et les `window._xxx` shims
+
+2. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur.
    Faire un test manuel ou Playwright du parcours complet.
-4. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
+
+3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
+
+4. **`getProjectCached` + `safeStr`** : petits helpers extractibles si besoin
+   (faible priorité, ~15 lignes au total).
 
 ---
 
@@ -161,4 +221,5 @@ quelques fonctions helper non extraites.
    + suite complète (en 2 passes).
 4. Remplacements dans `app.js` **uniquement** via AST `espree` (jamais de
    comptage d'accolades).
-5. Commit après chaque module vérifi
+5. Commit après chaque module vérifié, via le contournement Git du §2.1.
+6. Script utilitaire de nettoyage de code mort : `outputs/cleanup-deadcode.cjs`.
