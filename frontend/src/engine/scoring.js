@@ -121,11 +121,4 @@ export function levelFromScoreStrict(score) {
 
 // ─── Compat globals (legacy app.js) ─────────────────────────
 if (typeof window !== 'undefined') {
-  window.normalizeEmplacement = normalizeEmplacement;
-  window.objectiveToDoriKey = objectiveToDoriKey;
-  window.getDoriForObjective = getDoriForObjective;
-  window.getMpFromCam = getMpFromCam;
-  window.getIrFromCam = getIrFromCam;
-  window.levelFromScore = levelFromScore;
-  window.levelFromScoreStrict = levelFromScoreStrict;
 }

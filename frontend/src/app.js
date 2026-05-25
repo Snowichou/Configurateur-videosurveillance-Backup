@@ -32,6 +32,7 @@
 import { uid, createEmptyCameraBlock as _createEmptyCameraBlock, resetModel } from './state/actions.js';
 import { createInitialModel } from './state/model.js';
 import { scoreCameraForBlock as _scoreCameraForBlock, interpretScoreForBlock as _interpretScoreForBlock } from './engine/camera-score.js';
+import { normalizeEmplacement, objectiveToDoriKey, getDoriForObjective, getMpFromCam, getIrFromCam } from './engine/scoring.js';
 import { recommendCameraForAnswers as _recommendCameraForAnswers } from './engine/camera-reco.js';
 import { createLabelsHelpers } from './ui/labels.js';
 import { createComplementsHandlers } from './engine/complements.js';
@@ -175,19 +176,10 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
     return t;
   };
 
-  const normalizeEmplacement = window.normalizeEmplacement;
 
-  const objectiveToDoriKey = window.objectiveToDoriKey;
-  
   function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
-  const getMpFromCam = window.getMpFromCam;
 
-
-  const getIrFromCam = window.getIrFromCam;
-
-
-  const getDoriForObjective = window.getDoriForObjective;
 
 
 // ==========================================================
