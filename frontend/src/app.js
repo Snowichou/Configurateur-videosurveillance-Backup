@@ -90,16 +90,6 @@ window.kpi = function kpi(event, payload = {}) {
 };
 
 
-function kpiConfigSnapshot(proj) {
-  return window._kpiConfigSnapshotPure(proj, {
-    MODEL,
-    getSelectedOrRecommendedScreen,
-    getSelectedOrRecommendedEnclosure,
-    getSelectedOrRecommendedSign,
-  });
-}
-
-
 
 (() => {
   "use strict";
@@ -581,6 +571,15 @@ const {
   get CATALOG() { return CATALOG; },
 });
 /* eslint-enable no-unused-vars */
+
+function kpiConfigSnapshot(proj) {
+  return window._kpiConfigSnapshotPure(proj, {
+    MODEL,
+    getSelectedOrRecommendedScreen,
+    getSelectedOrRecommendedEnclosure,
+    getSelectedOrRecommendedSign,
+  });
+}
 
 
 // ==========================================================
