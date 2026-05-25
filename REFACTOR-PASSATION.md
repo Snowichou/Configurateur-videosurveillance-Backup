@@ -11,7 +11,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 447 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 412 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
 | Tests Vitest | **469** (25 fichiers) — tous au vert |
 | Build Vite | OK (317 modules transformés) |
@@ -40,6 +40,7 @@
 ### Commits de la session PH6
 
 ```
+dab87f6  PH7    Nettoyage app.js : dead code, stale comments, blank lines (1447→1412L)
 ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés, 469 tests)
 5b51fee  PH6.4  engine/reco-block.js (canRecommendBlock+buildRecoForBlock ~40L, 9 tests)
 2d9b9ba  PH6.3  utils/helpers.js (sanitizeFilename+dedupByUrl ~30L, 10 tests)
@@ -191,7 +192,7 @@ src = src[:low_start]  + replacement + src[low_end:]
 
 ---
 
-## 3. Ce qui reste dans `app.js` (1 447 lignes)
+## 3. Ce qui reste dans `app.js` (1 412 lignes)
 
 `app.js` est désormais un **vrai module ESM** : plus de IIFE, plus de `window._xxx` shims.
 Il reste l'orchestrateur principal : état global, thin wrappers locaux, bootstrap.
@@ -221,23 +222,30 @@ function scoreCameraForBlock(block, cam) {          // wrapper local
 | État global + DOM | ~400 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
 | `window._MODEL/CATALOG/STEPS/getCameraById` | 4 assignments | Maintenus pour `optimisations.js` |
 
-### TODO PH7 (prochaine session)
+### ✅ PH7 — Fait (session courante)
 
-1. **Éliminer les thin wrappers** en faveur d'un objet `deps` central :
+- Suppression fonction arrow orpheline `badgePill` (lignes ~275)
+- Correction 3 commentaires stale `via window._createRenderPipeline` → `via createRenderPipeline`
+- Suppression wrapper `applyLocalMediaToCatalog` + inline en arrow dans deps de `initPure`
+- Collapse des lignes vides consécutives (max 2) — 27 lignes supprimées
+- Net : **1 447 → 1 412 lignes** (35 supprimées)
+- Build ✓ (317 modules) · Tests ✓ (369 tests) · Commit `dab87f6`
+
+### TODO PH8 (prochaine session)
+
+1. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur depuis
+   le début du refactor. Faire un test manuel du parcours complet (Playwright ou manuel).
+   **C'est la priorité suivante.**
+
+2. **Deps central** : éliminer les 17 thin wrappers via un objet `deps` vivant :
    ```js
-   // Idée : créer un objet deps vivant au niveau module
    const deps = {
      get MODEL() { return MODEL; },
      get CATALOG() { return CATALOG; },
      T, CLR, toNum, ...
    };
-   // Puis appeler directement la fn pure à chaque call site :
-   scoreCameraForBlock(block, cam, deps);
+   // Call site direct : scoreCameraForBlock(block, cam, deps);
    ```
-   Cela supprimerait les 17 wrappers locaux restants.
-
-2. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur depuis
-   le début du refactor. Faire un test manuel du parcours complet (Playwright ou manuel).
 
 3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
 
