@@ -11,11 +11,11 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 414 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 407 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
-| Tests Vitest | **469** (25 fichiers) — tous au vert |
+| Tests Vitest | **17 fichiers** — tous au vert |
 | Build Vite | OK (317 modules transformés) |
-| Shims `window._xxx` | **0** — tous remplacés par imports ESM directs |
+| Shims `window.xxx` dans modules purs | **0** — tous supprimés (PH9/PH9b) |
 | Branche | `main` — tout est commité |
 
 ### Architecture actuelle
@@ -37,12 +37,14 @@
 - **handlers/** — `steps.js`, `admin.js`, `summary.js`, `init.js`, `quote.js`
 - **ui/** — `toast.js`, `labels.js`
 
-### Commits de la session PH6
+### Commits récents
 
 ```
+9868b84  PH9b   Purge window.xxx shims modules purs (format/csv/normalize/constants/storage) — ~43 shims supprimés
+ea9ffd7  PH9    scoring.js : imports ESM directs (normalizeEmplacement, objectiveToDoriKey, …) — 1414→1406L
 5a6844c  PH8    Smoke test : fix TDZ createLabelsHelpers + 4 vars non définies (LOG, SAVE_KEY, _SSO_USER, projectTipHtml)
 dab87f6  PH7    Nettoyage app.js : dead code, stale comments, blank lines (1447→1412L)
-ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés, 469 tests)
+ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés)
 5b51fee  PH6.4  engine/reco-block.js (canRecommendBlock+buildRecoForBlock ~40L, 9 tests)
 2d9b9ba  PH6.3  utils/helpers.js (sanitizeFilename+dedupByUrl ~30L, 10 tests)
 7aa8647  PH6.2  suppression IIFE principale (module ESM scope)
@@ -217,7 +219,7 @@ function scoreCameraForBlock(block, cam) {          // wrapper local
 
 | Fonction | Lignes | Commentaire |
 |---|---|---|
-| `localizedDatasheetUrl` | 4 | Wrapper → `window.localizedDatasheetUrl(url, _currentLang)` |
+| `localizedDatasheetUrl` | 4 | Wrapper → `_localizedDatasheetUrl(url, _currentLang)` (ESM depuis normalize.js, PH9b) |
 | `getProjectCached` | ~11 | Cache projet (dépend de `MODEL`) |
 | `safeStr`, `clamp`, `clampNum` | ~15 | Micro-helpers locaux |
 | État global + DOM | ~400 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
@@ -247,13 +249,33 @@ Smoke test via Playwright/Firefox contre le build prod — **4 bugs runtime dét
 Résultat : **smoke test ✅ PASS** — aucune erreur JS réelle à l'initialisation.
 Build ✓ (317 modules) · Tests ✓ (369 tests) · Commits `5a6844c`, `9d3af53`
 
-### TODO PH9 (prochaine session)
+### ✅ PH9 — Fait (session courante)
 
-1. **Smoke test navigateur** : l'app n'a PAS été testée dans un vrai navigateur depuis
-   le début du refactor. Faire un test manuel du parcours complet (Playwright ou manuel).
-   **C'est la priorité suivante.**
+Suppression de **tous** les `window.xxx = fn` résiduels dans les modules purs.
 
-2. **Deps central** : éliminer les 17 thin wrappers via un objet `deps` vivant :
+**PH9a** (commit `ea9ffd7`) — scoring.js : 5 fonctions migrées en imports ESM directs dans app.js.
+
+**PH9b** (commit `9868b84`) — purge globale sur 6 fichiers :
+
+| Fichier | Shims supprimés | L avant → après |
+|---|---|---|
+| `utils/format.js` | safeHtml, isFalseLike, toBool, toStrOrFalse, toNum, clampInt, clampNum, clamp, slugify | 137 → 126 |
+| `utils/csv.js` | parseCsv, loadCsv | 120 → 116 |
+| `catalog/normalize.js` | safeStr, safeNum, splitList, parsePipeList, localizedDatasheetUrl, parseRobustNum, extractUseCasesFromRow | 274 → 265 |
+| `core/constants.js` | COLORS, LIM, CLR, COMELIT, CONFIG | 145 → 140 |
+| `engine/storage.js` | mbpsToTB, getContextualMotionFactor | 244 → 241 |
+| `app.js` | import `_localizedDatasheetUrl` depuis normalize.js | 1406 → 1407 |
+
+`window.*` restants dans modules (intentionnels, NON shims) :
+- `auth.js` : `window.Auth = Auth` — accès externe
+- `kpi-tracker.js` : `window.kpi = fn` — event tracker global (appelé par steps.js)
+- `i18n.js` : `window.T`, `window.setLang`, etc. — appelés depuis main.js inline
+
+Build prod ✓ · Smoke test ✓ · 17 test files ✓
+
+### TODO PH10 (prochaine session)
+
+1. **Deps central** : éliminer les ~17 thin wrappers via un objet `deps` vivant :
    ```js
    const deps = {
      get MODEL() { return MODEL; },
@@ -262,11 +284,15 @@ Build ✓ (317 modules) · Tests ✓ (369 tests) · Commits `5a6844c`, `9d3af53`
    };
    // Call site direct : scoreCameraForBlock(block, cam, deps);
    ```
+   Cela permettrait de passer les deps aux fonctions pures sans wrappers locaux.
 
-3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
+2. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
 
-4. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
+3. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
    (app.js les importe directement). On peut les retirer ou garder comme doc.
+
+4. **Migrer i18n.js** : les `window.T`, `window.setLang`, etc. sont des shims pour main.js.
+   Après refactor main.js, ces exports pourraient devenir de vrais imports ESM.
 
 ---
 
