@@ -11,7 +11,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 248 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 132 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
 | Tests Vitest | **17 fichiers** — tous au vert |
 | Build Vite | OK (317 modules transformés) |
@@ -300,3 +300,71 @@ Nettoyage structurel de app.js — héritage de l'IIFE supprimée en PH6.2 :
 
 Suppression des 51 pre-imports redondants de `main.js` :
 - Hérités de l'époque `window.xxx = fn` shims — plus aucune utilité depuis PH6.5
+- Aucun module pur n'a de side-effect à l'import après PH9b
+- app.js importe statiquement tout ce dont il a besoin
+- Conservés : `./i18n.js`, `./chips-enhancer.js`, `./tooltip-fix.js`, `Auth`, html2pdf/canvas/jsPDF
+- **260 → 207 lignes** (−53L) · 314 modules Vite (−3) · Smoke ✓ · 21 test files ✓ · Commit `2265746`
+
+### ✅ PH13 — Fait (session courante)
+
+**i18n.js** : export nommé de `T`, `setLang`, `getLangSelectorHtml`, `updateStepperLabels`, `updateNavButtons` — suppression des 4 shims `window.xxx` correspondants (conservé : `window.T`, `window._currentLang`, `window.TRANSLATIONS` pour app.js).
+
+**main.js** : `import "./i18n.js"` → import nommé ; callback `.then()` simplifié (typeof guards supprimés, appels directs).
+
+**app.js** : objet `DEPS` central avec getters live (`MODEL`, `CATALOG`, sous-collections) — `scoreCameraForBlock`, `interpretScoreForBlock`, `recommendCameraForAnswers`, `computeTotals`, `pickNvr` passent maintenant `DEPS` au lieu d'un objet ad-hoc par wrapper. **1 248 → 1 243 lignes**.
+
+Build ✓ · Smoke ✓ · 21 test files ✓ · Commit `7bb257c`
+
+### TODO PH14 (prochaine session)
+
+1. **Migrer `T` et `_currentLang` dans app.js** : app.js utilise encore `T` et `_currentLang`
+   comme globals (`window.T`, `window._currentLang` set par i18n.js). Ajouter
+   `import { T, getCurrentLang } from './i18n.js'` dans app.js pour supprimer ces derniers
+   shims et rendre la dépendance explicite.
+
+2. **Migrer core/constants.js** : app.js redéfinit `COLORS`, `CONFIG`, `LIM`, `CLR` localement.
+   Importer depuis `constants.js` (en gérant la différence `CONFIG.scoring.levels` avec T lazy).
+
+3. **Étendre DEPS** aux render wrappers (`renderStepCameras`, `renderStepProject`, etc.)
+   — actuellement chaque render wrapper construit son propre objet de deps à la main.
+
+---
+
+## 4. Rappels de méthode (à conserver)
+
+1. Module pur + injection de dépendances ; wrapper `app.js` qui passe les deps
+   legacy → garantit **zéro changement de comportement**.
+2. Un fichier de tests Vitest par module pur (comportement + edge cases).
+3. Vérif systématique après chaque extraction : ESLint `src/` + `vite build`
+   + suite complète (en 2 passes).
+4. Remplacements dans `app.js` **uniquement** via AST `espree` (jamais de
+   comptage d'accolades).
+5. Commit après chaque module vérifié, via le contournement Git du §2.1.
+6. Script utilitaire de nettoyage de code mort : `outputs/cleanup-deadcode.cjs`.
+
+- app.js importe statiquement tout ce dont il a besoin
+- Conservés : `./i18n.js`, `./chips-enhancer.js`, `./tooltip-fix.js`, `Auth`, html2pdf/canvas/jsPDF
+- **260 → 207 lignes** (−53L) · 314 modules Vite (−3) · Smoke ✓ · 21 test files ✓ · Commit `2265746`
+
+### ✅ PH13 — Fait (session courante)
+
+**i18n.js** : export nommé de `T`, `setLang`, `getLangSelectorHtml`, `updateStepperLabels`, `updateNavButtons` — suppression des 4 shims `window.xxx` correspondants (conservé : `window.T`, `window.TRANSLATIONS` ; `window._currentLang` remplacé par `export getCurrentLang()` en PH14.1).
+
+**main.js** : `import "./i18n.js"` → import nommé ; callback `.then()` simplifié (typeof guards supprimés, appels directs).
+
+**app.js** : objet `DEPS` central avec getters live (`MODEL`, `CATALOG`, sous-collections) — `scoreCameraForBlock`, `interpretScoreForBlock`, `recommendCameraForAnswers` passent maintenant `DEPS` au lieu d'un objet ad-hoc par wrapper. **1 248 → 1 243 lignes**.
+
+Build ✓ · Smoke ✓ · 21 test files ✓ · Commit `7bb257c`
+
+### ✅ PH14 — Fait (session courante)
+
+**PH14.1** — `i18n.js` : `window._currentLang = _currentLang` remplacé par
+`export function getCurrentLang() { return _currentLang; }`.
+`app.js` : ajout `import { T, getCurrentLang } from './i18n.js'` ; les 2 usages de
+`_currentLang` dans app.js remplacés par `getCurrentLang()` ; le guard
+`typeof _currentLang !== "undefined"` supprimé.
+
+**PH14.2** — `app.js` : les 68 lignes de définitions locales `COLORS` + `CONFIG` remplacées
+par `import { COLORS, CONFIG } from './core/constants.js'`. `CLR` et `LIM` conservés comme
+raccourcis locaux. La version `constants.js` utilise des lazy getters pour `scoring.levels`
+(m
