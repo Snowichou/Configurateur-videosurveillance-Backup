@@ -3640,4 +3640,4 @@ export function getLangSelectorHtml() {
 // Exposer globalement
 window.TRANSLATIONS = TRANSLATIONS;
 window.T = T;
-window._currentLang = _currentLang;
+export function getCurrentLang() { return _currentLang; }

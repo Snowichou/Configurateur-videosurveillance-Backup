@@ -80,6 +80,8 @@ import { showPdfPreviewPure } from './render/pdf-preview.js';
 import { exportProjectPdfProPure } from './render/pdf-pro.js';
 import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-test.js';
 import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
+import { T, getCurrentLang } from './i18n.js';
+import { COLORS, CONFIG } from './core/constants.js';
 // ─────────────────────────────────────────────────────────────
 
   // ==========================================================
@@ -162,74 +164,8 @@ function interpretScoreForBlock(block, cam) {
 }
 
 // ==========================================================
-// 0) CONSTANTES CENTRALISÉES
+// 0) CONSTANTES — importées de core/constants.js
 // ==========================================================
-
-// 1) Couleurs d'abord (pour pouvoir les réutiliser partout sans dépendance circulaire)
-const COLORS = Object.freeze({
-  green:    "#00BC70",
-  blue:     "#1C1F2A",
-  danger:   "#DC2626",
-  warn:     "#F59E0B",
-  muted:    "#6B7280",
-
-  // Fonds "tintés" (lisibles)
-  okBg:     "rgba(0,188,112,.12)",
-  warnBg:   "rgba(245,158,11,.12)",
-  dangerBg: "rgba(220,38,38,.10)",
-
-  // Bonus utiles
-  okBorder:     "rgba(0,188,112,.35)",
-  warnBorder:   "rgba(245,158,11,.35)",
-  dangerBorder: "rgba(220,38,38,.35)",
-});
-
-// 2) Ensuite CONFIG (peut référencer COLORS sans problème)
-const CONFIG = Object.freeze({
-  colors: COLORS,
-
-  // Seuils légaux et métier
-  limits: {
-    maxRetentionDays: 30,
-    maxHoursPerDay: 24,
-    maxFps: 30,
-    defaultFps: 25,
-    defaultRetentionDays: 14,
-    defaultOverheadPct: 20,
-    defaultReservePortsPct: 10,
-    maxProjectNameLength: 80,
-    maxBlockLabelLength: 60,
-    maxQty: 999,
-    maxScreenQty: 20,
-    maxEnclosureQty: 10,
-    maxSignageQty: 20,
-    minPoeCamerasForSwitch: 16,
-    shareUrlMaxChars: 4000,
-    qrMaxChars: 4000,
-  },
-
-  // Codecs disponibles
-  codecs: ["h265", "h264"],
-  fpsOptions: [10, 12, 15, 20, 25],
-  screenSizes: [18, 22, 27, 32, 43, 55],
-
-  // Scoring
-  scoring: {
-    levels: {
-      ok:   { icon: "✅", label: T("cam_recommended"), color: COLORS.green,  bg: COLORS.okBg },
-      warn: { icon: "⚠️", label: T("cam_acceptable"),  color: COLORS.warn,   bg: COLORS.warnBg },
-      bad:  { icon: "❌", label: T("cam_not_adapted"),  color: COLORS.danger, bg: COLORS.dangerBg },
-    }
-  },
-
-  // Chemins médias locaux
-  paths: {
-    imgRoot: "/data/Images",
-    pdfRoot: "/data/fiche_tech",
-    dataDir: "/data",
-  },
-});
-
 // Raccourcis
 const CLR = CONFIG.colors;
 const LIM = CONFIG.limits;
@@ -332,7 +268,7 @@ const DOM = {
 
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
 function localizedDatasheetUrl(url) {
-  const lang = (typeof _currentLang !== "undefined") ? _currentLang : "fr";
+  const lang = getCurrentLang();
   return _localizedDatasheetUrl(url, lang);
 }
 
@@ -446,17 +382,11 @@ function computeCriticalProjectScore() {
 }
 
 function computeTotals() {
-  return _computeTotals(MODEL.cameraLines, MODEL.recording, { getCameraById });
+  return _computeTotals(MODEL.cameraLines, MODEL.recording, DEPS);
 }
 
 function pickNvr(totalCameras, totalInMbps, requiredTB) {
-  return _pickNvr(totalCameras, totalInMbps, requiredTB, {
-    cameraLines: MODEL.cameraLines,
-    getCameraById,
-    catalogNvrs: CATALOG.NVRS,
-    catalogHdds: CATALOG.HDDS,
-    T,
-  });
+  return _pickNvr(totalCameras, totalInMbps, requiredTB, DEPS);
 }
 
 function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
@@ -503,17 +433,7 @@ function getProjectCached() {
   // ==========================================================
 
 function renderFinalSummary(proj) {
-return renderFinalSummaryPure(proj, {
-  T,
-  safeHtml,
-  getThumbSrc,
-  MODEL,
-  getCameraById,
-  getSelectedOrRecommendedEnclosure,
-  getSelectedOrRecommendedScreen,
-  getSelectedOrRecommendedSign,
-  computeCriticalProjectScore,
-});
+  return renderFinalSummaryPure(proj, DEPS);
 }
 
 // ==========================================================
@@ -521,22 +441,7 @@ return renderFinalSummaryPure(proj, {
 // ==========================================================
 
 function buildPdfHtml(proj) {
-  return buildPdfHtmlPure(proj, {
-    T,
-    currentLang: _currentLang,
-    computeCriticalProjectScore,
-    generateQRDataUrl,
-    generateShareUrl,
-    getCameraById,
-    getSelectedOrRecommendedEnclosure,
-    getSelectedOrRecommendedScreen,
-    getSelectedOrRecommendedSign,
-    getThumbSrc,
-    interpretScoreForBlock,
-    safeHtml,
-    CATALOG,
-    MODEL,
-  });
+  return buildPdfHtmlPure(proj, { ...DEPS, currentLang: getCurrentLang() });
 }
 
 /* eslint-disable no-unused-vars */
@@ -593,6 +498,7 @@ function renderStepCameras() {
     MODEL.cameraBlocks.find((b) => b.id === MODEL.ui.activeBlockId) || MODEL.cameraBlocks[0];
   MODEL.ui.activeBlockId = activeBlock.id;
   return _renderStepCameras({
+    ...DEPS,
     cameraBlocks: MODEL.cameraBlocks,
     activeBlockId: MODEL.ui.activeBlockId,
     ui: {
@@ -601,17 +507,6 @@ function renderStepCameras() {
       onlyFavs: MODEL.ui.onlyFavs,
       compare: MODEL.ui.compare,
     },
-    T,
-    safeHtml,
-    normalizeEmplacement,
-    objectiveLabel,
-    canRecommendBlock,
-    buildRecoForBlock,
-    interpretScoreForBlock,
-    getCameraById,
-    getMpFromCam,
-    getIrFromCam,
-    camPickCardHTML,
   });
 }
 
@@ -650,12 +545,10 @@ function renderStepProject() {
       + `</div></div>`;
   }
   return _renderStepProject({
+    ...DEPS,
     model: MODEL,
-    T, safeHtml,
     csvUseCases: getAllUseCases(),
     limits: LIM,
-    // projectTipHtml / useCaseDescriptionHtml : optionnels, valeur par défaut dans render/projet.js
-    translateUseCase,
     saveCardHtml: cloudCardHtml + saveCardHtml,
   });
 }
@@ -669,29 +562,24 @@ function renderStepAccessories() {
     return { ...blk, camera };
   });
   return _renderStepAccessories({
+    ...DEPS,
     blocks,
-    T,
-    safeHtml,
-    normalizeEmplacement,
-    accessoryTypeLabel,
-    localizedDatasheetUrl,
   });
 }
 
 function renderStepNvrNetwork() {
   return _renderStepNvrNetwork({
+    ...DEPS,
     proj: getProjectCached(),
     isManual: !!MODEL.overrideNvrId,
-    T, safeHtml,
-    localizedDatasheetUrl,
   });
 }
 
 function renderStepStorage() {
   return _renderStepStorage({
+    ...DEPS,
     model: MODEL,
     proj: getProjectCached(),
-    T, safeHtml,
     fpsOptions: CONFIG.fpsOptions,
     storageTipHtml,
     renderStorageBarSvg,
@@ -717,13 +605,13 @@ function renderStepComplements() {
   const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function"
     ? getSelectedOrRecommendedSign()?.sign : null;
   return _renderStepComplements({
+    ...DEPS,
     proj,
     selections: {
       screen: { enabled: scrEnabled, selected: scrSel, sizeInch: MODEL.complements.screen.sizeInch, qty: MODEL.complements.screen.qty },
       enclosure: { enabled: encEnabled, selected: encSel, qty: MODEL.complements.enclosure.qty, screenInsideOk, screenSizeInch: Number(MODEL.complements.screen.sizeInch) || 0 },
       signage: { enabled: signEnabled, selected: signSel, scope: MODEL.complements.signage?.scope, qty: MODEL.complements.signage?.qty },
     },
-    T, safeHtml,
     screenSizes: CONFIG.screenSizes,
     optionTipHtml,
   });
@@ -732,9 +620,9 @@ function renderStepComplements() {
 function renderStepSummary() {
   const proj = LAST_PROJECT;
   return _renderStepSummary({
+    ...DEPS,
     proj,
     finalSummaryHtml: proj ? renderFinalSummary(proj) : '',
-    T,
   });
 }
 
