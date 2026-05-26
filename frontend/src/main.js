@@ -2,60 +2,7 @@ import "./style.css";
 import "./optimisations.css";
 import "./i18n.js";
 
-// ✅ Refactor — modules ESM (chargés AVANT app.js, exposés sur window
-//    pour rétro-compat avec le code legacy IIFE de app.js)
-//    Phase 1 = utils/engine/catalog (purs) ; Phase 2 = state/render/handlers
-import './utils/format.js';
-import './utils/csv.js';
-import './core/constants.js';
-import './engine/storage.js';
-import './engine/poe.js';
-import './engine/pick-nvr.js';
-import './engine/scoring.js';
-import './engine/camera-score.js';
-import './engine/camera-reco.js';
-import './engine/totals.js';
-import './engine/accessories.js';
-import './catalog/normalize.js';
-import './state/model.js';
-import './state/lookups.js';
-import './state/actions.js';
-import './render/projet.js';
-import './render/storage.js';
-import './render/options.js';
-import './render/accessories.js';
-import './render/nvr.js';
-import './render/summary.js';
-import './render/cameras.js';
-import './render/camera-card.js';
-import './render/summary-final.js';
-import './render/pdf-blob.js';
-import './render/pdf-export.js';
-import './render/pdf-preview.js';
-import './render/pdf-test.js';
-import './render/pipeline.js';
-import './render/datasheet-urls.js';
-import './render/pdf-pro.js';
-import './engine/validate-step.js';
-import './utils/share.js';
-import './render/pdf.js';
-import './engine/project.js';
-import './engine/kpi.js';
-import './handlers/steps.js';
-import './handlers/summary.js';
-import './handlers/init.js';
-import './catalog/media.js';
-import './ui/toast.js';
-import './handlers/quote.js';
-import './engine/block-lifecycle.js';
-import './engine/sanity.js';
-import './engine/complements.js';
-import './engine/storage-calc.js';
-import './ui/labels.js';
-import './engine/kpi-tracker.js';
-import './utils/helpers.js';
-import './engine/reco-block.js';
-import './handlers/admin.js';
+
 
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
