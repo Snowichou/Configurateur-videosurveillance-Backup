@@ -179,8 +179,10 @@ document.querySelector("#app").innerHTML = `
   <div class="headerActions" style="display:none"></div>
 `;
 
-import("./app.js").then(() => {
-  import("./optimisations.js");
+import("./app.js").then(({ getOptimDeps }) => {
+  import("./optimisations.js").then(({ initOptimisations }) => {
+    setTimeout(() => initOptimisations(getOptimDeps()), 500);
+  });
   // i18n : injecter le sélecteur de langue + appliquer la langue détectée
   const langWrap = document.getElementById("langSelectorWrap");
   if (langWrap) {

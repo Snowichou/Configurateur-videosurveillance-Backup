@@ -10,6 +10,8 @@
 // la lecture, pas au moment de l'import.
 // ============================================================
 
+import { T } from '../i18n.js';
+
 /**
  * Identité visuelle Comelit (pour le PDF + en-têtes).
  */
@@ -102,7 +104,7 @@ export const SCORING_LEVELS = Object.freeze({
   get ok() {
     return {
       icon: '✅',
-      label: (typeof window !== 'undefined' && window.T?.('cam_recommended')) || 'Recommandée',
+      label: T('cam_recommended') || 'Recommandée',
       color: COLORS.green,
       bg: COLORS.okBg,
     };
@@ -110,7 +112,7 @@ export const SCORING_LEVELS = Object.freeze({
   get warn() {
     return {
       icon: '⚠️',
-      label: (typeof window !== 'undefined' && window.T?.('cam_acceptable')) || 'Acceptable',
+      label: T('cam_acceptable') || 'Acceptable',
       color: COLORS.warn,
       bg: COLORS.warnBg,
     };
@@ -118,7 +120,7 @@ export const SCORING_LEVELS = Object.freeze({
   get bad() {
     return {
       icon: '❌',
-      label: (typeof window !== 'undefined' && window.T?.('cam_not_adapted')) || 'Non adaptée',
+      label: T('cam_not_adapted') || 'Non adaptée',
       color: COLORS.danger,
       bg: COLORS.dangerBg,
     };

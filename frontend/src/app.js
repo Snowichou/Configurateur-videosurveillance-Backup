@@ -180,7 +180,6 @@ const LIM = CONFIG.limits;
   SIGNAGE: [],        // ✅ panneaux de signalisation
   ACCESSORIES_MAP: new Map(), // key = camera_id, value = mapping row
   };
-  window._CATALOG = CATALOG;
 // createLabelsHelpers doit être appelé APRÈS const CATALOG (anti-TDZ)
 const {
   objectiveLabel,
@@ -193,7 +192,6 @@ const {
   CATALOG,
 });
   const MODEL = createInitialModel(LIM);
-  window._MODEL = MODEL;
 
 const KPI = Object.assign({}, window.KPI, {
   snapshot: createKpiSnapshot({
@@ -212,8 +210,6 @@ const KPI = Object.assign({}, window.KPI, {
     { id: "summary", get title(){ return T("step_summary"); }, badge: "7/7", get help(){ return T("step_summary_help"); } },
   ];
 
-// ✅ Expose STEPS pour le récap flottant
-window._STEPS = STEPS;
 
 // ==========================================================
 // COMPLÉMENTS (écran, boîtier, signalétique) — engine/complements.js
@@ -266,7 +262,6 @@ function localizedDatasheetUrl(url) {
 // ==========================================================
   // LOOKUPS
   const getCameraById = (id) => CATALOG.CAMERAS.find((c) => c.id === id) || null;
-  window._getCameraById = getCameraById;
 
 // ── DEPS central — superset de deps passé aux fonctions pures ──
 // Les getters garantissent des refs fraîches à MODEL/CATALOG au moment de l'appel.
@@ -285,8 +280,20 @@ const DEPS = {
   getCameraProfile, objectiveLabel, accessoryTypeLabel, objectiveToDoriKey,
   translateUseCase, getAllUseCases, localizedDatasheetUrl,
   sanitizeFilename, dedupByUrl,
+  KPI, mbpsToTB,
+  computeTotals, getTotalCameras, pickDisks, pickNvr, planPoESwitches,
   getProjectCached,
 };
+
+export function getOptimDeps() {
+  return {
+    getModel:     () => MODEL,
+    getCatalog:   () => CATALOG,
+    getSteps:     () => STEPS,
+    getCameraById,
+    render,
+  };
+}
 
 // ==========================================================
 // ENGINE — RECO CAMERA
@@ -367,20 +374,7 @@ function pickDisks(requiredTB, nvr) {
 }
 
 function computeProject() {
-  return computeProjectPure({
-    MODEL,
-    CATALOG,
-    T,
-    KPI,
-    clampNum,
-    computeTotals,
-    getCameraById,
-    getTotalCameras,
-    mbpsToTB,
-    pickDisks,
-    pickNvr,
-    planPoESwitches,
-  });
+  return computeProjectPure(DEPS);
 }
 
   // ==========================================================
@@ -585,10 +579,6 @@ function renderStepSummary() {
   });
 }
 
-  // ✅ Compat: ancien nom utilisé par render()
-if (typeof renderStepMounts !== "function" && typeof renderStepAccessories === "function") {
-  window.renderStepMounts = renderStepAccessories;
-}
 function bindSummaryButtons() {
   return bindSummaryButtonsPure({
     MODEL, STEPS, T,
@@ -739,21 +729,14 @@ async function testPdfGeneration(verbose = true) {
   });
 }
 
-// Exposer globalement pour usage en console
-window.testPdfGeneration = testPdfGeneration;
-
 // ==========================================================
 // EXPORT PACK (PDF + FICHES TECHNIQUES) -> ZIP
 // ==========================================================
-
-// Dédup par URL
 
 // Collecte les datasheet_url depuis le projet (tu peux enrichir ensuite)
 function collectDatasheetUrlsFromProject(proj) {
   return collectDatasheetUrlsFromProjectPure(proj, DEPS);
 }
-
-// Helper pour collecter les IDs produits
 
 async function exportProjectPdfWithLocalDatasheetsZip() {
   return exportProjectPdfWithLocalDatasheetsZipPure({

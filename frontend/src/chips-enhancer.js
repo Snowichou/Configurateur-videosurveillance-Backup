@@ -15,6 +15,8 @@
  *   <script src="chips-enhancer.js" defer></script>
  * ════════════════════════════════════════════════════════════════════════ */
 
+import { T as _T } from './i18n.js';
+
 (function () {
   'use strict';
 
@@ -58,10 +60,8 @@
   // cols = colonnes desktop (>=520px), colsNarrow = colonnes étroites
   function tr(key, fallback) {
     try {
-      if (typeof window !== 'undefined' && typeof window.T === 'function') {
-        const v = window.T(key);
-        return (v && v !== key) ? v : fallback;
-      }
+      const v = _T(key);
+      return (v && v !== key) ? v : fallback;
     } catch {}
     return fallback;
   }

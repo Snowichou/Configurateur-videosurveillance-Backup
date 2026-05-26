@@ -3637,7 +3637,4 @@ export function getLangSelectorHtml() {
     + '</select>';
 }
 
-// Exposer globalement
-window.TRANSLATIONS = TRANSLATIONS;
-window.T = T;
 export function getCurrentLang() { return _currentLang; }
