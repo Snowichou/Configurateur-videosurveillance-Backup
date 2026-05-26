@@ -3,368 +3,345 @@
 > Document de passation. Objectif global rappelé par Seb :
 > **« On commence par la dette technique, je veux que le code soit impeccable. »**
 > Décomposition du monolithe `frontend/src/app.js` (~13 000 lignes, IIFE, sans tests)
-> en modules ESM purs et testés.
+> en modules ESM purs et testés, avec injection de dépendances.
 
 ---
 
-## 1. État actuel (fin de session)
+## 1. État actuel
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 132 lignes** (était 13 000 à l'origine) |
-| Modules ESM extraits | **55** |
-| Tests Vitest | **17 fichiers** — tous au vert |
-| Build Vite | OK (317 modules transformés) |
-| Shims `window.xxx` dans modules purs | **0** — tous supprimés (PH9/PH9b) |
-| Branche | `main` — tout est commité |
+| `app.js` | **1 063 lignes** (était 13 000 à l'origine) |
+| Modules ESM extraits | **55** (utils, engine, catalog, state, render, handlers, ui) |
+| Tests Vitest | **20 fichiers — 216 tests — tous au vert** |
+| Build Vite | ✓ (314 modules transformés) |
+| Shims `window.xxx` dans modules purs | **0** — supprimés depuis PH9b |
+| Branche | `main` — tout commité |
 
-### Architecture actuelle
+### Architecture
 
-`app.js` est désormais un **vrai module ESM** :
-- Pas de IIFE, pas de `window._xxx = fn` dans les modules
-- 55 imports ESM directs en tête de `app.js` (dont 17 aliasés `_fn` pour éviter collision avec thin wrappers locaux)
-- Les thin wrappers locaux closent sur l'état (`MODEL`, `CATALOG`, `T`…) et délèguent aux fonctions pures importées
-- `optimisations.js` continue de lire `window._MODEL`, `window._CATALOG`, `window._STEPS`, `window._getCameraById` — ces 4 assignments sont conservés dans `app.js`
+`app.js` est un **orchestrateur ESM pur** :
+- 85 imports statiques en tête (dont ~20 aliasés `_fn` pour éviter collision avec wrappers locaux)
+- Objet `DEPS` central avec getters live (`MODEL`, `CATALOG`, sous-collections) + ~25 symboles hoistés
+- Tous les render wrappers utilisent `{ ...DEPS, <unique par appel> }`
+- Thin wrappers locaux closent sur l'état et délèguent aux fonctions pures
+- 4 `window._xxx` maintenus pour `optimisations.js` uniquement
 
 ### Modules extraits (`frontend/src/`)
 
 - **utils/** — `format.js`, `csv.js`, `share.js`, `helpers.js`
 - **core/** — `constants.js`
-- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`, `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`, `validate-step.js`, `kpi.js`, `block-lifecycle.js`, `persistence.js`, `sanity.js`, `complements.js`, `storage-calc.js`, `kpi-tracker.js`, `reco-block.js`
+- **engine/** — `storage.js`, `poe.js`, `pick-nvr.js`, `scoring.js`, `camera-score.js`,
+  `camera-reco.js`, `totals.js`, `accessories.js`, `project.js`, `validate-step.js`,
+  `kpi.js`, `block-lifecycle.js`, `persistence.js`, `sanity.js`, `complements.js`,
+  `storage-calc.js`, `kpi-tracker.js`, `reco-block.js`
 - **catalog/** — `normalize.js`, `media.js`
 - **state/** — `model.js`, `lookups.js`, `actions.js`
-- **render/** — `projet.js`, `storage.js`, `options.js`, `accessories.js`, `nvr.js`, `summary.js`, `cameras.js`, `camera-card.js`, `pdf.js`, `summary-final.js`, `pdf-blob.js`, `pdf-export.js`, `pdf-preview.js`, `datasheet-urls.js`, `pdf-pro.js`, `pdf-test.js`, `pipeline.js`
+- **render/** — `projet.js`, `storage.js`, `options.js`, `accessories.js`, `nvr.js`,
+  `summary.js`, `cameras.js`, `camera-card.js`, `pdf.js`, `summary-final.js`,
+  `pdf-blob.js`, `pdf-export.js`, `pdf-preview.js`, `datasheet-urls.js`,
+  `pdf-pro.js`, `pdf-test.js`, `pipeline.js`
 - **handlers/** — `steps.js`, `admin.js`, `summary.js`, `init.js`, `quote.js`
 - **ui/** — `toast.js`, `labels.js`
 
 ### Commits récents
 
 ```
-9868b84  PH9b   Purge window.xxx shims modules purs (format/csv/normalize/constants/storage) — ~43 shims supprimés
-ea9ffd7  PH9    scoring.js : imports ESM directs (normalizeEmplacement, objectiveToDoriKey, …) — 1414→1406L
-5a6844c  PH8    Smoke test : fix TDZ createLabelsHelpers + 4 vars non définies (LOG, SAVE_KEY, _SSO_USER, projectTipHtml)
-dab87f6  PH7    Nettoyage app.js : dead code, stale comments, blank lines (1447→1412L)
-ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM directs (55 imports, 80 shims supprimés)
-5b51fee  PH6.4  engine/reco-block.js (canRecommendBlock+buildRecoForBlock ~40L, 9 tests)
-2d9b9ba  PH6.3  utils/helpers.js (sanitizeFilename+dedupByUrl ~30L, 10 tests)
-7aa8647  PH6.2  suppression IIFE principale (module ESM scope)
-a4efec4  PH6.1b KPI interne → kpi-tracker.js (compactCameras+snapshot, 155L)
-(sessions précédentes : PH5, PH4.4a–f, PH3.3–3.8, etc.)
+c64e249  PH16   DEPS étendu : getProjectCached + kpiConfigSnapshot/camPickCardHTML/validateStep → DEPS (1074→1063L)
+5e7f8b4  PH15   Nettoyage stale comments, init() shorthand, collectDatasheetUrls → DEPS (1132→1074L)
+2d23a0e  PH14   T/getCurrentLang ESM import, constants dedup, DEPS render wrappers (1243→1132L)
+7bb257c  PH13   i18n exports ESM, DEPS central, main.js callback nettoyé (1248→1243L)
+2265746  PH12   main.js : 51 imports redondants supprimés (260→207L)
+63bdf35  PH11   Nettoyage structurel app.js : headers, indentation, blank lines (1309→1248L)
+20252b3  PH10   format.js dédoublonnage dans app.js + dead code (1407→1309L)
+9868b84  PH9b   Purge window.xxx shims dans 6 modules purs (~43 shims)
+ea9ffd7  PH9a   scoring.js : imports ESM directs dans app.js
+5a6844c  PH8    Smoke test : fix TDZ + 4 bugs runtime
+dab87f6  PH7    Nettoyage app.js dead code/stale comments (1447→1412L)
+ddbb896  PH6.5  Remplacer shims window._xxx par imports ESM (55 imports, ~80 shims)
 ```
 
 ---
 
 ## 2. ⚠️ Pièges d'environnement — À LIRE avant de reprendre
 
-### 2.1 Git : le verrou Windows bloque `git commit`
+### 2.1 Git : verrou Windows bloque `git commit`
 
-Le montage Windows interdit l'`unlink` côté sandbox Linux. Résultat : `.git/index.lock`
-(et les locks de refs) deviennent **orphelins** et bloquent tout `git commit` normal.
+Le montage Windows interdit `unlink` côté sandbox Linux → `.git/index.lock` orphelin.
 
-**Contournement utilisé** (à réutiliser tel quel) — n'utilise aucun verrou :
+**Contournement** (à réutiliser systématiquement) :
 
 ```bash
-cd <repo-root>   # configurateur-videosurveillance/ (PAS frontend/)
-cp .git/index /tmp/gitidx_<phase>
+cd configurateur-videosurveillance/   # PAS frontend/
 export GIT_INDEX_FILE=/tmp/gitidx_<phase>
+git read-tree HEAD
 git add <fichiers...>
 TREE=$(git write-tree)
-PARENT=$(git rev-parse HEAD)
-COMMIT=$(printf '%s' "message" | git -c user.name="refactor" -c user.email="refactor@local" commit-tree "$TREE" -p "$PARENT")
-printf '%s\n' "$COMMIT" > .git/refs/heads/main
-printf '%s %s refactor <refactor@local> %s +0000\tcommit: msg\n' "$PARENT" "$COMMIT" "$(date +%s)" >> .git/logs/HEAD
-cp /tmp/gitidx_<phase> .git/index
+COMMIT=$(git commit-tree $TREE -p HEAD -F /tmp/msg.txt)
+echo "$COMMIT" > .git/refs/heads/main
 ```
 
 Les warnings `unable to unlink .git/objects/.../tmp_obj_*` sont **inoffensifs**.
 
-### 2.2 Bug de padding null / cache de montage
+### 2.2 Écriture de fichiers → Python uniquement
 
-- L'outil **Edit** et **Write** peuvent laisser des **octets null** en fin de fichier.
-  Toujours écrire les fichiers de code via Python :
-  ```python
-  with open(path, 'w', encoding='utf-8', newline='\n') as f:
-      f.write(content)
-  ```
-- Pour `main.js` : toujours restaurer depuis `git show HEAD:frontend/src/main.js`,
-  ajouter le nouvel import, puis réécrire via Python.
-- Vérifier l'absence de null bytes : `data.count(b'\x00')`.
+Les outils Edit/Write peuvent laisser des octets null. Toujours :
+
+```python
+with open(path, 'w', encoding='utf-8', newline='\n') as f:
+    f.write(content)
+```
+
+Vérifier l'absence de null bytes : `data.count(b'\x00') == 0`.
 
 ### 2.3 ⛔ Ne JAMAIS compter les accolades
 
-Un script Python qui comptait les `{}` a un jour **détruit 138 Ko de `app.js`**.
-**Toujours** utiliser le parseur AST `espree` (déjà installé) pour localiser/remplacer :
+Un script Python qui comptait les `{}` a détruit 138 Ko de `app.js`.
+Utiliser `str.replace()` / `re.sub()` sur des **chaînes exactes** ; ou l'AST `espree` pour localiser.
+
+### 2.4 Build Vite + tests
 
 ```bash
-NODE_PATH="$(pwd)/node_modules" node -e "
-const espree = require('espree');
-// parser → trouver FunctionDeclaration par nom → utiliser node.range
-"
+# Build (outDir hors du dossier monté Windows)
+cd frontend && npx vite build --outDir /tmp/dist-phXX
+
+# Tests (un seul appel suffit maintenant, timeout 40s)
+timeout 40 node node_modules/vitest/dist/cli.js run
 ```
 
-### 2.4 Décalage de range espree (±1 char)
-
-`espree node.range[0]` peut pointer en plein milieu du mot `function`. **Toujours** vérifier :
+### 2.5 Smoke test Playwright
 
 ```python
-m = re.search(r'(async\s+)?function\s+NomDeLaFonction', src[range[0]-20:range[0]+50])
-real_start = range[0] - 20 + m.start()
+from playwright.sync_api import sync_playwright
+# Firefox déjà installé dans la sandbox
+with sync_playwright() as p:
+    browser = p.firefox.launch(headless=True)
+    page = browser.new_page()
+    # Servir /tmp/dist-phXX avec python3 -m http.server 5200 &
+    page.goto("http://localhost:5200", timeout=15000)
+    page.wait_for_selector("#steps", timeout=10000)
+    # Vérifier : pas de ReferenceError / TypeError dans les erreurs
 ```
 
-Et pour la fin, scanner en arrière depuis `range[1]` pour trouver le vrai `}` :
+### 2.6 Patterns ESM (rappel)
 
-```python
-pos = range[1] - 1
-while src[pos] != '}': pos -= 1
-real_end = pos + 1
-```
-
-**Exception** : les arrow functions/const one-liners (ex: `const toBool = (v) => ...;`) n'ont
-pas de `}` final — utiliser directement `range[1]` (endpoint espree) pour ceux-ci.
-
-### 2.5 Vérification build/tests
-
-Build + suite complète dépassent le timeout de 45 s du bash → lancer en **deux appels séparés** :
-
-```bash
-# Pass 1 (engine + render-pdf)
-node node_modules/vitest/vitest.mjs run src/__tests__/engine-*.test.js src/__tests__/render-pdf.test.js
-
-# Pass 2 (render + state + utils + catalog + ui)
-node node_modules/vitest/vitest.mjs run src/__tests__/catalog-*.test.js src/__tests__/render-{accessories,camera-card,cameras,nvr,options,projet,storage,summary}.test.js src/__tests__/state-*.test.js src/__tests__/utils-*.test.js src/__tests__/ui-labels.test.js
-```
-
-`vite build` vers `/tmp` : `--outDir /tmp/vite-phXXX --emptyOutDir`
-
-### 2.6 Patterns de factory et import ESM (PH6.5 — plus de shims window._xxx)
-
-Depuis PH6.5, les modules exportent directement et app.js importe :
 ```js
-// Dans le module
+// Module pur — export nommé, pas de window.xxx
 export function createXxxHandlers(deps = {}) { ... }
-// Plus de window._createXxxHandlers = ...
 
-// Dans app.js
-import { createXxxHandlers } from './handlers/xxx.js';
-const { fn1, fn2 } = createXxxHandlers({ dep1, dep2 });
-```
-
-Pour les fonctions pures dont app.js a un wrapper local (closure sur deps) :
-```js
-// Import aliasé pour éviter collision avec le wrapper local
+// app.js — import aliasé pour éviter collision avec wrapper local
 import { scoreCameraForBlock as _scoreCameraForBlock } from './engine/camera-score.js';
 
-// Wrapper local dans app.js (close sur MODEL, CATALOG, T…)
+// Wrapper local — close sur DEPS
 function scoreCameraForBlock(block, cam) {
-  return _scoreCameraForBlock(block, cam, { get CATALOG() {...}, ... });
+  return _scoreCameraForBlock(block, cam, DEPS);
 }
 ```
 
-Les 4 `window._xxx` maintenus sont réservés à `optimisations.js` :
+### 2.7 Objet DEPS — structure actuelle
+
+```js
+const DEPS = {
+  // Getters live (MODEL/CATALOG peuvent être mutés après init)
+  get MODEL()        { return MODEL; },
+  get CATALOG()      { return CATALOG; },
+  get cameraLines()  { return MODEL.cameraLines; },
+  get cameraBlocks() { return MODEL.cameraBlocks; },
+  get cameras()      { return CATALOG.CAMERAS; },
+  get catalogNvrs()  { return CATALOG.NVRS; },
+  get catalogHdds()  { return CATALOG.HDDS; },
+  get getCameraById()       { return getCameraById; },
+  get canRecommendBlock()   { return canRecommendBlock; },   // const post-DEPS
+  get buildRecoForBlock()   { return buildRecoForBlock; },   // const post-DEPS
+  // Valeurs directes (fn déclarations hoistées ou imports)
+  T, CLR,
+  clamp, clampInt, clampNum, toNum, safeHtml,
+  getDoriForObjective, normalizeEmplacement, getMpFromCam, getIrFromCam,
+  getCameraProfile, objectiveLabel, accessoryTypeLabel, objectiveToDoriKey,
+  translateUseCase, getAllUseCases, localizedDatasheetUrl,
+  sanitizeFilename, dedupByUrl,
+  getProjectCached,
+  getThumbSrc,
+  interpretScoreForBlock, computeCriticalProjectScore,
+  generateQRDataUrl, generateShareUrl,
+  getSelectedOrRecommendedEnclosure, getSelectedOrRecommendedScreen,
+  getSelectedOrRecommendedSign, camPickCardHTML,
+};
+```
+
+---
+
+## 3. Journal des phases (PH7 → PH16)
+
+### ✅ PH7 — Nettoyage dead code (1447→1412L)
+
+- Suppression `badgePill`, stale comments `via window._createRenderPipeline`,
+  wrapper `applyLocalMediaToCatalog`, lignes vides consécutives
+- Commit `dab87f6`
+
+### ✅ PH8 — Smoke test + 4 bugs runtime corrigés
+
+| Bug | Fix |
+|---|---|
+| TDZ `CATALOG` dans `createLabelsHelpers` | Déplacer après `window._CATALOG = CATALOG` |
+| `LOG is not defined` | `const LOG = console;` |
+| `SAVE_KEY is not defined` | `const SAVE_KEY = 'comelit_cfg_save';` |
+| `_SSO_USER is not defined` | → `window._SSO_USER` partout |
+| `projectTipHtml is not defined` | Retirer (optionnel dans render/projet.js) |
+
+Commits `5a6844c`, `9d3af53`
+
+### ✅ PH9 — Suppression shims window.xxx dans modules purs
+
+**PH9a** — scoring.js : 5 fonctions → imports ESM directs dans app.js  
+**PH9b** — 6 fichiers : format.js, csv.js, normalize.js, constants.js, storage.js, app.js  
+~43 shims supprimés. Commit `9868b84`
+
+### ✅ PH10 — Dédoublonnage format.js dans app.js (1407→1309L, −98L)
+
+- 5 définitions locales dupliquées de format.js supprimées
+- Dead code supprimé : `$$`, semicolons orphelins, `window._getCameraById` doublon,
+  25 commentaires `// ✅ Phase 2 —`, bloc `// BRANDING COMELIT`
+- Commit `20252b3`
+
+### ✅ PH11 — Nettoyage structurel app.js (1309→1248L, −61L)
+
+- 6 commentaires `// ✅ Phase 3 —` supprimés
+- 5 blocs section header orphelins supprimés
+- 20 fonctions top-level : 2-space → colonne 0
+- Blank lines : max 2
+- Commit `63bdf35`
+
+### ✅ PH12 — main.js : 51 imports redondants supprimés (260→207L, −53L)
+
+- Hérités de l'époque `window.xxx = fn` — plus aucune utilité depuis PH9b
+- Conservés : `./i18n.js`, `./chips-enhancer.js`, `./tooltip-fix.js`, `Auth`, html2pdf/canvas/jsPDF
+- Commit `2265746`
+
+### ✅ PH13 — i18n exports ESM + DEPS central (1248→1243L)
+
+- **i18n.js** : 5 fonctions exportées (`T`, `setLang`, `getLangSelectorHtml`,
+  `updateStepperLabels`, `updateNavButtons`) — 4 shims `window.xxx` supprimés
+- **main.js** : import nommé i18n + callback `.then()` simplifié
+- **app.js** : objet `DEPS` initial avec getters live (MODEL/CATALOG)
+- Commit `7bb257c`
+
+### ✅ PH14 — T/getCurrentLang ESM + constants + DEPS render (1243→1132L, −111L)
+
+**PH14.1** — `i18n.js` : `window._currentLang` → `export function getCurrentLang()`.
+`app.js` : import `{ T, getCurrentLang }` ; 2 usages `_currentLang` → `getCurrentLang()`.
+
+**PH14.2** — `app.js` : 68L de `COLORS`+`CONFIG` locaux → `import { COLORS, CONFIG } from './core/constants.js'`.
+`constants.js` utilise des lazy getters pour `scoring.levels` (i18n à chaud).
+
+**PH14.3** — `DEPS` étendu (+9 symboles). Tous les render wrappers refactorisés en
+`{ ...DEPS, <unique par appel> }`. `computeTotals` + `pickNvr` → DEPS.
+
+Commit `2d23a0e`
+
+### ✅ PH15 — Nettoyage stale comments + init() shorthand (1132→1074L, −58L)
+
+**PH15.1** — Nettoyage section headers :
+- Blocs 4A/4B (docs CSV format) supprimés
+- Tous les headers 2/4-space-indentés → colonne 0
+- Labels renumérotés (`0) HELPERS` → `HELPERS`, `8) ENGINE` ×3 → labels distincts…)
+- Banners orphelins supprimés
+
+**PH15.2** — `init()` : 9 paires `key: key` → shorthand JS. `sanitizeFilename` + `dedupByUrl`
+ajoutés à DEPS. `collectDatasheetUrlsFromProject` → DEPS.
+
+Commits `5e7f8b4`
+
+### ✅ PH16 — DEPS étendu + 5 migrations (1074→1063L, −11L)
+
+`getProjectCached` ajouté à DEPS (hoisted fn decl, ref directe sans getter).  
+Migré vers DEPS : `kpiConfigSnapshot`, `camPickCardHTML`, `validateStep`,
+`showStepValidationErrors`.
+
+Commit `c64e249`
+
+---
+
+## 4. TODO prochaine session (PH17+)
+
+### Priorité 1 — Migrer `optimisations.js` vers ESM
+
+**Objectif** : supprimer les 4 derniers `window._xxx` d'`app.js` :
 `window._MODEL`, `window._CATALOG`, `window._STEPS`, `window._getCameraById`.
 
-### 2.7 Apostrophes dans les strings JS écrits depuis Python
+**Blocant** : `optimisations.js` les lit via `window.*` en 8+ endroits et hook `window.render`.
 
-Les chaînes françaises avec apostrophes (`d'abord`, `l'app`...) dans du code JS single-quoted
-cassent le parseur ESLint. **Toujours** utiliser des double-quotes pour ces chaînes :
-```js
-showToast("⚠️ Finalise ta configuration d'abord.", 'warn')
-```
+**Plan** :
+1. Convertir `optimisations.js` en module ESM avec une fonction `initOptimisations(deps)` :
+   ```js
+   // optimisations.js
+   export function initOptimisations({ getModel, getCatalog, getSteps,
+                                       getCameraById, render }) { ... }
+   ```
+2. Appeler `initOptimisations({ ... })` depuis `app.js` après `import("./optimisations.js")`
+   dans `main.js` ou dans `init()`.
+3. Supprimer les 4 assignments `window._xxx` dans `app.js`.
+4. Supprimer `window.render` hook dans `optimisations.js` (passer `render` en dep).
 
-### 2.8 f-strings Python et backslash
-
-Python < 3.12 interdit les backslash dans les expressions f-string :
-```python
-# INTERDIT en Python < 3.12 :
-f"{value.count(b'\x00')}"
-# CORRECT : stocker d'abord
-null_count = value.count(b'\x00')
-f"{null_count}"
-```
-
-### 2.9 Ordre des remplacements dans app.js
-
-Quand on supprime/remplace plusieurs plages dans app.js au sein d'un même script Python,
-**toujours traiter du plus haut offset vers le plus bas** pour éviter le décalage d'index.
-Exemple :
-```python
-# Correct — highest first
-src = src[:high_start] + replacement + src[high_end:]
-src = src[:low_start]  + replacement + src[low_end:]
-```
+**Attention** : `optimisations.js` utilise aussi `window.render` et `window.__optimHooked`
+pour hooker le cycle de rendu — ces 2 window.xxx devront aussi être migrés ou explicitement
+conservés (hook de cycle non extractable facilement).
 
 ---
 
-## 3. Ce qui reste dans `app.js` (1 414 lignes)
+### Priorité 2 — Extraire `computeProject()` en `engine/project.js` étendu
 
-`app.js` est désormais un **vrai module ESM** : plus de IIFE, plus de `window._xxx` shims.
-Il reste l'orchestrateur principal : état global, thin wrappers locaux, bootstrap.
+`computeProject()` dans app.js est un wrapper sur `computeProjectPure` qui passe un gros
+objet de deps incluant `computeTotals, pickNvr, planPoESwitches, mbpsToTB, pickDisks,
+getTotalCameras` — des fonctions locales non présentes dans DEPS.
 
-### Thin wrappers locaux (pattern de clôture sur deps)
-
-Chaque wrapper local close sur l'état (`MODEL`, `CATALOG`, `T`, `CLR`…)
-et délègue à la fonction pure importée (aliasée `_fn`) :
-
-```js
-function scoreCameraForBlock(block, cam) {          // wrapper local
-  return _scoreCameraForBlock(block, cam, { ... }); // fn pure importée
-}
-```
-
-17 paires de ce type subsistent dans app.js. Le résoudre proprement nécessiterait soit :
-- Passer les deps explicitement à chaque call site (refactor invasif), ou
-- Extraire un objet `deps` central (ex: `makeDeps()`) injecté une seule fois.
-
-### Fonctions résiduelles à logique réelle (non wrappers)
-
-| Fonction | Lignes | Commentaire |
-|---|---|---|
-| `localizedDatasheetUrl` | 4 | Wrapper → `_localizedDatasheetUrl(url, _currentLang)` (ESM depuis normalize.js, PH9b) |
-| `getProjectCached` | ~11 | Cache projet (dépend de `MODEL`) |
-| `safeStr`, `clamp`, `clampNum` | ~15 | Micro-helpers locaux |
-| État global + DOM | ~400 | `MODEL`, `CATALOG`, `STEPS`, `DOM`, `KPI`… |
-| `window._MODEL/CATALOG/STEPS/getCameraById` | 4 assignments | Maintenus pour `optimisations.js` |
-
-### ✅ PH7 — Fait (session courante)
-
-- Suppression fonction arrow orpheline `badgePill` (lignes ~275)
-- Correction 3 commentaires stale `via window._createRenderPipeline` → `via createRenderPipeline`
-- Suppression wrapper `applyLocalMediaToCatalog` + inline en arrow dans deps de `initPure`
-- Collapse des lignes vides consécutives (max 2) — 27 lignes supprimées
-- Net : **1 447 → 1 412 lignes** (35 supprimées)
-- Build ✓ (317 modules) · Tests ✓ (369 tests) · Commit `dab87f6`
-
-### ✅ PH8 — Fait (session courante)
-
-Smoke test via Playwright/Firefox contre le build prod — **4 bugs runtime détectés et corrigés** :
-
-| Bug | Cause | Fix |
-|---|---|---|
-| TDZ `re` (= `CATALOG`) | `createLabelsHelpers` appelé ligne 262 mais `const CATALOG` à ligne 348 — vite fusionne en 1 `const` → TDZ | Déplacer l'appel après `window._CATALOG = CATALOG` + passer CATALOG directement (pas de getter) |
-| `LOG is not defined` | Variable utilisée dans `createPersistenceHandlers` et catch block, jamais déclarée | Ajouter `const LOG = console;` |
-| `SAVE_KEY is not defined` | Passé dans `initPure` mais jamais déclaré dans app.js | Ajouter `const SAVE_KEY = 'comelit_cfg_save';` |
-| `_SSO_USER is not defined` | Bare identifier en ESM strict — `window._SSO_USER` n'est pas set sans backend | Remplacer par `window._SSO_USER` partout (property access = safe) |
-| `projectTipHtml is not defined` | Passé dans deps de `_renderStepProject` mais jamais défini | Retirer (optionnel dans render/projet.js avec valeur par défaut `() => ''`) |
-
-Résultat : **smoke test ✅ PASS** — aucune erreur JS réelle à l'initialisation.
-Build ✓ (317 modules) · Tests ✓ (369 tests) · Commits `5a6844c`, `9d3af53`
-
-### ✅ PH9 — Fait (session courante)
-
-Suppression de **tous** les `window.xxx = fn` résiduels dans les modules purs.
-
-**PH9a** (commit `ea9ffd7`) — scoring.js : 5 fonctions migrées en imports ESM directs dans app.js.
-
-**PH9b** (commit `9868b84`) — purge globale sur 6 fichiers :
-
-| Fichier | Shims supprimés | L avant → après |
-|---|---|---|
-| `utils/format.js` | safeHtml, isFalseLike, toBool, toStrOrFalse, toNum, clampInt, clampNum, clamp, slugify | 137 → 126 |
-| `utils/csv.js` | parseCsv, loadCsv | 120 → 116 |
-| `catalog/normalize.js` | safeStr, safeNum, splitList, parsePipeList, localizedDatasheetUrl, parseRobustNum, extractUseCasesFromRow | 274 → 265 |
-| `core/constants.js` | COLORS, LIM, CLR, COMELIT, CONFIG | 145 → 140 |
-| `engine/storage.js` | mbpsToTB, getContextualMotionFactor | 244 → 241 |
-| `app.js` | import `_localizedDatasheetUrl` depuis normalize.js | 1406 → 1407 |
-
-`window.*` restants dans modules (intentionnels, NON shims) :
-- `auth.js` : `window.Auth = Auth` — accès externe
-- `kpi-tracker.js` : `window.kpi = fn` — event tracker global (appelé par steps.js)
-- `i18n.js` : `window.T`, `window.setLang`, etc. — appelés depuis main.js inline
-
-Build prod ✓ · Smoke test ✓ · 17 test files ✓
-
-### ✅ PH10 — Fait (session courante)
-
-Import de `safeHtml`, `toNum`, `clampInt`, `clampNum`, `clamp` depuis `utils/format.js` — suppression des 5 (×2 pour clampNum) définitions locales dupliquées dans app.js. Nettoyage associé :
-
-- Orphelins supprimés : bare arrow expression `$$`, 4 semicolons isolés
-- `window._getCameraById` en double supprimé
-- 25 commentaires stales `// ✅ Phase 2 —` supprimés
-- Bloc mort `// BRANDING COMELIT (PDF)` supprimé
-- Net : **1 407 → 1 309 lignes** (−98L)
-- Build prod ✓ · Smoke test ✓ · 17 test files ✓ · Commit `20252b3`
-
-### ✅ PH11 — Fait (session courante)
-
-Nettoyage structurel de app.js — héritage de l'IIFE supprimée en PH6.2 :
-- 6 commentaires `// ✅ Phase 3 —` supprimés
-- 5 blocs section header orphelins supprimés (`0B) CSV PARSER`, `4) NORMALIZATION`, `4A) SIGNAGE`, `4B) ACCESSORIES`, `2) MODEL`)
-- 20 fonctions top-level normalisées : 2-space → colonne 0 (`scoreCameraForBlock`, `renderStepCameras`, `init`, etc.)
-- `invalidateProjectCache` + KPI SAFETY SHIM : 4-space → 0
-- Blank lines : max 2
-- Net : **1 309 → 1 248 lignes** (−61L)
-- Audit dead-code : 0 fonction inutilisée (42 fonctions, toutes actives)
-- Build prod ✓ · Smoke test ✓ · 21 test files ✓ · Commit `63bdf35`
-
-### ✅ PH12 — Fait (session courante)
-
-Suppression des 51 pre-imports redondants de `main.js` :
-- Hérités de l'époque `window.xxx = fn` shims — plus aucune utilité depuis PH6.5
-- Aucun module pur n'a de side-effect à l'import après PH9b
-- app.js importe statiquement tout ce dont il a besoin
-- Conservés : `./i18n.js`, `./chips-enhancer.js`, `./tooltip-fix.js`, `Auth`, html2pdf/canvas/jsPDF
-- **260 → 207 lignes** (−53L) · 314 modules Vite (−3) · Smoke ✓ · 21 test files ✓ · Commit `2265746`
-
-### ✅ PH13 — Fait (session courante)
-
-**i18n.js** : export nommé de `T`, `setLang`, `getLangSelectorHtml`, `updateStepperLabels`, `updateNavButtons` — suppression des 4 shims `window.xxx` correspondants (conservé : `window.T`, `window._currentLang`, `window.TRANSLATIONS` pour app.js).
-
-**main.js** : `import "./i18n.js"` → import nommé ; callback `.then()` simplifié (typeof guards supprimés, appels directs).
-
-**app.js** : objet `DEPS` central avec getters live (`MODEL`, `CATALOG`, sous-collections) — `scoreCameraForBlock`, `interpretScoreForBlock`, `recommendCameraForAnswers`, `computeTotals`, `pickNvr` passent maintenant `DEPS` au lieu d'un objet ad-hoc par wrapper. **1 248 → 1 243 lignes**.
-
-Build ✓ · Smoke ✓ · 21 test files ✓ · Commit `7bb257c`
-
-### TODO PH14 (prochaine session)
-
-1. **Migrer `T` et `_currentLang` dans app.js** : app.js utilise encore `T` et `_currentLang`
-   comme globals (`window.T`, `window._currentLang` set par i18n.js). Ajouter
-   `import { T, getCurrentLang } from './i18n.js'` dans app.js pour supprimer ces derniers
-   shims et rendre la dépendance explicite.
-
-2. **Migrer core/constants.js** : app.js redéfinit `COLORS`, `CONFIG`, `LIM`, `CLR` localement.
-   Importer depuis `constants.js` (en gérant la différence `CONFIG.scoring.levels` avec T lazy).
-
-3. **Étendre DEPS** aux render wrappers (`renderStepCameras`, `renderStepProject`, etc.)
-   — actuellement chaque render wrapper construit son propre objet de deps à la main.
+**Option** : ajouter ces 6 fonctions à DEPS, puis `computeProject() → return computeProjectPure(DEPS)`.
+Prérequis : vérifier que `computeProjectPure` accepte les clés supplémentaires sans crash.
 
 ---
 
-## 4. Rappels de méthode (à conserver)
+### Priorité 3 — Nettoyage résiduel app.js
 
-1. Module pur + injection de dépendances ; wrapper `app.js` qui passe les deps
-   legacy → garantit **zéro changement de comportement**.
-2. Un fichier de tests Vitest par module pur (comportement + edge cases).
-3. Vérif systématique après chaque extraction : ESLint `src/` + `vite build`
-   + suite complète (en 2 passes).
-4. Remplacements dans `app.js` **uniquement** via AST `espree` (jamais de
-   comptage d'accolades).
-5. Commit après chaque module vérifié, via le contournement Git du §2.1.
-6. Script utilitaire de nettoyage de code mort : `outputs/cleanup-deadcode.cjs`.
+Éléments mineurs restants à traiter :
 
-- app.js importe statiquement tout ce dont il a besoin
-- Conservés : `./i18n.js`, `./chips-enhancer.js`, `./tooltip-fix.js`, `Auth`, html2pdf/canvas/jsPDF
-- **260 → 207 lignes** (−53L) · 314 modules Vite (−3) · Smoke ✓ · 21 test files ✓ · Commit `2265746`
+| Item | Description |
+|---|---|
+| `window.renderStepMounts` | Compat alias ligne ~601 — vérifier si encore utilisé par `optimisations.js`, sinon supprimer |
+| `window.testPdfGeneration` | Debug helper — commenter ou supprimer |
+| `// Dédup par URL` | Commentaire orphelin (code supprimé) ligne ~768 |
+| `// Helper pour collecter les IDs produits` | Idem, orphelin |
+| Section `// ADMIN PANEL` | Vérifier si `ADMIN_TOKEN` et `_adminRef` sont utilisés hors tests |
+| Double blank lines | Quelques séquences 3+ lignes vides subsistent |
 
-### ✅ PH13 — Fait (session courante)
+---
 
-**i18n.js** : export nommé de `T`, `setLang`, `getLangSelectorHtml`, `updateStepperLabels`, `updateNavButtons` — suppression des 4 shims `window.xxx` correspondants (conservé : `window.T`, `window.TRANSLATIONS` ; `window._currentLang` remplacé par `export getCurrentLang()` en PH14.1).
+### Priorité 4 — Tests des render wrappers (couverture)
 
-**main.js** : `import "./i18n.js"` → import nommé ; callback `.then()` simplifié (typeof guards supprimés, appels directs).
+Les wrappers `renderStepXxx` dans app.js ne sont pas couverts par les tests unitaires.
+Les fonctions pures importées ont des tests, mais pas les wrappers qui construisent
+`{ ...DEPS, <unique> }`. Un test d'intégration minimal vérifierait que l'appel ne crashe pas.
 
-**app.js** : objet `DEPS` central avec getters live (`MODEL`, `CATALOG`, sous-collections) — `scoreCameraForBlock`, `interpretScoreForBlock`, `recommendCameraForAnswers` passent maintenant `DEPS` au lieu d'un objet ad-hoc par wrapper. **1 248 → 1 243 lignes**.
+---
 
-Build ✓ · Smoke ✓ · 21 test files ✓ · Commit `7bb257c`
+### Priorité 5 (future) — Réduire `app.js` sous 1 000 lignes
 
-### ✅ PH14 — Fait (session courante)
+Avec PH17 (optimisations.js) et PH18 (computeProject → DEPS), on atteindrait ~1 020L.
+Pour passer sous 1 000 : extraire le bloc `createStepsHandlers` call (~30L) et le bloc
+`createRenderPipeline` call (~15L) dans des fonctions dédiées dans `handlers/`.
 
-**PH14.1** — `i18n.js` : `window._currentLang = _currentLang` remplacé par
-`export function getCurrentLang() { return _currentLang; }`.
-`app.js` : ajout `import { T, getCurrentLang } from './i18n.js'` ; les 2 usages de
-`_currentLang` dans app.js remplacés par `getCurrentLang()` ; le guard
-`typeof _currentLang !== "undefined"` supprimé.
+---
 
-**PH14.2** — `app.js` : les 68 lignes de définitions locales `COLORS` + `CONFIG` remplacées
-par `import { COLORS, CONFIG } from './core/constants.js'`. `CLR` et `LIM` conservés comme
-raccourcis locaux. La version `constants.js` utilise des lazy getters pour `scoring.levels`
-(m
+## 5. Rappels de méthode
+
+1. **Module pur + injection de dépendances** — wrapper `app.js` qui passe les deps
+   → garantit zéro changement de comportement observable.
+2. **Un fichier de tests Vitest par module pur** — comportement + edge cases.
+3. **Vérif systématique** après chaque extraction :
+   `npx vite build --outDir /tmp/dist-phXX` + `timeout 40 node node_modules/vitest/dist/cli.js run`
+4. **Remplacements dans `app.js`** uniquement via Python `str.replace()` / `re.sub()`
+   sur chaînes exactes — jamais via les outils Edit/Write du LLM.
+5. **Git workaround** : voir §2.1 — `GIT_INDEX_FILE=/tmp/gitidx_xxx` à chaque commit.
+6. **Smoke test** : Python + Playwright Firefox headless contre `/tmp/dist-phXX`
+   servi par `python3 -m http.server 5200`.
+7. **Apostrophes en strings JS** écrites depuis Python → utiliser double-quotes.
+8. **Ordre des remplacements** dans app.js : traiter du plus haut offset vers le plus bas.
