@@ -11,7 +11,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 407 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 309 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
 | Tests Vitest | **17 fichiers** — tous au vert |
 | Build Vite | OK (317 modules transformés) |
@@ -273,37 +273,35 @@ Suppression de **tous** les `window.xxx = fn` résiduels dans les modules purs.
 
 Build prod ✓ · Smoke test ✓ · 17 test files ✓
 
-### TODO PH10 (prochaine session)
+### ✅ PH10 — Fait (session courante)
 
-1. **Deps central** : éliminer les ~17 thin wrappers via un objet `deps` vivant :
+Import de `safeHtml`, `toNum`, `clampInt`, `clampNum`, `clamp` depuis `utils/format.js` — suppression des 5 (×2 pour clampNum) définitions locales dupliquées dans app.js. Nettoyage associé :
+
+- Orphelins supprimés : bare arrow expression `$$`, 4 semicolons isolés
+- `window._getCameraById` en double supprimé
+- 25 commentaires stales `// ✅ Phase 2 —` supprimés
+- Bloc mort `// BRANDING COMELIT (PDF)` supprimé
+- Net : **1 407 → 1 309 lignes** (−98L)
+- Build prod ✓ · Smoke test ✓ · 17 test files ✓ · Commit `20252b3`
+
+### TODO PH11 (prochaine session)
+
+1. **Nettoyage indentation/structure** : app.js mélange toujours des niveaux d'indentation incohérents (certaines fonctions à 0, d'autres à 2 espaces). Un pass de normalisation améliorerait la lisibilité.
+
+2. **Deps central** : éliminer les ~15 thin wrappers via un objet `deps` vivant :
    ```js
    const deps = {
      get MODEL() { return MODEL; },
      get CATALOG() { return CATALOG; },
-     T, CLR, toNum, ...
+     T, CLR, ...
    };
    // Call site direct : scoreCameraForBlock(block, cam, deps);
    ```
-   Cela permettrait de passer les deps aux fonctions pures sans wrappers locaux.
 
-2. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
+3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
 
-3. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
+4. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
    (app.js les importe directement). On peut les retirer ou garder comme doc.
 
-4. **Migrer i18n.js** : les `window.T`, `window.setLang`, etc. sont des shims pour main.js.
-   Après refactor main.js, ces exports pourraient devenir de vrais imports ESM.
-
----
-
-## 4. Rappels de méthode (à conserver)
-
-1. Module pur + injection de dépendances ; wrapper `app.js` qui passe les deps
-   legacy → garantit **zéro changement de comportement**.
-2. Un fichier de tests Vitest par module pur (comportement + edge cases).
-3. Vérif systématique après chaque extraction : ESLint `src/` + `vite build`
-   + suite complète (en 2 passes).
-4. Remplacements dans `app.js` **uniquement** via AST `espree` (jamais de
-   comptage d'accolades).
-5. Commit après chaque module vérifié, via le contournement Git du §2.1.
-6. Script utilitaire de nettoyage de code mort : `outputs/cleanup-deadcode.cjs`.
+5. **Migrer i18n.js** : les `window.T`, `window.setLang`, etc. sont des shims pour main.js.
+   Apr
