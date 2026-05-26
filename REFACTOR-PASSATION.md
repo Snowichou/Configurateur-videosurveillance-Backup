@@ -296,7 +296,7 @@ Nettoyage structurel de app.js — héritage de l'IIFE supprimée en PH6.2 :
 - Audit dead-code : 0 fonction inutilisée (42 fonctions, toutes actives)
 - Build prod ✓ · Smoke test ✓ · 21 test files ✓ · Commit `63bdf35`
 
-### TODO PH12 (prochaine session)
+### ✅ PH12 — Fait (session courante)
 
-1. **Simplifier main.js** : les 59 imports explicites de `main.js` sont devenus
-   redondants — app.js les importe tous directement. Audit : lesquel
+Suppression des 51 pre-imports redondants de `main.js` :
+- Hérités de l'époque `window.xxx = fn` shims — plus aucune utilité depuis PH6.5
