@@ -79,6 +79,7 @@ import { exportProjectPdfWithLocalDatasheetsZipPure } from './render/pdf-export.
 import { showPdfPreviewPure } from './render/pdf-preview.js';
 import { exportProjectPdfProPure } from './render/pdf-pro.js';
 import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-test.js';
+import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
 // ─────────────────────────────────────────────────────────────
 
 
@@ -129,47 +130,7 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
   // 0) HELPERS
   // ==========================================================
   const $ = (sel, root = document) => root.querySelector(sel);
-  (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  const safeHtml = (s) =>
-    String(s ?? "").replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-    }[m]));
-
-
-  ;
-
-  ;
-
-  ;
-
-    const toNum = (v) => {
-    if (v == null) return null;
-    const s = String(v).trim();
-    if (!s) return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-  };
-
-  const clampInt = (v, min, max) => {
-    const n = parseInt(v, 10);
-    if (Number.isNaN(n)) return min;
-    return Math.max(min, Math.min(max, n));
-  };
-
-  ;
-
-  // ==========================================================
-// BRANDING COMELIT (PDF)
-// ==========================================================
-
-// Essaie plusieurs noms possibles (tu ajusteras si besoin)
-
-  // ✅ Phase 2 — extrait dans src/state/actions.js
 
   const sum = (arr, fn) => {
     let t = 0;
@@ -178,31 +139,10 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
   };
 
 
-  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
-
-
-
-
-// ==========================================================
-// Score global projet (pondéré par quantité)
-
-
-// ==========================================================
-// AXE 1 — Lecture “pastilles” (strict)
-
-// ==========================================================
-// Adaptateur score -> niveaux stricts (ok/warn/bad)
-
-
-// ==========================================================
-// Comptage des niveaux de risque (AXE 1)
-
-
   /**
    * Retourne { score, parts[], ratio, dori, required }
    */
   function scoreCameraForBlock(block, cam) {
-    // ✅ Phase 2 — logique extraite dans src/engine/camera-score.js
     return _scoreCameraForBlock(block, cam, {
       getDoriForObjective,
       normalizeEmplacement,
@@ -232,7 +172,6 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
  *   Dissuasion/Détection : ratio < 0.80 => INADAPTÉ
  */
 function interpretScoreForBlock(block, cam) {
-  // ✅ Phase 2 — logique extraite dans src/engine/camera-score.js
   return _interpretScoreForBlock(block, cam, {
     getDoriForObjective,
     normalizeEmplacement,
@@ -244,8 +183,6 @@ function interpretScoreForBlock(block, cam) {
     T,
   });
 }
-
-
 
 
     // ==========================================================
@@ -459,11 +396,6 @@ function localizedDatasheetUrl(url) {
   const getCameraById = (id) => CATALOG.CAMERAS.find((c) => c.id === id) || null;
   window._getCameraById = getCameraById;
 
-  
-
-  // i18n: traduire les noms de use cases du CSV
-  
-window._getCameraById = getCameraById;
   // ==========================================================
   // 6) ENGINE - RECO CAMERA (V3 — profils métier + pool élargi)
   // ==========================================================
@@ -472,7 +404,6 @@ window._getCameraById = getCameraById;
 
 
     function recommendCameraForAnswers(ans) {
-    // ✅ Phase 2 — logique extraite dans src/engine/camera-reco.js
     return _recommendCameraForAnswers(ans, {
       normalizeEmplacement,
       toNum,
@@ -487,7 +418,6 @@ window._getCameraById = getCameraById;
   // ==========================================================
   // 7) ENGINE - BLOCS + ACCESSOIRES
   // ==========================================================
-  // ✅ Phase 2 — extrait dans src/state/actions.js
   function createEmptyCameraBlock() {
     return _createEmptyCameraBlock(MODEL.projectUseCase || '');
   }
@@ -542,18 +472,15 @@ const {
    * Règle : le score le plus faible parmi les blocs validés
    */
   function computeCriticalProjectScore() {
-    // ✅ Phase 2 — logique extraite dans src/engine/totals.js
     return _computeCriticalProjectScore(MODEL.cameraBlocks);
   }
 
 
   function computeTotals() {
-    // ✅ Phase 2 — logique extraite dans src/engine/totals.js
     return _computeTotals(MODEL.cameraLines, MODEL.recording, { getCameraById });
   }
 
   function pickNvr(totalCameras, totalInMbps, requiredTB) {
-    // ✅ Phase 2 — logique extraite dans src/engine/pick-nvr.js
     return _pickNvr(totalCameras, totalInMbps, requiredTB, {
       cameraLines: MODEL.cameraLines,
       getCameraById,
@@ -564,7 +491,6 @@ const {
   }
 
   function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
-    // ✅ Phase 2 — logique extraite dans src/engine/poe.js
     return _planPoESwitches(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
   }
 
@@ -574,7 +500,6 @@ const {
   }
 
 
- // ✅ Phase 2 -- calcul projet extrait dans src/engine/project.js
   function computeProject() {
     return computeProjectPure({
       MODEL,
@@ -591,14 +516,6 @@ const {
       planPoESwitches,
     });
   }
-
-
-// petite util locale safe (si tu n’en as pas déjà)
-function clampNum(v, min, max, fallback) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, n));
-}
 
 
     // ==========================================================
@@ -621,7 +538,6 @@ function clampNum(v, min, max, fallback) {
   // ==========================================================
 
   function renderFinalSummary(proj) {
-  // ✅ Phase 2 — PH2.22 : rendu récapitulatif final extrait dans render/summary-final.js
   return renderFinalSummaryPure(proj, {
     T,
     safeHtml,
@@ -641,7 +557,6 @@ function clampNum(v, min, max, fallback) {
 // ==========================================================
 
   function buildPdfHtml(proj) {
-    // ✅ Phase 2 — génération HTML PDF extraite dans src/render/pdf.js
     return buildPdfHtmlPure(proj, {
       T,
       currentLang: _currentLang,
@@ -699,7 +614,6 @@ const {
 
 
 function camPickCardHTML(blk, cam) {
-  // ✅ Phase 2 — composition HTML extraite dans src/render/camera-card.js
   return renderCameraPickCard(blk, cam, {
     interpretScoreForBlock,
     T,
@@ -711,7 +625,6 @@ function camPickCardHTML(blk, cam) {
 }
 
   function renderStepCameras() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/cameras.js
     if (!Array.isArray(MODEL.cameraBlocks) || !MODEL.cameraBlocks.length) {
       MODEL.cameraBlocks = [createEmptyCameraBlock()];
     }
@@ -743,7 +656,6 @@ function camPickCardHTML(blk, cam) {
   }
 
   function renderStepProject() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/projet.js
     const savedCfg = typeof loadConfigFromLocalStorage === "function" ? loadConfigFromLocalStorage() : null;
     let saveCardHtml = "";
     if (savedCfg) {
@@ -789,7 +701,6 @@ function camPickCardHTML(blk, cam) {
   }
 
   function renderStepAccessories() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/accessories.js
     //    Le caller enrichit chaque bloc validé avec sa caméra résolue.
     const validatedBlocks = (MODEL.cameraBlocks || []).filter((b) => b.validated);
     const blocks = validatedBlocks.map((blk) => {
@@ -808,7 +719,6 @@ function camPickCardHTML(blk, cam) {
   }
 
   function renderStepNvrNetwork() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/nvr.js
     return _renderStepNvrNetwork({
       proj: getProjectCached(),
       isManual: !!MODEL.overrideNvrId,
@@ -818,7 +728,6 @@ function camPickCardHTML(blk, cam) {
   }
 
   function renderStepStorage() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/storage.js
     return _renderStepStorage({
       model: MODEL,
       proj: getProjectCached(),
@@ -830,7 +739,6 @@ function camPickCardHTML(blk, cam) {
   }
 
   function renderStepComplements() {
-    // ✅ Phase 2 — composition HTML extraite dans src/render/options.js
     const proj = getProjectCached();
     const scrEnabled = !!MODEL.complements.screen.enabled;
     const scrSel = scrEnabled && typeof getSelectedOrRecommendedScreen === "function"
@@ -862,7 +770,6 @@ function camPickCardHTML(blk, cam) {
   }
 
 function renderStepSummary() {
-  // ✅ Phase 2 — composition HTML extraite dans src/render/summary.js
   const proj = LAST_PROJECT;
   return _renderStepSummary({
     proj,
@@ -973,7 +880,6 @@ function generateShareUrl() {
 // APERÇU PDF — Preview HTML dans une modale
 // ==========================================================
 function showPdfPreview() {
-  // ✅ Phase 2 — PH2.25 : extraite dans render/pdf-preview.js
   return showPdfPreviewPure({
     T,
     getLastProject: () => LAST_PROJECT,
@@ -987,7 +893,6 @@ function showPdfPreview() {
 // PDF BLOB (PRO) — même rendu que exportProjectPdfPro()
 // ==========================================================
 async function buildPdfBlobProFromProject(proj) {
-  // ✅ Phase 2 — PH2.23 : extraite dans render/pdf-blob.js
   return buildPdfBlobProFromProjectPure(proj, {
     T, LAST_PROJECT, computeProject, buildPdfHtml, CATALOG,
   });
@@ -995,7 +900,6 @@ async function buildPdfBlobProFromProject(proj) {
 
 
 // ===========================================================
-// ✅ Phase 2 — handlers data-action extraits dans src/handlers/steps.js
 // ===========================================================
 const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
   MODEL,
@@ -1073,7 +977,6 @@ function collectDatasheetUrlsFromProject(proj) {
 // Helper pour collecter les IDs produits
 
 async function exportProjectPdfWithLocalDatasheetsZip() {
-  // ✅ Phase 2 — PH2.24 : extraite dans render/pdf-export.js
   return exportProjectPdfWithLocalDatasheetsZipPure({
     T,
     getLastProject: () => LAST_PROJECT,
@@ -1239,7 +1142,6 @@ bind(DOM.btnCompute, "click", () => {
     }
 
 bind(DOM.btnReset, "click", () => {
-  // ✅ Phase 2 — réinitialisation déléguée à src/state/actions.js
   resetModel(MODEL, LIM);
   LAST_PROJECT = null;
   sanity();
