@@ -137,14 +137,7 @@ function invalidateProjectCache() {
    * Retourne { score, parts[], ratio, dori, required }
    */
 function scoreCameraForBlock(block, cam) {
-  return _scoreCameraForBlock(block, cam, {
-    getDoriForObjective,
-    normalizeEmplacement,
-    getMpFromCam,
-    getIrFromCam,
-    getCameraProfile,
-    clamp,
-  });
+  return _scoreCameraForBlock(block, cam, DEPS);
 }
 
 /**
@@ -165,16 +158,7 @@ function scoreCameraForBlock(block, cam) {
  *   Dissuasion/Détection : ratio < 0.80 => INADAPTÉ
  */
 function interpretScoreForBlock(block, cam) {
-  return _interpretScoreForBlock(block, cam, {
-    getDoriForObjective,
-    normalizeEmplacement,
-    getMpFromCam,
-    getIrFromCam,
-    getCameraProfile,
-    clamp,
-    objectiveLabel,
-    T,
-  });
+  return _interpretScoreForBlock(block, cam, DEPS);
 }
 
 // ==========================================================
@@ -375,22 +359,33 @@ function localizedDatasheetUrl(url) {
   const getCameraById = (id) => CATALOG.CAMERAS.find((c) => c.id === id) || null;
   window._getCameraById = getCameraById;
 
+// ── DEPS central — superset de deps passé aux fonctions pures ──
+// Les getters garantissent des refs fraîches à MODEL/CATALOG au moment de l'appel.
+const DEPS = {
+  get MODEL()        { return MODEL; },
+  get CATALOG()      { return CATALOG; },
+  get cameraLines()  { return MODEL.cameraLines; },
+  get cameraBlocks() { return MODEL.cameraBlocks; },
+  get cameras()      { return CATALOG.CAMERAS; },
+  get catalogNvrs()  { return CATALOG.NVRS; },
+  get catalogHdds()  { return CATALOG.HDDS; },
+  get getCameraById(){ return getCameraById; },
+  T, CLR,
+  clamp, clampInt, clampNum, toNum, safeHtml,
+  getDoriForObjective, normalizeEmplacement, getMpFromCam, getIrFromCam,
+  getCameraProfile, objectiveLabel, accessoryTypeLabel, objectiveToDoriKey,
+  translateUseCase, getAllUseCases, localizedDatasheetUrl,
+};
+
   // ==========================================================
   // 6) ENGINE - RECO CAMERA (V3 — profils métier + pool élargi)
   // ==========================================================
 
   
 
-    function recommendCameraForAnswers(ans) {
-    return _recommendCameraForAnswers(ans, {
-      normalizeEmplacement,
-      toNum,
-      objectiveToDoriKey,
-      getCameraProfile,
-      cameras: CATALOG.CAMERAS,
-      T,
-    });
-  }
+function recommendCameraForAnswers(ans) {
+  return _recommendCameraForAnswers(ans, DEPS);
+}
 
   // ==========================================================
   // 7) ENGINE - BLOCS + ACCESSOIRES

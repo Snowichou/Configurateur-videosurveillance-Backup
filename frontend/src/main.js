@@ -1,6 +1,6 @@
 import "./style.css";
 import "./optimisations.css";
-import "./i18n.js";
+import { T, setLang, getLangSelectorHtml, updateStepperLabels, updateNavButtons } from './i18n.js';
 
 
 
@@ -183,18 +183,18 @@ import("./app.js").then(() => {
   import("./optimisations.js");
   // i18n : injecter le sélecteur de langue + appliquer la langue détectée
   const langWrap = document.getElementById("langSelectorWrap");
-  if (langWrap && typeof getLangSelectorHtml === "function") {
+  if (langWrap) {
     langWrap.innerHTML = getLangSelectorHtml();
     langWrap.querySelector("#langSelector")?.addEventListener("change", (e) => {
       setLang(e.target.value);
     });
   }
-  if (typeof updateStepperLabels === "function") updateStepperLabels();
-  if (typeof updateNavButtons === "function") updateNavButtons();
+  updateStepperLabels();
+  updateNavButtons();
   // i18n: mettre à jour le titre de l'app
   const brandEl = document.getElementById("brandTitle");
-  if (brandEl && typeof T === "function") brandEl.textContent = T("app_title");
-  if (typeof T === "function") document.title = T("app_title") + " - Comelit";
+  if (brandEl) brandEl.textContent = T("app_title");
+  document.title = T("app_title") + " - Comelit";
 });
 
 // PWA — Enregistrer le Service Worker
