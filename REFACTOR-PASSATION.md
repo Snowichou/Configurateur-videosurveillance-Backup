@@ -11,7 +11,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `app.js` | **1 309 lignes** (était 13 000 à l'origine) |
+| `app.js` | **1 248 lignes** (était 13 000 à l'origine) |
 | Modules ESM extraits | **55** |
 | Tests Vitest | **17 fichiers** — tous au vert |
 | Build Vite | OK (317 modules transformés) |
@@ -284,24 +284,19 @@ Import de `safeHtml`, `toNum`, `clampInt`, `clampNum`, `clamp` depuis `utils/for
 - Net : **1 407 → 1 309 lignes** (−98L)
 - Build prod ✓ · Smoke test ✓ · 17 test files ✓ · Commit `20252b3`
 
-### TODO PH11 (prochaine session)
+### ✅ PH11 — Fait (session courante)
 
-1. **Nettoyage indentation/structure** : app.js mélange toujours des niveaux d'indentation incohérents (certaines fonctions à 0, d'autres à 2 espaces). Un pass de normalisation améliorerait la lisibilité.
+Nettoyage structurel de app.js — héritage de l'IIFE supprimée en PH6.2 :
+- 6 commentaires `// ✅ Phase 3 —` supprimés
+- 5 blocs section header orphelins supprimés (`0B) CSV PARSER`, `4) NORMALIZATION`, `4A) SIGNAGE`, `4B) ACCESSORIES`, `2) MODEL`)
+- 20 fonctions top-level normalisées : 2-space → colonne 0 (`scoreCameraForBlock`, `renderStepCameras`, `init`, etc.)
+- `invalidateProjectCache` + KPI SAFETY SHIM : 4-space → 0
+- Blank lines : max 2
+- Net : **1 309 → 1 248 lignes** (−61L)
+- Audit dead-code : 0 fonction inutilisée (42 fonctions, toutes actives)
+- Build prod ✓ · Smoke test ✓ · 21 test files ✓ · Commit `63bdf35`
 
-2. **Deps central** : éliminer les ~15 thin wrappers via un objet `deps` vivant :
-   ```js
-   const deps = {
-     get MODEL() { return MODEL; },
-     get CATALOG() { return CATALOG; },
-     T, CLR, ...
-   };
-   // Call site direct : scoreCameraForBlock(block, cam, deps);
-   ```
+### TODO PH12 (prochaine session)
 
-3. **Code mort** : relancer `outputs/cleanup-deadcode.cjs` pour identifier les restes.
-
-4. **Simplifier main.js** : les imports explicites dans `main.js` sont devenus redondants
-   (app.js les importe directement). On peut les retirer ou garder comme doc.
-
-5. **Migrer i18n.js** : les `window.T`, `window.setLang`, etc. sont des shims pour main.js.
-   Apr
+1. **Simplifier main.js** : les 59 imports explicites de `main.js` sont devenus
+   redondants — app.js les importe tous directement. Audit : lesquel
