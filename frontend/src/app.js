@@ -84,9 +84,8 @@ import { T, getCurrentLang } from './i18n.js';
 import { COLORS, CONFIG } from './core/constants.js';
 // ─────────────────────────────────────────────────────────────
 
-  // ==========================================================
-  // GLOBALS (doivent exister AVANT toute utilisation)
-  // ==========================================================
+// ==========================================================
+// GLOBALS (doivent exister AVANT toute utilisation)
   let LAST_PROJECT = null;
   let _renderProjectCache = null;
   // Invalide le cache projet — à appeler à chaque mutation du MODEL
@@ -124,9 +123,8 @@ function invalidateProjectCache() {
     }
   })();
 
-  // ==========================================================
-  // 0) HELPERS
-  // ==========================================================
+// ==========================================================
+// HELPERS
   const $ = (sel, root = document) => root.querySelector(sel);
 
   const sum = (arr, fn) => {
@@ -164,15 +162,14 @@ function interpretScoreForBlock(block, cam) {
 }
 
 // ==========================================================
-// 0) CONSTANTES — importées de core/constants.js
+// CONSTANTES — importées de core/constants.js
 // ==========================================================
 // Raccourcis
 const CLR = CONFIG.colors;
 const LIM = CONFIG.limits;
 
 // ==========================================================
-  // 1) DATA (catalog)
-  // ==========================================================
+  // DATA — catalog
   const CATALOG = {
   CAMERAS: [],
   NVRS: [],
@@ -220,7 +217,6 @@ window._STEPS = STEPS;
 
 // ==========================================================
 // COMPLÉMENTS (écran, boîtier, signalétique) — engine/complements.js
-// ==========================================================
 /* eslint-disable no-unused-vars */
 const {
   pickScreenBySize, isScreenInsideCompatible, pickBestEnclosure,
@@ -244,8 +240,7 @@ function kpiConfigSnapshot(proj) {
 }
 
 // ==========================================================
-// 3) DOM CACHE (robuste)
-// ==========================================================
+// DOM CACHE
 const DOM = {
   stepsEl: $("#steps"),
   btnCompute: $("#btnCompute"),
@@ -272,26 +267,9 @@ function localizedDatasheetUrl(url) {
   return _localizedDatasheetUrl(url, lang);
 }
 
-// ==========================================================
-  // 4A) SIGNAGE (panneaux de signalisation)
-  // ==========================================================
-  // CSV attendu (tes colonnes):
-  // id,name,material,fixing,Dimension,Prive_Public,image_url,datasheet_url
-
-  // ==========================================================
-  // 4B) ACCESSORIES MAPPING (✅ aligné sur TON CSV)
-  // ==========================================================
-    /**
-   * ✅ Mapping accessoires par caméra (TON FORMAT)
-   * camera_id,junction_box_id,junction_box_name,wall_mount_id,wall_mount_name,wall_mount_stand_alone,
-   * ceiling_mount_id,ceiling_mount_name,ceiling_mount_stand_alone,qty,
-   * image_url_junction_box,datasheet_url_junction_box,image_url_wall_mount,datasheet_url_wall_mount,
-   * image_url_ceiling_mount,datasheet_url_ceiling_mount
-   */
 
 // ==========================================================
-  // 5) LOOKUPS
-  // ==========================================================
+  // LOOKUPS
   const getCameraById = (id) => CATALOG.CAMERAS.find((c) => c.id === id) || null;
   window._getCameraById = getCameraById;
 
@@ -311,11 +289,11 @@ const DEPS = {
   getDoriForObjective, normalizeEmplacement, getMpFromCam, getIrFromCam,
   getCameraProfile, objectiveLabel, accessoryTypeLabel, objectiveToDoriKey,
   translateUseCase, getAllUseCases, localizedDatasheetUrl,
+  sanitizeFilename, dedupByUrl,
 };
 
-  // ==========================================================
-  // 6) ENGINE - RECO CAMERA (V3 — profils métier + pool élargi)
-  // ==========================================================
+// ==========================================================
+// ENGINE — RECO CAMERA
 
   
 
@@ -323,24 +301,21 @@ function recommendCameraForAnswers(ans) {
   return _recommendCameraForAnswers(ans, DEPS);
 }
 
-  // ==========================================================
-  // 7) ENGINE - BLOCS + ACCESSOIRES
-  // ==========================================================
+// ==========================================================
+// ENGINE — BLOCS
 function createEmptyCameraBlock() {
   return _createEmptyCameraBlock(MODEL.projectUseCase || '');
 }
 
 // ==========================================================
 // UI PREFS (localStorage) + mode démo
-// ==========================================================
 
 function applyDemoClass() {
   document.body.classList.toggle("demoMode", !!MODEL?.ui?.demo);
 }
 
 // ==========================================================
-// 8) ENGINE - BLOCKS SANITY + VALIDATION
-// ==========================================================
+// ENGINE — SANITY + VALIDATION
 function sanity() {
   return sanityPure({
     MODEL, createEmptyCameraBlock, applyDemoClass,
@@ -348,8 +323,7 @@ function sanity() {
 }
 
   // ==========================================================
-// 8) ENGINE - BLOCKS LIFECYCLE — engine/block-lifecycle.js
-// ==========================================================
+// ENGINE — BLOCKS LIFECYCLE
 /* eslint-disable no-unused-vars */
 const {
   rebuildAccessoryLinesFromBlocks, unvalidateBlock, invalidateIfNeeded,
@@ -366,9 +340,8 @@ const {
 });
 /* eslint-enable no-unused-vars */
 
-  // ==========================================================
-  // 8) ENGINE - PROJET (NVR / SWITCH / HDD)
-  // ==========================================================
+// ==========================================================
+// ENGINE — PROJET
 function getTotalCameras() {
   return sum(MODEL.cameraLines, (l) => (l.qty || 0));
 }
@@ -414,9 +387,8 @@ function computeProject() {
   });
 }
 
-    // ==========================================================
-  // PROJECT CACHE + NAV GUARDS (fixes manquants)
   // ==========================================================
+// PROJECT CACHE + NAV GUARDS (fixes manquants)
 
 function getProjectCached() {
   if (_renderProjectCache) return _renderProjectCache;
@@ -430,7 +402,6 @@ function getProjectCached() {
   return _renderProjectCache;
 }
 
-  // ==========================================================
 
 function renderFinalSummary(proj) {
   return renderFinalSummaryPure(proj, DEPS);
@@ -438,7 +409,6 @@ function renderFinalSummary(proj) {
 
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
-// ==========================================================
 
 function buildPdfHtml(proj) {
   return buildPdfHtmlPure(proj, { ...DEPS, currentLang: getCurrentLang() });
@@ -467,9 +437,9 @@ const {
 
 // updateNavButtons() via createRenderPipeline
 
-  // ==========================================================
-  // 10) UI - STEPS RENDER
-  // ==========================================================
+// ==========================================================
+// RENDER — STEPS
+// ==========================================================
   // updateProgress() via createRenderPipeline
 
   const { canRecommendBlock, buildRecoForBlock } = createRecoBlockHelpers({
@@ -641,7 +611,6 @@ function bindSummaryButtons() {
 
 // ==========================================================
 // SAUVEGARDE, PARTAGE & TRANSITION COMMERCIALE — engine/persistence.js
-// ==========================================================
 const LOG = console; // logger (warn/error) — console par défaut
 const SAVE_KEY = 'comelit_cfg_save'; // clé localStorage (= persistence.js interne)
 const {
@@ -695,32 +664,28 @@ function showToast(message, type) {
   } catch (e) { LOG.warn("[Share] Auto-restore failed:", e); }
 })();
 
-  // ==========================================================
-  // MAIN RENDER (manquait → causait "render is not defined")
-  // ==========================================================
+// ==========================================================
+// MAIN RENDER (manquait → causait "render is not defined")
+// ==========================================================
 // Debounce render pour éviter les re-renders multiples rapides
 let _renderRAF = null;
 // render() + _renderImmediate() via createRenderPipeline
 
-// ==========================================================
 
 // ==========================================================
 // QR CODE — Utilise qrcode.js (CDN) pour générer un QR data URL
-// ==========================================================
 function generateQRDataUrl(text, size = 150) {
   return generateQRDataUrlPure(text, size);
 }
 
 // ==========================================================
 // SHARE URL — Génère l'URL de partage pour le QR code
-// ==========================================================
 function generateShareUrl() {
   return generateShareUrlPure({ snapshotForSave, MODEL });
 }
 
 // ==========================================================
 // APERÇU PDF — Preview HTML dans une modale
-// ==========================================================
 function showPdfPreview() {
   return showPdfPreviewPure({
     T,
@@ -732,15 +697,12 @@ function showPdfPreview() {
 }
 
 // PDF BLOB (PRO) — même rendu que exportProjectPdfPro()
-// ==========================================================
 async function buildPdfBlobProFromProject(proj) {
   return buildPdfBlobProFromProjectPure(proj, {
     T, LAST_PROJECT, computeProject, buildPdfHtml, CATALOG,
   });
 }
 
-// ===========================================================
-// ===========================================================
 const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
   MODEL,
   render,
@@ -768,7 +730,6 @@ const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
 // ==========================================================
 // EXPORT PDF (PRO) — version robuste + logs
 // Remplace intégralement ta fonction exportProjectPdfPro()
-// ==========================================================
 async function exportProjectPdfPro(proj) {
   return exportProjectPdfProPure(proj, {
     T,
@@ -780,7 +741,6 @@ async function exportProjectPdfPro(proj) {
 
 // ==========================================================
 // TESTS AUTOMATISÉS PDF
-// ==========================================================
 async function testPdfGeneration(verbose = true) {
   return testPdfGenerationPure(verbose, {
     getLastProject: () => LAST_PROJECT,
@@ -801,10 +761,7 @@ window.testPdfGeneration = testPdfGeneration;
 
 // Collecte les datasheet_url depuis le projet (tu peux enrichir ensuite)
 function collectDatasheetUrlsFromProject(proj) {
-  return collectDatasheetUrlsFromProjectPure(proj, {
-    MODEL, getCameraById, sanitizeFilename, localizedDatasheetUrl, dedupByUrl,
-    getSelectedOrRecommendedScreen, getSelectedOrRecommendedEnclosure, getSelectedOrRecommendedSign,
-  });
+  return collectDatasheetUrlsFromProjectPure(proj, DEPS);
 }
 
 // Helper pour collecter les IDs produits
@@ -829,12 +786,10 @@ async function exportProjectPdfPackPro() {
 }
 
   // ==========================================================
-// 13) NAV / BUTTONS (safe bindings)
-// ==========================================================
+// NAV / BUTTONS
 
 // ==========================================================
 // VALIDATION PAR ÉTAPE
-// ==========================================================
 function validateStep(stepId) {
   return validateStepPure(stepId, { MODEL, T, getProjectCached });
 }
@@ -1065,35 +1020,22 @@ bind(DOM.stepsEl, "change", onStepsChange);
 bind(DOM.stepsEl, "input", onStepsInput);
 
 // ==========================================================
-// 14) INIT (load CSV)
+// INIT — chargement CSV
 // ==========================================================
 async function init() {
-return initPure({
-  DOM,
-  KPI,
-  loadCsv: loadCsv,
-  CATALOG,
-  MODEL,
-  setLastProject: (v) => { LAST_PROJECT = v; },
-  normalizeCamera: normalizeCamera,
-  normalizeNvr: normalizeNvr,
-  normalizeHdd: normalizeHdd,
-  normalizeSwitch: normalizeSwitch,
-  normalizeScreen: normalizeScreen,
-  normalizeEnclosure: normalizeEnclosure,
-  normalizeSignageRow: normalizeSignageRow,
-  normalizeAccessoryMapping: normalizeAccessoryMapping,
-  applyLocalMediaToCatalog: () => _applyLocalMediaToCatalog(CATALOG),
-  sanity,
-  syncResultsUI,
-  render,
-  updateNavButtons,
-});
+  return initPure({
+    DOM, KPI, CATALOG, MODEL,
+    loadCsv,
+    setLastProject: (v) => { LAST_PROJECT = v; },
+    normalizeCamera, normalizeNvr, normalizeHdd, normalizeSwitch,
+    normalizeScreen, normalizeEnclosure, normalizeSignageRow, normalizeAccessoryMapping,
+    applyLocalMediaToCatalog: () => _applyLocalMediaToCatalog(CATALOG),
+    sanity, syncResultsUI, render, updateNavButtons,
+  });
 }
 
 // ==========================================================
 // ADMIN PANEL (UI) - utilise /api/login + /api/csv/{name}
-// ==========================================================
 let ADMIN_TOKEN = null;
 
 // Schémas attendus (minimum) — aide à éviter de casser le configurateur
