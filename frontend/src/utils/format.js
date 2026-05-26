@@ -124,14 +124,3 @@ export const slugify = (s, maxLen = 40) =>
 // app.js référence ces fonctions sans les importer (legacy IIFE).
 // On les expose sur window pour préserver le comportement actuel
 // pendant la phase de transition.
-if (typeof window !== 'undefined') {
-  window.safeHtml = safeHtml;
-  window.isFalseLike = isFalseLike;
-  window.toBool = toBool;
-  window.toStrOrFalse = toStrOrFalse;
-  window.toNum = toNum;
-  window.clampInt = clampInt;
-  window.clampNum = clampNum;
-  window.clamp = clamp;
-  window.slugify = slugify;
-}

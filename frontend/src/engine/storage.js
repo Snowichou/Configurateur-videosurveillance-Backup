@@ -237,8 +237,5 @@ export function pickDisks(requiredTB, nvr, catalogHdds) {
 // On expose sur window pour préserver le comportement actuel.
 // Quand la suite du refactor migrera app.js → modules ESM, on pourra
 // supprimer ces exports globaux.
-if (typeof window !== 'undefined') {
-  window.mbpsToTB = mbpsToTB;
-  window.getContextualMotionFactor = getContextualMotionFactor;
-  // pickDisks reste dans app.js comme wrapper (utilise CATALOG.HDDS global)
+if (typeof window !== 'undefined') {// pickDisks reste dans app.js comme wrapper (utilise CATALOG.HDDS global)
 }

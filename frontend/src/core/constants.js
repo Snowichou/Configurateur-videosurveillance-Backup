@@ -138,12 +138,3 @@ export const CONFIG = Object.freeze({
   scoring: { levels: SCORING_LEVELS },
   paths: PATHS,
 });
-
-// ─── Compat globals (legacy app.js) ─────────────────────────
-if (typeof window !== 'undefined') {
-  window.COMELIT = COMELIT;
-  window.COLORS = COLORS;
-  window.LIM = LIMITS;
-  window.CLR = COLORS; // ancien alias
-  window.CONFIG = CONFIG;
-}

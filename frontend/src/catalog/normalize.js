@@ -263,12 +263,3 @@ export function normalizeAccessoryMapping(raw, localizedName = fallbackLocalized
 }
 
 // ─── Compat globals (legacy app.js) ─────────────────────────
-if (typeof window !== 'undefined') {
-  window.safeStr = safeStr;
-  window.safeNum = safeNum;
-  window.splitList = splitList;
-  window.parsePipeList = parsePipeList;
-  window.localizedDatasheetUrl = localizedDatasheetUrl;
-  window.parseRobustNum = parseRobustNum;
-  window.extractUseCasesFromRow = extractUseCasesFromRow;
-}

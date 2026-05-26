@@ -114,7 +114,3 @@ export async function loadCsv(url) {
 }
 
 // ─── Compat global (legacy app.js) ──────────────────────────
-if (typeof window !== 'undefined') {
-  window.parseCsv = parseCsv;
-  window.loadCsv = loadCsv;
-}

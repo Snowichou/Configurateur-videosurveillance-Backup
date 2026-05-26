@@ -50,7 +50,8 @@ import { createPersistenceHandlers } from './engine/persistence.js';
 import { getThumbSrc, applyLocalMediaToCatalog as _applyLocalMediaToCatalog } from './catalog/media.js';
 import { normalizeCamera, normalizeNvr, normalizeHdd, normalizeSwitch,
          normalizeScreen, normalizeEnclosure, normalizeSignageRow,
-         normalizeAccessoryMapping } from './catalog/normalize.js';
+         normalizeAccessoryMapping,
+         localizedDatasheetUrl as _localizedDatasheetUrl } from './catalog/normalize.js';
 import { loadCsv } from './utils/csv.js';
 import { sanitizeFilename, dedupByUrl } from './utils/helpers.js';
 import { generateQRDataUrlPure, generateShareUrlPure } from './utils/share.js';
@@ -431,7 +432,7 @@ const DOM = {
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
 function localizedDatasheetUrl(url) {
   const lang = (typeof _currentLang !== "undefined") ? _currentLang : "fr";
-  return window.localizedDatasheetUrl(url, lang);
+  return _localizedDatasheetUrl(url, lang);
 }
 
 
