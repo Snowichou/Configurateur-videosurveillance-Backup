@@ -82,18 +82,16 @@ import { testPdfGenerationPure, ensurePdfPackButtonPure } from './render/pdf-tes
 import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
 // ─────────────────────────────────────────────────────────────
 
-
   // ==========================================================
   // GLOBALS (doivent exister AVANT toute utilisation)
   // ==========================================================
   let LAST_PROJECT = null;
   let _renderProjectCache = null;
   // Invalide le cache projet — à appeler à chaque mutation du MODEL
-    function invalidateProjectCache() {
-      _renderProjectCache = null;
-      LAST_PROJECT = null;
-    }
-
+function invalidateProjectCache() {
+  _renderProjectCache = null;
+  LAST_PROJECT = null;
+}
 
   window.addEventListener("error", (e) => {
     console.error("JS Error:", e.error || e.message);
@@ -102,10 +100,9 @@ import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
     console.error("Unhandled promise:", e.reason);
   });
 
-    /* =========================================================
-    KPI SAFETY SHIM (anti-crash)
-    À placer tout en haut du fichier app.js (après "use strict" si présent)
-    ========================================================= */
+/* =========================================================
+   KPI SAFETY SHIM (anti-crash)
+   ========================================================= */
   (() => {
     try {
       const k = (window.KPI = window.KPI || {});
@@ -125,12 +122,10 @@ import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
     }
   })();
 
-
   // ==========================================================
   // 0) HELPERS
   // ==========================================================
   const $ = (sel, root = document) => root.querySelector(sel);
-
 
   const sum = (arr, fn) => {
     let t = 0;
@@ -138,21 +133,19 @@ import { safeHtml, toNum, clampInt, clampNum, clamp } from './utils/format.js';
     return t;
   };
 
-
   /**
    * Retourne { score, parts[], ratio, dori, required }
    */
-  function scoreCameraForBlock(block, cam) {
-    return _scoreCameraForBlock(block, cam, {
-      getDoriForObjective,
-      normalizeEmplacement,
-      getMpFromCam,
-      getIrFromCam,
-      getCameraProfile,
-      clamp,
-    });
-  }
-
+function scoreCameraForBlock(block, cam) {
+  return _scoreCameraForBlock(block, cam, {
+    getDoriForObjective,
+    normalizeEmplacement,
+    getMpFromCam,
+    getIrFromCam,
+    getCameraProfile,
+    clamp,
+  });
+}
 
 /**
  * Interprétation score → 3 niveaux + motif principal + phrase
@@ -183,11 +176,6 @@ function interpretScoreForBlock(block, cam) {
     T,
   });
 }
-
-
-    // ==========================================================
-  // 0B) CSV PARSER (no deps)
-  // ==========================================================
 
 // ==========================================================
 // 0) CONSTANTES CENTRALISÉES
@@ -287,9 +275,6 @@ const {
   T,
   CATALOG,
 });
-  // ==========================================================
-  // 2) MODEL (state) — factory extraite dans src/state/model.js (Phase 2)
-  // ==========================================================
   const MODEL = createInitialModel(LIM);
   window._MODEL = MODEL;
 
@@ -338,7 +323,6 @@ function kpiConfigSnapshot(proj) {
   });
 }
 
-
 // ==========================================================
 // 3) DOM CACHE (robuste)
 // ==========================================================
@@ -362,16 +346,11 @@ const DOM = {
   btnExportPdfPack: $("#btnExportPdfPack"),
 };
 
-  // ==========================================================
-  // 4) NORMALIZATION
-  // ==========================================================
-
 // i18n: Adapt datasheet URL locale (/fr_FR/ or /fr-fr/ → /xx_XX/ or /xx-xx/)
 function localizedDatasheetUrl(url) {
   const lang = (typeof _currentLang !== "undefined") ? _currentLang : "fr";
   return _localizedDatasheetUrl(url, lang);
 }
-
 
 // ==========================================================
   // 4A) SIGNAGE (panneaux de signalisation)
@@ -402,7 +381,6 @@ function localizedDatasheetUrl(url) {
 
   
 
-
     function recommendCameraForAnswers(ans) {
     return _recommendCameraForAnswers(ans, {
       normalizeEmplacement,
@@ -414,13 +392,12 @@ function localizedDatasheetUrl(url) {
     });
   }
 
-
   // ==========================================================
   // 7) ENGINE - BLOCS + ACCESSOIRES
   // ==========================================================
-  function createEmptyCameraBlock() {
-    return _createEmptyCameraBlock(MODEL.projectUseCase || '');
-  }
+function createEmptyCameraBlock() {
+  return _createEmptyCameraBlock(MODEL.projectUseCase || '');
+}
 
 // ==========================================================
 // UI PREFS (localStorage) + mode démo
@@ -429,7 +406,6 @@ function localizedDatasheetUrl(url) {
 function applyDemoClass() {
   document.body.classList.toggle("demoMode", !!MODEL?.ui?.demo);
 }
-
 
 // ==========================================================
 // 8) ENGINE - BLOCKS SANITY + VALIDATION
@@ -462,118 +438,111 @@ const {
   // ==========================================================
   // 8) ENGINE - PROJET (NVR / SWITCH / HDD)
   // ==========================================================
-  function getTotalCameras() {
-    return sum(MODEL.cameraLines, (l) => (l.qty || 0));
-  }
-
+function getTotalCameras() {
+  return sum(MODEL.cameraLines, (l) => (l.qty || 0));
+}
 
   /**
    * AXE 1 — Score solution critique
    * Règle : le score le plus faible parmi les blocs validés
    */
-  function computeCriticalProjectScore() {
-    return _computeCriticalProjectScore(MODEL.cameraBlocks);
-  }
+function computeCriticalProjectScore() {
+  return _computeCriticalProjectScore(MODEL.cameraBlocks);
+}
 
+function computeTotals() {
+  return _computeTotals(MODEL.cameraLines, MODEL.recording, { getCameraById });
+}
 
-  function computeTotals() {
-    return _computeTotals(MODEL.cameraLines, MODEL.recording, { getCameraById });
-  }
+function pickNvr(totalCameras, totalInMbps, requiredTB) {
+  return _pickNvr(totalCameras, totalInMbps, requiredTB, {
+    cameraLines: MODEL.cameraLines,
+    getCameraById,
+    catalogNvrs: CATALOG.NVRS,
+    catalogHdds: CATALOG.HDDS,
+    T,
+  });
+}
 
-  function pickNvr(totalCameras, totalInMbps, requiredTB) {
-    return _pickNvr(totalCameras, totalInMbps, requiredTB, {
-      cameraLines: MODEL.cameraLines,
-      getCameraById,
-      catalogNvrs: CATALOG.NVRS,
-      catalogHdds: CATALOG.HDDS,
-      T,
-    });
-  }
+function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
+  return _planPoESwitches(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
+}
 
-  function planPoESwitches(totalCameras, reservePct = 10, nvr = null) {
-    return _planPoESwitches(totalCameras, reservePct, nvr, CATALOG.SWITCHES);
-  }
+function pickDisks(requiredTB, nvr) {
+  return _pickDisks(requiredTB, nvr, CATALOG.HDDS);
+}
 
-
-  function pickDisks(requiredTB, nvr) {
-    return _pickDisks(requiredTB, nvr, CATALOG.HDDS);
-  }
-
-
-  function computeProject() {
-    return computeProjectPure({
-      MODEL,
-      CATALOG,
-      T,
-      KPI,
-      clampNum,
-      computeTotals,
-      getCameraById,
-      getTotalCameras,
-      mbpsToTB,
-      pickDisks,
-      pickNvr,
-      planPoESwitches,
-    });
-  }
-
+function computeProject() {
+  return computeProjectPure({
+    MODEL,
+    CATALOG,
+    T,
+    KPI,
+    clampNum,
+    computeTotals,
+    getCameraById,
+    getTotalCameras,
+    mbpsToTB,
+    pickDisks,
+    pickNvr,
+    planPoESwitches,
+  });
+}
 
     // ==========================================================
   // PROJECT CACHE + NAV GUARDS (fixes manquants)
   // ==========================================================
 
-  function getProjectCached() {
-    if (_renderProjectCache) return _renderProjectCache;
-    try {
-      _renderProjectCache = computeProject();
-    } catch (e) {
-      console.error("[getProjectCached] computeProject failed:", e.message);
-      _renderProjectCache = null;
-      return null;
-    }
-    return _renderProjectCache;
+function getProjectCached() {
+  if (_renderProjectCache) return _renderProjectCache;
+  try {
+    _renderProjectCache = computeProject();
+  } catch (e) {
+    console.error("[getProjectCached] computeProject failed:", e.message);
+    _renderProjectCache = null;
+    return null;
   }
-
+  return _renderProjectCache;
+}
 
   // ==========================================================
 
-  function renderFinalSummary(proj) {
-  return renderFinalSummaryPure(proj, {
-    T,
-    safeHtml,
-    getThumbSrc,
-    MODEL,
-    getCameraById,
-    getSelectedOrRecommendedEnclosure,
-    getSelectedOrRecommendedScreen,
-    getSelectedOrRecommendedSign,
-    computeCriticalProjectScore,
-  });
+function renderFinalSummary(proj) {
+return renderFinalSummaryPure(proj, {
+  T,
+  safeHtml,
+  getThumbSrc,
+  MODEL,
+  getCameraById,
+  getSelectedOrRecommendedEnclosure,
+  getSelectedOrRecommendedScreen,
+  getSelectedOrRecommendedSign,
+  computeCriticalProjectScore,
+});
 }
-
 
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
 // ==========================================================
 
-  function buildPdfHtml(proj) {
-    return buildPdfHtmlPure(proj, {
-      T,
-      currentLang: _currentLang,
-      computeCriticalProjectScore,
-      generateQRDataUrl,
-      generateShareUrl,
-      getCameraById,
-      getSelectedOrRecommendedEnclosure,
-      getSelectedOrRecommendedScreen,
-      getSelectedOrRecommendedSign,
-      getThumbSrc,
-      interpretScoreForBlock,
-      safeHtml,
-      CATALOG,
-      MODEL,
-    });
-  }
+function buildPdfHtml(proj) {
+  return buildPdfHtmlPure(proj, {
+    T,
+    currentLang: _currentLang,
+    computeCriticalProjectScore,
+    generateQRDataUrl,
+    generateShareUrl,
+    getCameraById,
+    getSelectedOrRecommendedEnclosure,
+    getSelectedOrRecommendedScreen,
+    getSelectedOrRecommendedSign,
+    getThumbSrc,
+    interpretScoreForBlock,
+    safeHtml,
+    CATALOG,
+    MODEL,
+  });
+}
 
 /* eslint-disable no-unused-vars */
 const {
@@ -596,22 +565,18 @@ const {
 });
 /* eslint-enable no-unused-vars */
 
-
 // updateNavButtons() via createRenderPipeline
-
 
   // ==========================================================
   // 10) UI - STEPS RENDER
   // ==========================================================
   // updateProgress() via createRenderPipeline
 
-
   const { canRecommendBlock, buildRecoForBlock } = createRecoBlockHelpers({
   get MODEL() { return MODEL; },
   toNum,
   recommendCameraForAnswers,
 });
-
 
 function camPickCardHTML(blk, cam) {
   return renderCameraPickCard(blk, cam, {
@@ -624,150 +589,150 @@ function camPickCardHTML(blk, cam) {
   });
 }
 
-  function renderStepCameras() {
-    if (!Array.isArray(MODEL.cameraBlocks) || !MODEL.cameraBlocks.length) {
-      MODEL.cameraBlocks = [createEmptyCameraBlock()];
-    }
-    if (!MODEL.ui.activeBlockId) MODEL.ui.activeBlockId = MODEL.cameraBlocks[0].id;
-    const activeBlock =
-      MODEL.cameraBlocks.find((b) => b.id === MODEL.ui.activeBlockId) || MODEL.cameraBlocks[0];
-    MODEL.ui.activeBlockId = activeBlock.id;
-    return _renderStepCameras({
-      cameraBlocks: MODEL.cameraBlocks,
-      activeBlockId: MODEL.ui.activeBlockId,
-      ui: {
-        favorites: MODEL.ui.favorites,
-        mode: MODEL.ui.mode,
-        onlyFavs: MODEL.ui.onlyFavs,
-        compare: MODEL.ui.compare,
-      },
-      T,
-      safeHtml,
-      normalizeEmplacement,
-      objectiveLabel,
-      canRecommendBlock,
-      buildRecoForBlock,
-      interpretScoreForBlock,
-      getCameraById,
-      getMpFromCam,
-      getIrFromCam,
-      camPickCardHTML,
-    });
+function renderStepCameras() {
+  if (!Array.isArray(MODEL.cameraBlocks) || !MODEL.cameraBlocks.length) {
+    MODEL.cameraBlocks = [createEmptyCameraBlock()];
   }
+  if (!MODEL.ui.activeBlockId) MODEL.ui.activeBlockId = MODEL.cameraBlocks[0].id;
+  const activeBlock =
+    MODEL.cameraBlocks.find((b) => b.id === MODEL.ui.activeBlockId) || MODEL.cameraBlocks[0];
+  MODEL.ui.activeBlockId = activeBlock.id;
+  return _renderStepCameras({
+    cameraBlocks: MODEL.cameraBlocks,
+    activeBlockId: MODEL.ui.activeBlockId,
+    ui: {
+      favorites: MODEL.ui.favorites,
+      mode: MODEL.ui.mode,
+      onlyFavs: MODEL.ui.onlyFavs,
+      compare: MODEL.ui.compare,
+    },
+    T,
+    safeHtml,
+    normalizeEmplacement,
+    objectiveLabel,
+    canRecommendBlock,
+    buildRecoForBlock,
+    interpretScoreForBlock,
+    getCameraById,
+    getMpFromCam,
+    getIrFromCam,
+    camPickCardHTML,
+  });
+}
 
-  function renderStepProject() {
-    const savedCfg = typeof loadConfigFromLocalStorage === "function" ? loadConfigFromLocalStorage() : null;
-    let saveCardHtml = "";
-    if (savedCfg) {
-      const svN = safeHtml(savedCfg.projectName || "Sans nom");
-      const svD = savedCfg.savedAt ? new Date(savedCfg.savedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
-      const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
-      const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
-      saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
-        + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
-        + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
-        + (svD ? svD + '<br>' : '')
-        + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
-        + `<div style="display:flex;gap:8px;margin-top:10px">`
-        + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📂 ${T("proj_save_load")}</button>`
-        + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
-        + '</div></div>';
-    }
-    let cloudCardHtml = "";
-    if (window._SSO_USER && window._SSO_USER.oid) {
-      const isAzure = !!window._SSO_USER.sso;
-      const userLabel = isAzure
-        ? safeHtml(window._SSO_USER.email || window._SSO_USER.name || "utilisateur")
-        : "mode local (sans Azure)";
-      const desc = isAzure
-        ? `Connecté en tant que <strong>${userLabel}</strong>. Vos projets sont liés à votre compte Azure et accessibles depuis n'importe quel appareil.`
-        : `Vous êtes en <strong>${userLabel}</strong>. Les projets sont stockés sur le serveur et partagés entre tous les utilisateurs locaux. Configurez Azure AD pour avoir un espace par utilisateur.`;
-      cloudCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(28,31,42,.15);background:linear-gradient(180deg,#FAFEFC 0%,#fff 100%);margin-bottom:10px">`
-        + `<div class="recoName">${isAzure ? "☁️" : "🗄️"} Mes projets ${isAzure ? "cloud" : "serveur"}</div>`
-        + `<div class="muted" style="margin-top:4px">${desc}</div>`
-        + `<div style="margin-top:10px">`
-        + `<button class="btn primary" data-action="openCloudProjects" type="button" style="width:100%">📂 Voir mes projets ${isAzure ? "cloud" : "serveur"}</button>`
-        + `</div></div>`;
-    }
-    return _renderStepProject({
-      model: MODEL,
-      T, safeHtml,
-      csvUseCases: getAllUseCases(),
-      limits: LIM,
-      // projectTipHtml / useCaseDescriptionHtml : optionnels, valeur par défaut dans render/projet.js
-      translateUseCase,
-      saveCardHtml: cloudCardHtml + saveCardHtml,
-    });
+function renderStepProject() {
+  const savedCfg = typeof loadConfigFromLocalStorage === "function" ? loadConfigFromLocalStorage() : null;
+  let saveCardHtml = "";
+  if (savedCfg) {
+    const svN = safeHtml(savedCfg.projectName || "Sans nom");
+    const svD = savedCfg.savedAt ? new Date(savedCfg.savedAt).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
+    const svC = (savedCfg.cameraLines || []).reduce((a, l) => a + (Number(l.qty) || 0), 0);
+    const svB = (savedCfg.cameraBlocks || []).filter(b => b.validated).length;
+    saveCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(0,188,112,.3);background:rgba(0,188,112,.03);margin-bottom:10px">`
+      + `<div class="recoName">💾 ${T("proj_save_available")}</div>`
+      + `<div class="muted" style="margin-top:4px"><strong>${svN}</strong><br>`
+      + (svD ? svD + '<br>' : '')
+      + svB + ' bloc(s) · ' + svC + ' caméra(s)</div>'
+      + `<div style="display:flex;gap:8px;margin-top:10px">`
+      + `<button class="btn primary" data-action="restoreSave" type="button" style="flex:1">📂 ${T("proj_save_load")}</button>`
+      + `<button class="btnGhost" data-action="deleteSave" type="button">🗑️</button>`
+      + '</div></div>';
   }
+  let cloudCardHtml = "";
+  if (window._SSO_USER && window._SSO_USER.oid) {
+    const isAzure = !!window._SSO_USER.sso;
+    const userLabel = isAzure
+      ? safeHtml(window._SSO_USER.email || window._SSO_USER.name || "utilisateur")
+      : "mode local (sans Azure)";
+    const desc = isAzure
+      ? `Connecté en tant que <strong>${userLabel}</strong>. Vos projets sont liés à votre compte Azure et accessibles depuis n'importe quel appareil.`
+      : `Vous êtes en <strong>${userLabel}</strong>. Les projets sont stockés sur le serveur et partagés entre tous les utilisateurs locaux. Configurez Azure AD pour avoir un espace par utilisateur.`;
+    cloudCardHtml = `<div class="recoCard" style="padding:14px;border:1.5px solid rgba(28,31,42,.15);background:linear-gradient(180deg,#FAFEFC 0%,#fff 100%);margin-bottom:10px">`
+      + `<div class="recoName">${isAzure ? "☁️" : "🗄️"} Mes projets ${isAzure ? "cloud" : "serveur"}</div>`
+      + `<div class="muted" style="margin-top:4px">${desc}</div>`
+      + `<div style="margin-top:10px">`
+      + `<button class="btn primary" data-action="openCloudProjects" type="button" style="width:100%">📂 Voir mes projets ${isAzure ? "cloud" : "serveur"}</button>`
+      + `</div></div>`;
+  }
+  return _renderStepProject({
+    model: MODEL,
+    T, safeHtml,
+    csvUseCases: getAllUseCases(),
+    limits: LIM,
+    // projectTipHtml / useCaseDescriptionHtml : optionnels, valeur par défaut dans render/projet.js
+    translateUseCase,
+    saveCardHtml: cloudCardHtml + saveCardHtml,
+  });
+}
 
-  function renderStepAccessories() {
-    //    Le caller enrichit chaque bloc validé avec sa caméra résolue.
-    const validatedBlocks = (MODEL.cameraBlocks || []).filter((b) => b.validated);
-    const blocks = validatedBlocks.map((blk) => {
-      const camLine = (MODEL.cameraLines || []).find((cl) => cl.fromBlockId === blk.id);
-      const camera = camLine ? getCameraById(camLine.cameraId) : null;
-      return { ...blk, camera };
-    });
-    return _renderStepAccessories({
-      blocks,
-      T,
-      safeHtml,
-      normalizeEmplacement,
-      accessoryTypeLabel,
-      localizedDatasheetUrl,
-    });
-  }
+function renderStepAccessories() {
+  //    Le caller enrichit chaque bloc validé avec sa caméra résolue.
+  const validatedBlocks = (MODEL.cameraBlocks || []).filter((b) => b.validated);
+  const blocks = validatedBlocks.map((blk) => {
+    const camLine = (MODEL.cameraLines || []).find((cl) => cl.fromBlockId === blk.id);
+    const camera = camLine ? getCameraById(camLine.cameraId) : null;
+    return { ...blk, camera };
+  });
+  return _renderStepAccessories({
+    blocks,
+    T,
+    safeHtml,
+    normalizeEmplacement,
+    accessoryTypeLabel,
+    localizedDatasheetUrl,
+  });
+}
 
-  function renderStepNvrNetwork() {
-    return _renderStepNvrNetwork({
-      proj: getProjectCached(),
-      isManual: !!MODEL.overrideNvrId,
-      T, safeHtml,
-      localizedDatasheetUrl,
-    });
-  }
+function renderStepNvrNetwork() {
+  return _renderStepNvrNetwork({
+    proj: getProjectCached(),
+    isManual: !!MODEL.overrideNvrId,
+    T, safeHtml,
+    localizedDatasheetUrl,
+  });
+}
 
-  function renderStepStorage() {
-    return _renderStepStorage({
-      model: MODEL,
-      proj: getProjectCached(),
-      T, safeHtml,
-      fpsOptions: CONFIG.fpsOptions,
-      storageTipHtml,
-      renderStorageBarSvg,
-    });
-  }
+function renderStepStorage() {
+  return _renderStepStorage({
+    model: MODEL,
+    proj: getProjectCached(),
+    T, safeHtml,
+    fpsOptions: CONFIG.fpsOptions,
+    storageTipHtml,
+    renderStorageBarSvg,
+  });
+}
 
-  function renderStepComplements() {
-    const proj = getProjectCached();
-    const scrEnabled = !!MODEL.complements.screen.enabled;
-    const scrSel = scrEnabled && typeof getSelectedOrRecommendedScreen === "function"
-      ? getSelectedOrRecommendedScreen(proj)?.selected : null;
-    const encEnabled = !!MODEL.complements.enclosure.enabled;
-    const screenForEnc = scrEnabled
-      ? (typeof pickScreenBySize === "function" ? pickScreenBySize(MODEL.complements.screen.sizeInch) : scrSel)
-      : null;
-    const encResult = encEnabled && typeof pickBestEnclosure === "function"
-      ? pickBestEnclosure(proj, screenForEnc) : null;
-    const encSel = encResult?.enclosure
-      || (encEnabled && typeof getSelectedOrRecommendedEnclosure === "function"
-        ? getSelectedOrRecommendedEnclosure(proj)?.selected : null);
-    const screenInsideOk = encResult?.screenInsideOk || false;
-    const signEnabled = !!MODEL.complements.signage?.enabled;
-    const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function"
-      ? getSelectedOrRecommendedSign()?.sign : null;
-    return _renderStepComplements({
-      proj,
-      selections: {
-        screen: { enabled: scrEnabled, selected: scrSel, sizeInch: MODEL.complements.screen.sizeInch, qty: MODEL.complements.screen.qty },
-        enclosure: { enabled: encEnabled, selected: encSel, qty: MODEL.complements.enclosure.qty, screenInsideOk, screenSizeInch: Number(MODEL.complements.screen.sizeInch) || 0 },
-        signage: { enabled: signEnabled, selected: signSel, scope: MODEL.complements.signage?.scope, qty: MODEL.complements.signage?.qty },
-      },
-      T, safeHtml,
-      screenSizes: CONFIG.screenSizes,
-      optionTipHtml,
-    });
-  }
+function renderStepComplements() {
+  const proj = getProjectCached();
+  const scrEnabled = !!MODEL.complements.screen.enabled;
+  const scrSel = scrEnabled && typeof getSelectedOrRecommendedScreen === "function"
+    ? getSelectedOrRecommendedScreen(proj)?.selected : null;
+  const encEnabled = !!MODEL.complements.enclosure.enabled;
+  const screenForEnc = scrEnabled
+    ? (typeof pickScreenBySize === "function" ? pickScreenBySize(MODEL.complements.screen.sizeInch) : scrSel)
+    : null;
+  const encResult = encEnabled && typeof pickBestEnclosure === "function"
+    ? pickBestEnclosure(proj, screenForEnc) : null;
+  const encSel = encResult?.enclosure
+    || (encEnabled && typeof getSelectedOrRecommendedEnclosure === "function"
+      ? getSelectedOrRecommendedEnclosure(proj)?.selected : null);
+  const screenInsideOk = encResult?.screenInsideOk || false;
+  const signEnabled = !!MODEL.complements.signage?.enabled;
+  const signSel = signEnabled && typeof getSelectedOrRecommendedSign === "function"
+    ? getSelectedOrRecommendedSign()?.sign : null;
+  return _renderStepComplements({
+    proj,
+    selections: {
+      screen: { enabled: scrEnabled, selected: scrSel, sizeInch: MODEL.complements.screen.sizeInch, qty: MODEL.complements.screen.qty },
+      enclosure: { enabled: encEnabled, selected: encSel, qty: MODEL.complements.enclosure.qty, screenInsideOk, screenSizeInch: Number(MODEL.complements.screen.sizeInch) || 0 },
+      signage: { enabled: signEnabled, selected: signSel, scope: MODEL.complements.signage?.scope, qty: MODEL.complements.signage?.qty },
+    },
+    T, safeHtml,
+    screenSizes: CONFIG.screenSizes,
+    optionTipHtml,
+  });
+}
 
 function renderStepSummary() {
   const proj = LAST_PROJECT;
@@ -790,7 +755,6 @@ function bindSummaryButtons() {
     saveConfigToLocalStorage, shareConfigUrl, requestQuote, sendToDistributor,
   });
 }
-
 
 // ==========================================================
 // SAUVEGARDE, PARTAGE & TRANSITION COMMERCIALE — engine/persistence.js
@@ -855,26 +819,21 @@ function showToast(message, type) {
 let _renderRAF = null;
 // render() + _renderImmediate() via createRenderPipeline
 
-
 // ==========================================================
 
 // ==========================================================
 // QR CODE — Utilise qrcode.js (CDN) pour générer un QR data URL
 // ==========================================================
 function generateQRDataUrl(text, size = 150) {
-  // ✅ Phase 3 — PH3.4 : extraite dans utils/share.js
   return generateQRDataUrlPure(text, size);
 }
-
 
 // ==========================================================
 // SHARE URL — Génère l'URL de partage pour le QR code
 // ==========================================================
 function generateShareUrl() {
-  // ✅ Phase 3 — PH3.4 : extraite dans utils/share.js
   return generateShareUrlPure({ snapshotForSave, MODEL });
 }
-
 
 // ==========================================================
 // APERÇU PDF — Preview HTML dans une modale
@@ -889,7 +848,6 @@ function showPdfPreview() {
   });
 }
 
-
 // PDF BLOB (PRO) — même rendu que exportProjectPdfPro()
 // ==========================================================
 async function buildPdfBlobProFromProject(proj) {
@@ -897,7 +855,6 @@ async function buildPdfBlobProFromProject(proj) {
     T, LAST_PROJECT, computeProject, buildPdfHtml, CATALOG,
   });
 }
-
 
 // ===========================================================
 // ===========================================================
@@ -925,13 +882,11 @@ const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
   confirmDialog: window.confirm ? window.confirm.bind(window) : (() => false),
 });
 
-
 // ==========================================================
 // EXPORT PDF (PRO) — version robuste + logs
 // Remplace intégralement ta fonction exportProjectPdfPro()
 // ==========================================================
 async function exportProjectPdfPro(proj) {
-  // ✅ Phase 3 — PH3.2 : extraite dans render/pdf-pro.js
   return exportProjectPdfProPure(proj, {
     T,
     getLastProject: () => LAST_PROJECT,
@@ -939,7 +894,6 @@ async function exportProjectPdfPro(proj) {
     computeProject, buildPdfBlobProFromProject, kpiConfigSnapshot, KPI, MODEL,
   });
 }
-
 
 // ==========================================================
 // TESTS AUTOMATISÉS PDF
@@ -953,7 +907,6 @@ async function testPdfGeneration(verbose = true) {
   });
 }
 
-
 // Exposer globalement pour usage en console
 window.testPdfGeneration = testPdfGeneration;
 
@@ -961,18 +914,15 @@ window.testPdfGeneration = testPdfGeneration;
 // EXPORT PACK (PDF + FICHES TECHNIQUES) -> ZIP
 // ==========================================================
 
-
 // Dédup par URL
 
 // Collecte les datasheet_url depuis le projet (tu peux enrichir ensuite)
 function collectDatasheetUrlsFromProject(proj) {
-  // ✅ Phase 3 — PH3.1 : extraite dans render/datasheet-urls.js
   return collectDatasheetUrlsFromProjectPure(proj, {
     MODEL, getCameraById, sanitizeFilename, localizedDatasheetUrl, dedupByUrl,
     getSelectedOrRecommendedScreen, getSelectedOrRecommendedEnclosure, getSelectedOrRecommendedSign,
   });
 }
-
 
 // Helper pour collecter les IDs produits
 
@@ -988,14 +938,12 @@ async function exportProjectPdfWithLocalDatasheetsZip() {
   });
 }
 
-
 // Alias pour compatibilité
 
 // Alias pour compatibilité avec l'ancien nom
 async function exportProjectPdfPackPro() {
   return await exportProjectPdfWithLocalDatasheetsZip();
 }
-
 
   // ==========================================================
 // 13) NAV / BUTTONS (safe bindings)
@@ -1005,16 +953,12 @@ async function exportProjectPdfPackPro() {
 // VALIDATION PAR ÉTAPE
 // ==========================================================
 function validateStep(stepId) {
-  // ✅ Phase 3 — PH3.3 : extraite dans engine/validate-step.js
   return validateStepPure(stepId, { MODEL, T, getProjectCached });
 }
 
-
 function showStepValidationErrors(errors) {
-  // ✅ Phase 3 — PH3.3 : extraite dans engine/validate-step.js
   return showStepValidationErrorsPure(errors, { T });
 }
-
 
 // CSS animation pour le toast
 if (!document.getElementById("stepValidationStyle")) {
@@ -1151,7 +1095,6 @@ bind(DOM.btnReset, "click", () => {
   updateNavButtons();
 });
 
-
 bind(DOM.btnDemo, "click", () => {
   MODEL.cameraLines = [];
   MODEL.accessoryLines = [];
@@ -1230,7 +1173,6 @@ bind(DOM.btnDemo, "click", () => {
   });
 });
 
-
 // EXPORT (PDF)
 bind(DOM.btnExportPdf, "click", exportProjectPdfPro);
 
@@ -1239,31 +1181,31 @@ bind(DOM.stepsEl, "click", onStepsClick);
 bind(DOM.stepsEl, "change", onStepsChange);
 bind(DOM.stepsEl, "input", onStepsInput);
 
-  // ==========================================================
-  // 14) INIT (load CSV)
-  // ==========================================================
-  async function init() {
-  return initPure({
-    DOM,
-    KPI,
-    loadCsv: loadCsv,
-    CATALOG,
-    MODEL,
-    setLastProject: (v) => { LAST_PROJECT = v; },
-    normalizeCamera: normalizeCamera,
-    normalizeNvr: normalizeNvr,
-    normalizeHdd: normalizeHdd,
-    normalizeSwitch: normalizeSwitch,
-    normalizeScreen: normalizeScreen,
-    normalizeEnclosure: normalizeEnclosure,
-    normalizeSignageRow: normalizeSignageRow,
-    normalizeAccessoryMapping: normalizeAccessoryMapping,
-    applyLocalMediaToCatalog: () => _applyLocalMediaToCatalog(CATALOG),
-    sanity,
-    syncResultsUI,
-    render,
-    updateNavButtons,
-  });
+// ==========================================================
+// 14) INIT (load CSV)
+// ==========================================================
+async function init() {
+return initPure({
+  DOM,
+  KPI,
+  loadCsv: loadCsv,
+  CATALOG,
+  MODEL,
+  setLastProject: (v) => { LAST_PROJECT = v; },
+  normalizeCamera: normalizeCamera,
+  normalizeNvr: normalizeNvr,
+  normalizeHdd: normalizeHdd,
+  normalizeSwitch: normalizeSwitch,
+  normalizeScreen: normalizeScreen,
+  normalizeEnclosure: normalizeEnclosure,
+  normalizeSignageRow: normalizeSignageRow,
+  normalizeAccessoryMapping: normalizeAccessoryMapping,
+  applyLocalMediaToCatalog: () => _applyLocalMediaToCatalog(CATALOG),
+  sanity,
+  syncResultsUI,
+  render,
+  updateNavButtons,
+});
 }
 
 // ==========================================================
@@ -1272,7 +1214,6 @@ bind(DOM.stepsEl, "input", onStepsInput);
 let ADMIN_TOKEN = null;
 
 // Schémas attendus (minimum) — aide à éviter de casser le configurateur
-
 
 const _adminRef = { value: (typeof ADMIN_TOKEN !== 'undefined' ? ADMIN_TOKEN : '') };
 /* eslint-disable no-unused-vars */
@@ -1285,15 +1226,13 @@ const {
 /* eslint-enable no-unused-vars */
 bindAdminPanel();
 
-
-  init();
-  function ensurePdfPackButton() {
-  return ensurePdfPackButtonPure({
-    T,
-    exportProjectPdfWithLocalDatasheetsZip,
-  });
+init();
+function ensurePdfPackButton() {
+return ensurePdfPackButtonPure({
+  T,
+  exportProjectPdfWithLocalDatasheetsZip,
+});
 }
-
 
 // Auto-init
 if (typeof document !== "undefined") {
