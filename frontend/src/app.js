@@ -231,12 +231,7 @@ const {
 /* eslint-enable no-unused-vars */
 
 function kpiConfigSnapshot(proj) {
-  return kpiConfigSnapshotPure(proj, {
-    MODEL,
-    getSelectedOrRecommendedScreen,
-    getSelectedOrRecommendedEnclosure,
-    getSelectedOrRecommendedSign,
-  });
+  return kpiConfigSnapshotPure(proj, DEPS);
 }
 
 // ==========================================================
@@ -290,6 +285,7 @@ const DEPS = {
   getCameraProfile, objectiveLabel, accessoryTypeLabel, objectiveToDoriKey,
   translateUseCase, getAllUseCases, localizedDatasheetUrl,
   sanitizeFilename, dedupByUrl,
+  getProjectCached,
 };
 
 // ==========================================================
@@ -449,14 +445,7 @@ const {
 });
 
 function camPickCardHTML(blk, cam) {
-  return renderCameraPickCard(blk, cam, {
-    interpretScoreForBlock,
-    T,
-    CLR,
-    safeHtml,
-    localizedDatasheetUrl,
-    compare: MODEL.ui.compare,
-  });
+  return renderCameraPickCard(blk, cam, { ...DEPS, compare: MODEL.ui.compare });
 }
 
 function renderStepCameras() {
@@ -791,11 +780,11 @@ async function exportProjectPdfPackPro() {
 // ==========================================================
 // VALIDATION PAR ÉTAPE
 function validateStep(stepId) {
-  return validateStepPure(stepId, { MODEL, T, getProjectCached });
+  return validateStepPure(stepId, DEPS);
 }
 
 function showStepValidationErrors(errors) {
-  return showStepValidationErrorsPure(errors, { T });
+  return showStepValidationErrorsPure(errors, DEPS);
 }
 
 // CSS animation pour le toast
