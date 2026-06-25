@@ -64,7 +64,13 @@ export function renderFinalSummaryPure(proj, deps = {}) {
       if (!cam) return null;
 
       const blk = (MODEL.cameraBlocks || []).find((b) => b.id === l.fromBlockId) || null;
-      const placeLabel = blk && blk.label ? `${blk.label}` : "";
+      const ans = (blk && blk.answers) || {};
+      // Indicateur : distance obtenue par mesure photo + gyroscope.
+      const measured = ans.hasPhoto
+        ? `📷 ${ans.distance_m ? ans.distance_m + " m mesurés" : "distance mesurée"}`
+        : "";
+      const baseLabel = blk && blk.label ? `${blk.label}` : "";
+      const placeLabel = [baseLabel, measured].filter(Boolean).join(" · ");
 
       const imgUrl = pickImg("cameras", cam.id, cam);
 
