@@ -27,6 +27,7 @@ export function createPersistenceHandlers(deps = {}) {
   function snapshotForSave() {
     try {
       return {
+        projectId: MODEL?.projectId || '',
         projectName: MODEL?.projectName || '',
         projectUseCase: MODEL?.projectUseCase || '',
         cameraBlocks: (MODEL?.cameraBlocks || []).map(b => ({
@@ -49,6 +50,7 @@ export function createPersistenceHandlers(deps = {}) {
   function restoreFromSnapshot(snap) {
     try {
       if (!snap) return false;
+      if (snap.projectId != null) MODEL.projectId = snap.projectId;
       if (snap.projectName != null) MODEL.projectName = snap.projectName;
       if (snap.projectUseCase != null) MODEL.projectUseCase = snap.projectUseCase;
       if (Array.isArray(snap.cameraBlocks)) MODEL.cameraBlocks = snap.cameraBlocks;

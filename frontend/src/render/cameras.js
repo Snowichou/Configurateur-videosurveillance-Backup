@@ -142,6 +142,11 @@ function buildBlockCard(blk, idx, ctx) {
                 style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)" />
               <button data-action="measureDistance" data-bid="${sh(blk.id)}" type="button" class="btnGhost"
                 style="width:100%;margin-top:8px">📷 Mesurer la distance (photo + gyroscope)</button>
+              ${ans.hasPhoto ? `
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button data-action="viewPhoto" data-bid="${sh(blk.id)}" type="button" class="btnGhost" style="flex:1">🖼️ Voir la photo</button>
+                <button data-action="removePhoto" data-bid="${sh(blk.id)}" type="button" class="btnGhost" aria-label="Supprimer la photo">🗑️</button>
+              </div>` : ``}
             </div>
 
             <div>

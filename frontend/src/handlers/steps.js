@@ -35,6 +35,8 @@ export function createStepsHandlers(deps = {}) {
     KPI,
     confirmDialog,
     openMeasureModal,
+    photoStore,
+    openPhotoViewer,
   } = deps;
 
 function onStepsClick(e) {
@@ -63,16 +65,57 @@ function onStepsClick(e) {
     openMeasureModal({
       heightM: (blk.answers && blk.answers.height_m) || "",
       T,
-      onResult: ({ distanceM, heightM }) => {
+      onResult: ({ distanceM, heightM, blob }) => {
         invalidateIfNeeded(blk);
         if (distanceM > 0) {
           blk.answers.distance_m = String(Math.min(999, Math.max(1, Math.round(distanceM))));
         }
         if (heightM > 0) blk.answers.height_m = String(heightM);
         MODEL.ui.activeBlockId = bid;
+        // Stockage local de la photo (IndexedDB) — jamais envoyée au serveur.
+        if (blob && photoStore && typeof photoStore.savePhoto === "function") {
+          photoStore
+            .savePhoto(MODEL.projectId, blk.id, blob, { distanceM, heightM })
+            .then((ok) => {
+              if (ok) {
+                blk.answers.hasPhoto = "1";
+                render();
+              }
+            })
+            .catch(() => {});
+        }
         render();
       },
     });
+    return;
+  }
+
+  if (action === "viewPhoto") {
+    const bid = el.getAttribute("data-bid");
+    const blk = MODEL.cameraBlocks.find((b) => b.id === bid);
+    if (!blk || typeof openPhotoViewer !== "function" || !photoStore) return;
+    openPhotoViewer({
+      getPhoto: photoStore.getPhoto,
+      projectId: MODEL.projectId,
+      cameraId: blk.id,
+      onDelete: () => {
+        if (photoStore.deletePhoto) photoStore.deletePhoto(MODEL.projectId, blk.id).catch(() => {});
+        delete blk.answers.hasPhoto;
+        render();
+      },
+    });
+    return;
+  }
+
+  if (action === "removePhoto") {
+    const bid = el.getAttribute("data-bid");
+    const blk = MODEL.cameraBlocks.find((b) => b.id === bid);
+    if (!blk) return;
+    if (photoStore && photoStore.deletePhoto) {
+      photoStore.deletePhoto(MODEL.projectId, blk.id).catch(() => {});
+    }
+    delete blk.answers.hasPhoto;
+    render();
     return;
   }
 
@@ -127,6 +170,9 @@ function onStepsClick(e) {
     if (idx >= 0) {
       const blk = MODEL.cameraBlocks[idx];
       if (blk.validated) unvalidateBlock(blk);
+      if (photoStore && photoStore.deletePhoto) {
+        photoStore.deletePhoto(MODEL.projectId, blk.id).catch(() => {});
+      }
       MODEL.cameraBlocks.splice(idx, 1);
       sanity();
       render();

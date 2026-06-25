@@ -81,6 +81,10 @@ export function createInitialModel(limits = FALLBACK_LIMITS) {
       previewByBlock: {}, // { [blockId]: cameraId } => carte "pré-sélectionnée"
     },
 
+    // Identifiant projet stable — sert de clé de stockage des photos de
+    // mesure (IndexedDB) et survit aux sauvegardes/restaurations.
+    projectId: 'P' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+
     projectName: '',
     projectUseCase: '', // Use case global du projet (Résidentiel, Tertiaire, etc.)
     projectNotes: '', // Notes commerciales libres

@@ -72,6 +72,8 @@ import { bindSummaryButtonsPure } from './handlers/summary.js';
 import { createQuoteHandlers } from './handlers/quote.js';
 import { createStepsHandlers } from './handlers/steps.js';
 import { openMeasureModal } from './ui/measure/modal.js';
+import { openPhotoViewer } from './ui/measure/photo-viewer.js';
+import * as photoStore from './storage/photo-store.js';
 import { initPure } from './handlers/init.js';
 import { createAdminHandlers } from './handlers/admin.js';
 import { buildPdfBlobProFromProjectPure } from './render/pdf-blob.js';
@@ -706,6 +708,8 @@ const { onStepsClick, onStepsChange, onStepsInput } = createStepsHandlers({
   KPI,
   confirmDialog: window.confirm ? window.confirm.bind(window) : (() => false),
   openMeasureModal,
+  openPhotoViewer,
+  photoStore,
 });
 
 // ==========================================================

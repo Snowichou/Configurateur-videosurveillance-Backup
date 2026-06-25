@@ -67,6 +67,7 @@ function cloneModel() {
   if (!m) return null;
   try {
     return JSON.parse(JSON.stringify({
+      projectId: m.projectId,
       projectName: m.projectName, projectUseCase: m.projectUseCase,
       cameraBlocks: m.cameraBlocks, cameraLines: m.cameraLines,
       accessoryLines: m.accessoryLines, recording: m.recording,
@@ -83,6 +84,7 @@ function applySnapshot(snap) {
   const m = getModel();
   if (!m || !snap) return;
   Object.assign(m, {
+    projectId: snap.projectId ?? m.projectId,
     projectName: snap.projectName ?? m.projectName,
     projectUseCase: snap.projectUseCase ?? m.projectUseCase,
     cameraBlocks: snap.cameraBlocks ?? m.cameraBlocks,
