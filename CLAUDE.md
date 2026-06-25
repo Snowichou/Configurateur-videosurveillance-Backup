@@ -1,7 +1,7 @@
 # CLAUDE.md — Configurateur Vidéosurveillance Comelit
 
 > Fichier de contexte pour Claude. Lu automatiquement à l'ouverture du projet.
-> Dernière mise à jour : après session PH17+18+cleanup (mai 2026).
+> Dernière mise à jour : après session « Mesure DORI photo + gyroscope » (juin 2026).
 
 ---
 
@@ -79,12 +79,13 @@ step, swipe mobile, compare caméras, validation par étape, navigation guard.
 |---|---|
 | `utils/` | `format.js`, `csv.js`, `share.js`, `helpers.js` |
 | `core/` | `constants.js` — couleurs, limites, labels scoring |
-| `engine/` | 18 modules — calculs purs (stockage, NVR, PoE, scoring, projet...) |
+| `engine/` | 19 modules — calculs purs (stockage, NVR, PoE, scoring, projet, **measure-distance**...) |
 | `catalog/` | `normalize.js`, `media.js` |
 | `state/` | `model.js`, `lookups.js`, `actions.js` |
 | `render/` | 17 modules — HTML generation (une fonction pure par écran) |
 | `handlers/` | `steps.js`, `admin.js`, `summary.js`, `init.js`, `quote.js` |
-| `ui/` | `toast.js`, `labels.js` |
+| `storage/` | `photo-store.js` — wrapper IndexedDB (photos de mesure, 100 % local) |
+| `ui/` | `toast.js`, `labels.js`, **`measure/`** (`gyro.js`, `capture.js`, `modal.js`, `photo-viewer.js`) |
 
 ---
 
@@ -100,7 +101,7 @@ npm run dev                  # http://localhost:5173
 npx vite build --outDir /tmp/dist-test
 
 # Tests (vitest non installé dans node_modules — installer dans /tmp)
-npm install --prefix /tmp/vitest-install vitest @vitest/coverage-v8 happy-dom
+npm install --prefix /tmp/vitest-install vitest @vitest/coverage-v8 happy-dom fake-indexeddb
 NODE_PATH=/tmp/vitest-install/node_modules \
   /tmp/vitest-install/node_modules/.bin/vitest run
 
@@ -180,7 +181,66 @@ with open(path, 'w', encoding='utf-8', newline='\n') as f:
 | (origine) | — | app.js monolithe IIFE ~13 000 lignes |
 
 **Résultat** : app.js 13 000L → 1 045L. 0 shim `window.xxx` dans les modules purs.
-469 tests, 26 fichiers de test, tous au vert.
+498 tests, 29 fichiers de test, tous au vert.
+
+---
+
+## Feature : Mesure DORI par photo + gyroscope (PWA)
+
+L'installateur se place à l'emplacement de la caméra, saisit la **hauteur de
+montage**, incline le téléphone vers la zone au sol : l'angle de plongée
+(gyroscope) donne la **distance horizontale** par trigonométrie, qui alimente
+le moteur DORI existant. Une photo (preuve visuelle) est stockée **100 % en
+local**.
+
+### Formule
+
+```
+distance_horizontale = hauteur_montage / tan(angle_de_plongée)
+```
+
+`angle_de_plongée` est dérivé de `DeviceOrientationEvent` :
+portrait `90 - beta`, paysage `90 - |gamma|` (cf. `depressionFromOrientation`).
+
+### Modules
+
+| Fichier | Rôle |
+|---|---|
+| `engine/measure-distance.js` | **Pur** : `depressionFromOrientation`, `computeGroundDistance`, `measureFromPhone` + `MEASURE_LIMITS`. Cas limites : horizon (`angle_too_small`), vers le haut (`pointing_up`), hauteur invalide, bornage 999 m. |
+| `ui/measure/gyro.js` | Capteur : support, permission iOS (`requestPermission`), orientation écran, abonnement. |
+| `ui/measure/capture.js` | Caméra arrière (`getUserMedia` facingMode environment), capture JPEG `canvas.toBlob` qualité 0.6. |
+| `ui/measure/modal.js` | `openMeasureModal({heightM,T,onResult})` — orchestration + repli manuel. |
+| `ui/measure/photo-viewer.js` | `openPhotoViewer(...)` — lightbox lecture seule + suppression. |
+| `storage/photo-store.js` | IndexedDB : `savePhoto/getPhoto/deletePhoto/clearProject`, clé `projectId::cameraId`, repli gracieux si IndexedDB indisponible. |
+
+### Intégration
+
+- **MODEL** : `answers.height_m` (champ bloc) + `answers.hasPhoto` (flag) +
+  `MODEL.projectId` (id stable, persiste via **les 2 serializers** :
+  `engine/persistence.js` ET `optimisations.js` clone/applySnapshot).
+- **Wiring** : `openMeasureModal`, `openPhotoViewer`, `photoStore` injectés dans
+  `createStepsHandlers(deps)` (app.js). Actions `data-action` :
+  `measureDistance`, `viewPhoto`, `removePhoto`.
+- **render/cameras.js** : champ hauteur + bouton « 📷 Mesurer » + boutons
+  Voir/Supprimer (conditionnels sur `hasPhoto`).
+- **Récap** (`render/summary-final.js`) : badge `📷 X m mesurés` sur les lignes
+  caméra mesurées.
+
+### Robustesse (phase 6, intégrée)
+
+Permission gyro/caméra refusée, capteur absent, aucun event (<2,5 s),
+angle ≈ 0° / vers le haut, paysage/portrait, IndexedDB indisponible →
+**toujours** un repli (saisie manuelle de la distance) sans crash.
+
+### PWA
+
+`public/manifest.json` + `public/sw.js` (déplacés depuis `src/` — étaient
+référencés à la racine `/` mais non servis : la PWA était inopérante).
+Enregistrement SW dans `main.js`.
+
+> **Dépendance test** : `fake-indexeddb` (devDependency) pour
+> `__tests__/storage-photo-store.test.js`. Inclus dans la commande
+> d'install vitest ci-dessus.
 
 ---
 
@@ -205,6 +265,8 @@ with open(path, 'w', encoding='utf-8', newline='\n') as f:
 | `frontend/src/optimisations.js` | UI extras — pattern initOptimisations(deps) |
 | `frontend/src/main.js` | Bootstrap + wiring dynamic imports |
 | `frontend/src/core/constants.js` | Constantes centralisées |
+| `frontend/src/engine/measure-distance.js` | Mesure DORI — trigo pure + cas limites |
+| `frontend/src/storage/photo-store.js` | Stockage local IndexedDB des photos de mesure |
 | `REFACTOR-PASSATION.md` | Détail technique complet + patterns + aide-mémoire |
 | `CONTRIBUTING.md` | Conventions Git, workflow, checklist PR |
 
