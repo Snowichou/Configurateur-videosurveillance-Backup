@@ -134,6 +134,18 @@ function buildBlockCard(blk, idx, ctx) {
 
             <div>
               <strong>
+                🔧 Hauteur de montage (m)
+                <span class="infoTip" data-tip="Hauteur de fixation de la caméra. Sert au calcul de distance par photo : distance = hauteur / tan(angle de plongée).">i</span>
+              </strong>
+              <input data-action="inputBlockField" data-bid="${sh(blk.id)}" data-field="height_m" type="number" min="0.1" max="50" step="0.1" inputmode="decimal"
+                value="${sh(ans.height_m ?? '')}" placeholder="Ex: 2.5"
+                style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)" />
+              <button data-action="measureDistance" data-bid="${sh(blk.id)}" type="button" class="btnGhost"
+                style="width:100%;margin-top:8px">📷 Mesurer la distance (photo + gyroscope)</button>
+            </div>
+
+            <div>
+              <strong>
                 🔧 ${T('cam_mount_type')}
                 <span class="infoTip" data-tip="${T('cam_tip_mounting')}">i</span>
               </strong>

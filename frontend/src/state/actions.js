@@ -50,6 +50,7 @@ export function createEmptyCameraBlock(useCase = '', uidFn = uid) {
       ai_type: '',
       objective: '',
       distance_m: '',
+      height_m: '',
       mounting: 'wall',
       // Type spécial forcé : "" | "ptz" | "panoramic_180"
       force_camera_type: '',

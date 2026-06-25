@@ -34,6 +34,7 @@ export function createStepsHandlers(deps = {}) {
     SAVE_KEY,
     KPI,
     confirmDialog,
+    openMeasureModal,
   } = deps;
 
 function onStepsClick(e) {
@@ -51,6 +52,27 @@ function onStepsClick(e) {
 
   if (action === "screenSize") {
     // Géré dans onStepsChange (c'est un select)
+    return;
+  }
+
+  if (action === "measureDistance") {
+    const bid = el.getAttribute("data-bid");
+    const blk = MODEL.cameraBlocks.find((b) => b.id === bid);
+    if (!blk) return;
+    if (typeof openMeasureModal !== "function") return;
+    openMeasureModal({
+      heightM: (blk.answers && blk.answers.height_m) || "",
+      T,
+      onResult: ({ distanceM, heightM }) => {
+        invalidateIfNeeded(blk);
+        if (distanceM > 0) {
+          blk.answers.distance_m = String(Math.min(999, Math.max(1, Math.round(distanceM))));
+        }
+        if (heightM > 0) blk.answers.height_m = String(heightM);
+        MODEL.ui.activeBlockId = bid;
+        render();
+      },
+    });
     return;
   }
 
@@ -332,6 +354,9 @@ function onStepsChange(e) {
     if (field === "distance_m") {
       const v = String(el.value ?? "").trim();
       blk.answers[field] = v ? String(clampInt(v, 1, 999)) : "";
+    } else if (field === "height_m") {
+      const n = parseFloat(String(el.value ?? "").replace(",", "."));
+      blk.answers[field] = Number.isFinite(n) ? String(Math.min(50, Math.max(0.1, n))) : "";
     } else {
       blk.answers[field] = el.value;
     }
