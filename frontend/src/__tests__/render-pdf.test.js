@@ -154,3 +154,42 @@ describe('buildPdfHtmlPure -- blocs camera', () => {
     expect(buildPdfHtmlPure(makeProj(), deps)).not.toContain('Bloc Ignore');
   });
 });
+
+describe('buildPdfHtmlPure -- photo de mesure (P5)', () => {
+  const block = {
+    id: 'b1', label: 'Zone Entree', validated: true,
+    answers: { objective: 'identification', emplacement: 'exterieur', distance_m: '15', hasPhoto: '1' },
+  };
+
+  it('incruste la photo (dataURL) quand getMeasurePhoto la fournit', () => {
+    const dataUrl = 'data:image/jpeg;base64,AAAA';
+    const deps = makeDeps({
+      MODEL: { ...makeDeps().MODEL, cameraBlocks: [block], cameraLines: [] },
+      getMeasurePhoto: (id) => (id === 'b1' ? dataUrl : null),
+    });
+    const html = buildPdfHtmlPure(makeProj(), deps);
+    expect(html).toContain('measurePhoto');
+    expect(html).toContain(dataUrl);
+  });
+
+  it('affiche la distance mesurée (distance_m) dans le séparateur de bloc', () => {
+    const deps = makeDeps({
+      MODEL: { ...makeDeps().MODEL, cameraBlocks: [block], cameraLines: [] },
+      getMeasurePhoto: () => null,
+    });
+    const html = buildPdfHtmlPure(makeProj(), deps);
+    expect(html).toContain('15m');
+  });
+
+  it('pas d’image si aucune photo (getMeasurePhoto → null)', () => {
+    const deps = makeDeps({
+      MODEL: {
+        ...makeDeps().MODEL,
+        cameraBlocks: [{ ...block, answers: { ...block.answers, hasPhoto: undefined } }],
+        cameraLines: [],
+      },
+      getMeasurePhoto: () => null,
+    });
+    expect(buildPdfHtmlPure(makeProj(), deps)).not.toContain('measurePhoto');
+  });
+});

@@ -181,7 +181,7 @@ with open(path, 'w', encoding='utf-8', newline='\n') as f:
 | (origine) | — | app.js monolithe IIFE ~13 000 lignes |
 
 **Résultat** : app.js 13 000L → 1 045L. 0 shim `window.xxx` dans les modules purs.
-498 tests, 29 fichiers de test, tous au vert.
+501 tests, 29 fichiers de test, tous au vert.
 
 ---
 
@@ -225,6 +225,11 @@ portrait `90 - beta`, paysage `90 - |gamma|` (cf. `depressionFromOrientation`).
   Voir/Supprimer (conditionnels sur `hasPhoto`).
 - **Récap** (`render/summary-final.js`) : badge `📷 X m mesurés` sur les lignes
   caméra mesurées.
+- **Export PDF** (`render/pdf.js`) : vignette de la photo + distance dans le
+  séparateur de bloc. Les photos sont pré-chargées en dataURL
+  (`prefetchMeasurePhotos` dans app.js) avant le rendu synchrone, via le chokepoint
+  `buildPdfBlobProFromProject` (couvre export, pack ZIP, aperçu). Au passage,
+  correction d'un bug latent : le PDF lisait `ans.distance` au lieu de `ans.distance_m`.
 
 ### Robustesse (phase 6, intégrée)
 

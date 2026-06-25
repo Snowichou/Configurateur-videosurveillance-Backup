@@ -36,6 +36,7 @@ export function buildPdfHtmlPure(proj, deps = {}) {
     safeHtml,
     CATALOG,
     MODEL,
+    getMeasurePhoto,
   } = deps;
 
   const now = new Date();
@@ -312,8 +313,9 @@ export function buildPdfHtmlPure(proj, deps = {}) {
       label: blockLabel,
       blkInfo: {
         objective: String(ans.objective || "").toLowerCase(),
-        distance: ans.distance || null,
+        distance: ans.distance_m || ans.distance || null,
         emplacement: String(ans.emplacement || "").toLowerCase(),
+        photoUrl: typeof getMeasurePhoto === "function" ? getMeasurePhoto(blk.id) : null,
       },
       camera: cam ? { qty: camLine.qty || 0, id: cam.id, name: cam.name, scoreInfo } : null,
       accessories: blockAccs.map((a) => ({ qty: a.qty || 0, id: a.accessoryId, name: a.name || a.accessoryId, image_url: a.image_url || false }))
@@ -399,12 +401,16 @@ export function buildPdfHtmlPure(proj, deps = {}) {
       const dist = blkInfo?.distance ? `${blkInfo.distance}m` : "";
       const empl = blkInfo?.emplacement === "exterieur" ? "Ext." : blkInfo?.emplacement === "interieur" ? "Int." : "";
       const meta = [objLabel, dist, empl].filter(Boolean).join(" • ");
+      const photo = blkInfo?.photoUrl
+        ? `<img class="measurePhoto" src="${blkInfo.photoUrl}" alt="Photo de mesure" style="height:48px;width:auto;border-radius:6px;margin-left:auto;object-fit:cover" />`
+        : "";
       return `
       <tr class="blockSeparator">
         <td colspan="4">
-          <div class="blockSepInner">
+          <div class="blockSepInner" style="display:flex;align-items:center;gap:8px">
             <span class="blockSepLabel">📍 ${safe(label)}</span>
             ${meta ? `<span class="blockSepMeta">${safe(meta)}</span>` : ""}
+            ${photo}
           </div>
         </td>
       </tr>

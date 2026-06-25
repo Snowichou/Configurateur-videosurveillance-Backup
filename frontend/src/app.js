@@ -403,8 +403,45 @@ function renderFinalSummary(proj) {
 // ==========================================================
 // THUMBS / IMAGES (LOCAL DATA ONLY) — logique dans catalog/media.js
 
+// Cache des photos de mesure (dataURL) pour l'export PDF — rempli par
+// prefetchMeasurePhotos() avant chaque génération (buildPdfHtml est sync).
+let _measurePhotoCache = {};
+
+function _blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    try {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error || new Error('read_failed'));
+      fr.readAsDataURL(blob);
+    } catch (e) { reject(e); }
+  });
+}
+
+// Lit les photos stockées (IndexedDB) des blocs mesurés → dataURL en cache.
+// Échoue en douceur (IndexedDB indisponible, photo absente) sans bloquer le PDF.
+async function prefetchMeasurePhotos() {
+  _measurePhotoCache = {};
+  try {
+    if (!photoStore?.photoStoreAvailable?.()) return;
+    const blocks = (MODEL.cameraBlocks || []).filter((b) => b?.answers?.hasPhoto);
+    await Promise.all(
+      blocks.map(async (b) => {
+        try {
+          const rec = await photoStore.getPhoto(MODEL.projectId, b.id);
+          if (rec?.blob) _measurePhotoCache[b.id] = await _blobToDataURL(rec.blob);
+        } catch { /* photo ignorée */ }
+      })
+    );
+  } catch { /* prefetch best-effort */ }
+}
+
 function buildPdfHtml(proj) {
-  return buildPdfHtmlPure(proj, { ...DEPS, currentLang: getCurrentLang() });
+  return buildPdfHtmlPure(proj, {
+    ...DEPS,
+    currentLang: getCurrentLang(),
+    getMeasurePhoto: (blockId) => _measurePhotoCache[blockId] || null,
+  });
 }
 
 /* eslint-disable no-unused-vars */
@@ -668,7 +705,8 @@ function generateShareUrl() {
 
 // ==========================================================
 // APERÇU PDF — Preview HTML dans une modale
-function showPdfPreview() {
+async function showPdfPreview() {
+  await prefetchMeasurePhotos();
   return showPdfPreviewPure({
     T,
     getLastProject: () => LAST_PROJECT,
@@ -680,6 +718,7 @@ function showPdfPreview() {
 
 // PDF BLOB (PRO) — même rendu que exportProjectPdfPro()
 async function buildPdfBlobProFromProject(proj) {
+  await prefetchMeasurePhotos();
   return buildPdfBlobProFromProjectPure(proj, {
     T, LAST_PROJECT, computeProject, buildPdfHtml, CATALOG,
   });
